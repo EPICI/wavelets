@@ -3,20 +3,21 @@ package main;
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.ArrayList;
-import java.util.Arrays;
-
 import javax.swing.*;
-import components.*;
 import java.awt.*;
 import java.awt.event.*;
+import components.*;
 
 //An individual clip
 public class Clip implements Serializable {
+	private static final long serialVersionUID = 1L;
 	
 	//Constants
 	public static final String START_TIME = "Start time";
 	public static final String END_TIME = "End time";
 	
+	//Is it part of a layer
+	public boolean isLayerClip = true;
 	//Parent layer
 	public Layer parentLayer;
 	//Start and end
@@ -47,6 +48,8 @@ public class Clip implements Serializable {
 	public transient JLabel infoInputLabel;
 	public transient JButton actionSave;
 	public transient JButton actionPlay;
+	public transient WGraphViewerPanel graphTarget;
+	public transient boolean graphTargetSet = false;
 	//Safety bit
 	public transient boolean nodeSelectorChanging = false;
 	
@@ -126,6 +129,9 @@ public class Clip implements Serializable {
 			@Override
 			public void mouseClicked(MouseEvent e) {
 				double[] soundDouble = getAudio();
+				if(graphTargetSet){
+					graphTarget.graphData = soundDouble;
+				}
 				short[] soundShort = Waveform.quickShort(soundDouble);
 				Wavelets.mainPlayer.playSound(soundShort);
 				Wavelets.updateDisplay();
@@ -159,6 +165,16 @@ public class Clip implements Serializable {
 		//Final
 		refreshNodeSelector();
 		refreshNodes();
+	}
+	
+	public void setGraphTarget(WGraphViewerPanel target){
+		graphTarget = target;
+		graphTargetSet = true;
+	}
+	
+	public void removeGraphTarget(){
+		graphTarget = null;
+		graphTargetSet = false;
 	}
 	
 	public void updateLength(){

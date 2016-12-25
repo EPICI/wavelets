@@ -6,6 +6,7 @@ import java.util.Arrays;
 
 //Generic node object used in a network
 public class Node implements Serializable {
+	private static final long serialVersionUID = 1L;
 	
 	//Primary stuff
 	public String name;

@@ -18,6 +18,7 @@ import main.Wavelets;
 
 //Used to view a node network
 public class WNodesViewerPanel extends JPanel {
+	private static final long serialVersionUID = 1L;
 	
 	//Built in inputs
 	public static final String[] codedInputsArray = {"time","position","rate","phase","start","end"};

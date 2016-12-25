@@ -1,12 +1,16 @@
 package components;
 
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
 //Drawing class
 public class Draw {
+	//Max size
+	public static final Dimension MAX_SIZE = new Dimension(Integer.MAX_VALUE,Integer.MAX_VALUE);
+	
     //Copy of interpolation function
     public static double lerp(double a,double b,double t){
         return (1-t)*a+b*t;

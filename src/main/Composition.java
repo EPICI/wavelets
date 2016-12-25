@@ -6,6 +6,7 @@ import javax.swing.*;
 
 //A composition
 public class Composition implements Serializable {
+	private static final long serialVersionUID = 1L;
 	
 	//Global
 	public HashMap<String,Curve> curves = new HashMap<String,Curve>();

@@ -6,6 +6,8 @@ import java.awt.event.AdjustmentListener;
 import javax.swing.*;
 
 public class WScrollPane extends JScrollPane{
+	private static final long serialVersionUID = 1L;
+	
 	//Constructor
 	public WScrollPane(JComponent component){
 		super(component);

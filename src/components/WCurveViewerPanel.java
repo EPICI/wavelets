@@ -3,7 +3,6 @@ package components;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.util.Collections;
@@ -13,6 +12,7 @@ import main.Wavelets;
 
 //Curve viewer
 public class WCurveViewerPanel extends JPanel {
+	private static final long serialVersionUID = 1L;
 	
 	Curve trackCurve;
 	

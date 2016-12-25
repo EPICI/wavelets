@@ -11,6 +11,7 @@ import java.util.Arrays;
 
 //A bunch of connected nodes
 public class Nodes implements Serializable {
+	private static final long serialVersionUID = 1L;
 	
 	//Source text
 	public String source = "";
@@ -39,7 +40,7 @@ public class Nodes implements Serializable {
 	public transient JPanel scriptPanel;//Contains script stuff
 	public transient JPanel viewPanel;//TODO create a class to visualize nodes
 	public transient JPanel testPanel;//Preview with a temporary clip
-	public transient JPanel graphPanel;//TODO create a class to graph the preview
+	public transient WGraphViewerPanel graphPanel;//TODO create a class to graph the preview
 	public transient JLabel scriptLabel;//Script
 	public transient JTextArea scriptArea;//Type script here
 	public transient JButton scriptSave;//Save and compile
@@ -57,9 +58,9 @@ public class Nodes implements Serializable {
 		scriptLabel = new JLabel("Source");
 		scriptArea = new JTextArea();
 		scriptSave = new JButton("Compile");
-		viewPanel = new WNodesViewerPanel(this);//Please replace with more user friendly UI
-		testPanel = new JPanel();//Will be replaced later
-		graphPanel = new JPanel();//TODO Replace with visualizer class
+		viewPanel = new WNodesViewerPanel(this);//TODO replace with more user friendly UI
+		testPanel = new JPanel();
+		graphPanel = new WGraphViewerPanel();
 		//Add to parents
 		scriptPanel.add(scriptLabel,BorderLayout.PAGE_START);
 		scriptPanel.add(scriptArea,BorderLayout.CENTER);
@@ -226,10 +227,12 @@ public class Nodes implements Serializable {
 	
 	public void refreshTestClip(){
 		testClip = new Clip();
+		testClip.isLayerClip = false;
 		testClip.parentLayer = parentComposition.nodeLayer;
 		testClip.nodesName = parentComposition.nodesSelection;
 		testClip.initTransient();
 		testClip.infoNodeSelector.setSelectedItem(parentComposition.nodesSelection);
+		testClip.setGraphTarget(graphPanel);
 		testPanel = testClip.parentPanel;
 	}
 

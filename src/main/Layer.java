@@ -1,13 +1,13 @@
 package main;
 
 import java.util.ArrayList;
-import components.*;
 import javax.swing.*;
 import java.awt.event.*;
 import java.io.Serializable;
 
 //A single layer, containing multiple clips
 public class Layer implements Serializable {
+	private static final long serialVersionUID = 1L;
 	
 	//Parent composition
 	public Composition parentComposition;
@@ -17,7 +17,10 @@ public class Layer implements Serializable {
 	public ArrayList<Clip> clips = new ArrayList<Clip>();
 	//Layer name
 	public String name = "";
-	//The left panel
+	//All filters, in order they are applied
+	public ArrayList<Filter> filters = new ArrayList<Filter>();
+	
+	//Display - left area
 	public transient JPanel parentPanel;
 	public transient GroupLayout layout;
 	public transient JLabel nameLabel;
@@ -26,6 +29,8 @@ public class Layer implements Serializable {
 	public transient JButton buttonEdit;
 	public transient JButton buttonDelete;
 	public transient boolean editMode;
+	//Display - properties panel
+	//TODO
 	
 	public Layer(){
 		initTransient();

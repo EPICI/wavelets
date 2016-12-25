@@ -10,6 +10,7 @@ import components.*;
 
 //Curve made of samples
 public class Curve implements Serializable {
+	private static final long serialVersionUID = 1L;
 	
 	//Curve data
 	protected ArrayList<Double> locations = new ArrayList<Double>();

@@ -5,7 +5,6 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 import components.*;
-import javax.swing.plaf.synth.*;
 
 //The main program
 public class Wavelets{
@@ -108,7 +107,7 @@ public class Wavelets{
 	//Set default font
 	//Source: http://stackoverflow.com/questions/7434845/setting-the-default-font-of-swing-program
 	public static void setUIFont (javax.swing.plaf.FontUIResource f){
-		java.util.Enumeration keys = UIManager.getDefaults().keys();
+		Enumeration<Object> keys = UIManager.getDefaults().keys();//TODO figure out what type it is
 		while (keys.hasMoreElements()) {
 			Object key = keys.nextElement();
 			Object value = UIManager.get(key);
@@ -1203,6 +1202,8 @@ public class Wavelets{
 			nodeEditorInPanel.add(currentNodes.graphPanel,BorderLayout.PAGE_END);
 			nodeEditorName.setText(composition.nodesSelection);
 			nodeEditorDupli.setEnabled(true);
+			//Temporary solution
+			currentNodes.graphPanel.setPreferredSize(new Dimension(mainFrame.getWidth(),200));
 		}else{
 			nodeEditorName.setText("None selected");
 			nodeEditorDupli.setEnabled(false);

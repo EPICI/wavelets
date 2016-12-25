@@ -1,6 +1,6 @@
 package main;
 
-//Generic class for all sounds
+//Class which provides basic waveforms and some other audio related functionality
 public class Waveform {
 	
 	public final static double twopi = Math.PI*2;
