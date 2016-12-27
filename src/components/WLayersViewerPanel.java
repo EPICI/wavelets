@@ -4,8 +4,6 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Rectangle;
-import java.util.Arrays;
-
 import javax.swing.JPanel;
 import main.*;
 
@@ -18,7 +16,7 @@ public class WLayersViewerPanel extends JPanel {
 	public static final double LOG_SEMITONE = Math.log(SEMITONE);
 	
 	//In order: all other layers, current layer, selected clip
-	public static float[] alphas = {0.1f,0.3f,0.5f};
+	public static float[] alphas = {0.1f,0.2f,0.3f};
 	//Cached boundaries
 	public static double[] cacheBounds = {0,1,-2,2};
 	public static int cacheHash = 1;
@@ -79,12 +77,17 @@ public class WLayersViewerPanel extends JPanel {
 		int samples = Wavelets.composition.samplesPerSecond;
 		double lsamples = left*samples;
 		double rsamples = right*samples;
+		//Blank background
+		g.setColor(colOuter);
+		g.fillRect(0,0,clipBounds.width,clipBounds.height);
+		g.setColor(colInner);
+		g.fillRect(2,2,xcap,ycap);
 		//Grid lines setup
 		g.setColor(colGridLine);
 		double gridPos;
 		double gridInc;
 		//Horizontal
-		gridInc = Math.pow(12d, Math.floor(Math.log(top-bottom)/Math.log(12d)-0.8d));
+		gridInc = 1d;
 		gridPos = Math.ceil(top-gridInc);
 		while(gridPos>bottom){
 			int mapping = (int) Math.floor((top-gridPos)/(top-bottom)*clipBounds.height);
@@ -94,7 +97,7 @@ public class WLayersViewerPanel extends JPanel {
 			gridPos-=gridInc;
 		}
 		//Vertical
-		gridInc = Math.pow(10d, Math.floor(Math.log10(right-left)-0.4d));
+		gridInc = Math.pow(10, Math.floor(Math.log10(right-left)-0.6));
 		gridPos = Math.floor(left+gridInc);
 		while(gridPos<right){
 			int mapping = (int) Math.floor((gridPos-left)/(right-left)*clipBounds.width);
@@ -103,11 +106,6 @@ public class WLayersViewerPanel extends JPanel {
 			}
 			gridPos+=gridInc;
 		}
-		//Blank background
-		g.setColor(colOuter);
-		g.fillRect(0,0,clipBounds.width,clipBounds.height);
-		g.setColor(colInner);
-		g.fillRect(2,2,xcap,ycap);
 		//Draw
 		for(String layerName:Wavelets.composition.layers.keySet()){
 			boolean isSelectedLayer = layerName.equals(Wavelets.composition.layerSelection);
@@ -124,17 +122,29 @@ public class WLayersViewerPanel extends JPanel {
 					}
 				}
 				Clip clip = layer.clips.get(i);
-				double[] freqs = clip.getFreq();
-				int position = Draw.mapToRound(left, right, 2, xcap, clip.startTime);
-				int mapIndex = Draw.mapToRound(2, xcap, lsamples, rsamples, position);
-				int offset = mapIndex;
-				mapIndex = 0;
-				while(mapIndex<freqs.length){
+				if(clip.length>0){
+					double[] freqs = clip.getFreq();
+					int position = Draw.mapToRound(left, right, 2, xcap, clip.startTime);
+					int mapIndex = Draw.mapToRound(2, xcap, lsamples, rsamples, position);
+					int offset = mapIndex;
+					mapIndex = 0;
 					double freq = freqs[mapIndex];
 					double pitch = Math.log(freq/440d)/LOG_SEMITONE;
-					g.drawLine(position, Draw.mapToRound(top,bottom,2,ycap,pitch-0.25d), position, Draw.mapToRound(top,bottom,2,ycap,pitch+0.25d));
-					position++;
-					mapIndex = Draw.mapToRound(2, xcap, lsamples, rsamples, position)-offset;
+					int pos1 = Draw.mapToRound(top,bottom,2,ycap,pitch-0.5d);
+					int pos2 = Draw.mapToRound(top,bottom,2,ycap,pitch+0.5d);
+					g.drawLine(position, pos1-1, position, pos2+1);
+					while(mapIndex<freqs.length){
+						freq = freqs[mapIndex];
+						pitch = Math.log(freq/440d)/LOG_SEMITONE;
+						pos1 = Draw.mapToRound(top,bottom,2,ycap,pitch-0.5d);
+						pos2 = Draw.mapToRound(top,bottom,2,ycap,pitch+0.5d);
+						g.drawLine(position, pos1, position, pos2);
+						g.fillRect(position, pos1, 1, 1);
+						g.fillRect(position, pos2, 1, 1);
+						position++;
+						mapIndex = Draw.mapToRound(2, xcap, lsamples, rsamples, position)-offset;
+					}
+					g.drawLine(position, pos1-1, position, pos2+1);
 				}
 			}
 		}
