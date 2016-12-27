@@ -291,8 +291,8 @@ public class Curve implements Serializable {
 			}
 			
 		});
-				//Finish
-				updateSelection();
+		//Finish
+		updateSelection();
 	}
 	
 	public void updateSelection(){
@@ -364,7 +364,9 @@ public class Curve implements Serializable {
 	
 	public void tryEditPoint(int index, double location, double value){
 		if(locations.get(index)!=location||values.get(index)!=value){
-			editPoint(index,location,value);
+			if(!locations.contains(location)){
+				editPoint(index,location,value);
+			}
 		}
 	}
 	

@@ -312,6 +312,28 @@ public class Clip implements Serializable {
 	public ArrayList<String> getInputs(){
 		return new ArrayList<String>(inputs.keySet());
 	}
+	
+	public void copyFrom(Clip source){
+		infoNodeSelector.setSelectedItem(source.nodesName);
+		HashMap<String,Double> sourceInputs = source.inputs;
+		for(String name:sourceInputs.keySet()){
+			double value = sourceInputs.get(name);
+			switch(name){
+			case(START_TIME):{
+				startTime = value;
+				break;
+			}case(END_TIME):{
+				endTime = value;
+				break;
+			}default:{
+				inputs.put(name, value);
+				break;
+			}
+			}
+		}
+		updateLength();
+		inputsRegistered = true;
+	}
 
 	public static void main(String[] args) {
 		//Leave empty

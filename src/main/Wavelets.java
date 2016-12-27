@@ -20,10 +20,10 @@ public class Wavelets{
 	//Composer panes
 	public static JScrollPane composerTopScrollPane;//Top panel is toolbar
 	public static JPanel composerTopInPanel;//Inside panel
-	public static JPanel composerBottomPanel;//Bottom panel is graph viewer
+	public static JPanel composerBottomPanel;//Bottom panel is filters manager
 	public static JScrollPane composerLeftScrollPane;//Left panel is layer manager
 	public static JPanel composerLeftInPanel;//Inside panel
-	public static JScrollPane composerRightScrollPane;//Right panel is clip property manager
+	public static JScrollPane composerRightScrollPane;//Right panel is shared property manager
 	public static JPanel composerRightInPanel;//Inside panel
 	public static JPanel composerCenterPanel;//Middle is clip viewer
 	public static ArrayList<JComponent> composerPanels = new ArrayList<JComponent>();
@@ -32,8 +32,6 @@ public class Wavelets{
 	public static ArrayList<ArrayList<JComponent>> composerTopPanelComponents;//Top panel objects
 	public static JPanel composerLeftPanelSubpanel;//Toolbar subpanel
 	public static JButton composerLeftPanelAddButton;//Add new layer
-	public static JPanel composerRightPanelLayerProperties;//Layer properties panel
-	public static JPanel composerRightPanelClipProperties;//Clip properties panel
 	//Curve editor panes
 	public static JScrollPane curveEditorScrollPane;//Parent scroll pane
 	public static JPanel curveEditorInPanel;//Inside panel
@@ -241,14 +239,14 @@ public class Wavelets{
 	public static void initComposer(){
 		//Composer layout
 		composerTopInPanel = new JPanel(new FlowLayout());
-		composerTopScrollPane = new WScrollPane(composerTopInPanel);
+		composerTopScrollPane = new JScrollPane(composerTopInPanel);
 		composerTopScrollPane.setPreferredSize(new Dimension(1800,60));//TODO Temporary
 		composerBottomPanel = new JPanel(new BorderLayout());
 		composerLeftInPanel = new JPanel();
 		composerLeftInPanel.setLayout(new BoxLayout(composerLeftInPanel, BoxLayout.PAGE_AXIS));
-		composerLeftScrollPane = new WScrollPane(composerLeftInPanel);
+		composerLeftScrollPane = new JScrollPane(composerLeftInPanel);
 		composerLeftScrollPane.setPreferredSize(new Dimension(300,800));//TODO Temporary
-		composerRightScrollPane = new WScrollPane(composerRightInPanel);
+		composerRightScrollPane = new JScrollPane(composerRightInPanel);
 		composerCenterPanel = new JPanel(new BorderLayout());
 		composerPanels.add(composerTopScrollPane);
 		composerPanels.add(composerBottomPanel);
@@ -264,30 +262,26 @@ public class Wavelets{
 	}
 	
 	public static void initComposerTopPanelSubpanel(){
+		//Create objects
 		composerTopPanelSubpanels = new ArrayList<JPanel>();
 		composerTopPanelComponents = new ArrayList<ArrayList<JComponent>>();
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
-		composerTopPanelComponents.get(0).add(new JLabel("Composition"));
-		composerTopPanelComponents.get(0).add(new JButton("Play"));
-		composerTopPanelComponents.get(0).add(new JButton("Stop"));
-		composerTopPanelComponents.get(0).add(new JButton("Cache samples"));
-		composerTopPanelComponents.get(0).add(new JButton("Clear cache"));
+		composerTopPanelComponents.get(0).add(new JButton("Stop player"));
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
-		composerTopPanelComponents.get(1).add(new JLabel("Layer"));
+		composerTopPanelComponents.get(1).add(new JLabel("Composition"));
 		composerTopPanelComponents.get(1).add(new JButton("Play"));
-		composerTopPanelComponents.get(1).add(new JButton("Stop"));
 		composerTopPanelComponents.get(1).add(new JButton("Cache samples"));
 		composerTopPanelComponents.get(1).add(new JButton("Clear cache"));
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
-		composerTopPanelComponents.get(2).add(new JLabel("Clip"));
+		composerTopPanelComponents.get(2).add(new JLabel("Layer"));
 		composerTopPanelComponents.get(2).add(new JButton("Play"));
-		composerTopPanelComponents.get(2).add(new JButton("Stop"));
 		composerTopPanelComponents.get(2).add(new JButton("Cache samples"));
 		composerTopPanelComponents.get(2).add(new JButton("Clear cache"));
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
 		composerTopPanelComponents.get(3).add(new JLabel("No clip selected"));//This should have the clip number
 		composerTopPanelComponents.get(3).add(new JButton("\u25C4"));//Left arrow
 		composerTopPanelComponents.get(3).add(new JButton("\u25BA"));//Right arrow
+		//Add objects
 		for(ArrayList<JComponent> currentcomponentlist : composerTopPanelComponents){
 			JPanel currentpanel = new JPanel();
 			currentpanel.setLayout(new FlowLayout());
@@ -297,6 +291,119 @@ public class Wavelets{
 				currentpanel.add(currentcomponent);
 			}
 		}
+		//Listeners
+		composerTopPanelComponents.get(0).get(0).addMouseListener(new MouseListener() {
+
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				mainPlayer.stopSound();
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseExited(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mousePressed(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		composerTopPanelComponents.get(3).get(1).addMouseListener(new MouseListener() {
+
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				if(composition.layers.containsKey(composition.layerSelection)){
+					Layer current = composition.layers.get(composition.layerSelection);
+					if(current.clipCount>0){
+						current.selectedClip--;
+						current.updateClipSelection();
+					}else{
+						current.addClip();
+					}
+				}
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseExited(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mousePressed(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		composerTopPanelComponents.get(3).get(2).addMouseListener(new MouseListener() {
+
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				if(composition.layers.containsKey(composition.layerSelection)){
+					Layer current = composition.layers.get(composition.layerSelection);
+					if(current.clipCount>0){
+						current.selectedClip++;
+						current.updateClipSelection();
+					}else{
+						current.addClip();
+					}
+				}
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseExited(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mousePressed(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
 	}
 		
 	public static void initComposerLeftPanelSubpanel(){
@@ -338,6 +445,8 @@ public class Wavelets{
 	
 	public static void initComposerRightPanelSubpanel(){
 		//Right panel
+		composerRightInPanel = new JPanel();
+		composerRightScrollPane = new JScrollPane(composerRightInPanel);
 	}
 	
 	//Initialize curve editor layout
@@ -404,7 +513,7 @@ public class Wavelets{
 		curveEditorToolbar.add(curveEditorToolbars.get(2),BorderLayout.PAGE_END);
 		curveEditorInPanel = new JPanel(new BorderLayout());
 		curveEditorInPanel.add(curveEditorToolbar,BorderLayout.PAGE_START);
-		curveEditorScrollPane = new WScrollPane(curveEditorInPanel);
+		curveEditorScrollPane = new JScrollPane(curveEditorInPanel);
 		//Listeners
 		curveEditorSelector.addItemListener(new ItemListener() {
 
@@ -412,7 +521,7 @@ public class Wavelets{
 			public void itemStateChanged(ItemEvent event) {
 				if(!curveEditorSelectorChanging){
 					if(event.getStateChange()==ItemEvent.SELECTED){
-						composition.curvesSelection = (String) event.getItem();
+						composition.curveSelection = (String) event.getItem();
 						updateCurveSelection();
 					}
 				}
@@ -423,10 +532,10 @@ public class Wavelets{
 
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
-				if(composition.curves.containsKey(composition.curvesSelection)){
+				if(composition.curves.containsKey(composition.curveSelection)){
 					String newName = curveEditorName.getText();
-					if(!(newName.equals(composition.curvesSelection)||composition.curves.containsKey(newName))){
-						composition.renameCurve(composition.curvesSelection, curveEditorName.getText());
+					if(!(newName.equals(composition.curveSelection)||composition.curves.containsKey(newName))){
+						composition.renameCurve(composition.curveSelection, curveEditorName.getText());
 					}
 				}
 			}
@@ -460,8 +569,8 @@ public class Wavelets{
 
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				if(composition.curves.containsKey(composition.curvesSelection)){
-					composition.removeCurve(composition.curvesSelection);
+				if(composition.curves.containsKey(composition.curveSelection)){
+					composition.removeCurve(composition.curveSelection);
 					composition.updateCurves();
 					updateCurveSelection();
 				}
@@ -533,7 +642,7 @@ public class Wavelets{
 			public void mouseClicked(MouseEvent e) {
 				String newName = curveEditorName.getText();
 				if(!composition.curves.containsKey(newName)){
-					composition.dupliCurve(newName,composition.curvesSelection);
+					composition.dupliCurve(newName,composition.curveSelection);
 				}
 			}
 
@@ -567,8 +676,8 @@ public class Wavelets{
 			@Override
 			public void itemStateChanged(ItemEvent event) {
 				if(event.getStateChange()==ItemEvent.SELECTED){
-					if(composition.curves.containsKey(composition.curvesSelection)){
-						composition.curves.get(composition.curvesSelection).setMode(Curve.modeNames.get(event.getItem()));
+					if(composition.curves.containsKey(composition.curveSelection)){
+						composition.curves.get(composition.curveSelection).setMode(Curve.modeNames.get(event.getItem()));
 						updateDisplay();
 					}
 				}
@@ -589,8 +698,8 @@ public class Wavelets{
 
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
-				if(composition.curves.containsKey(composition.curvesSelection)){
-					Curve selectedCurve = composition.curves.get(composition.curvesSelection);
+				if(composition.curves.containsKey(composition.curveSelection)){
+					Curve selectedCurve = composition.curves.get(composition.curveSelection);
 					switch(Curve.selectedPreviewMode){
 					case 0:{
 						double rate = 220d/composition.samplesPerSecond;
@@ -728,7 +837,7 @@ public class Wavelets{
 		nodeEditorToolbar.add(nodeEditorToolbars.get(0),BorderLayout.PAGE_START);
 		nodeEditorInPanel = new JPanel(new BorderLayout());
 		nodeEditorInPanel.add(nodeEditorToolbar,BorderLayout.PAGE_START);
-		nodeEditorScrollPane = new WScrollPane(nodeEditorInPanel);
+		nodeEditorScrollPane = new JScrollPane(nodeEditorInPanel);
 		//Add all listeners
 		nodeEditorSelector.addItemListener(new ItemListener() {
 
@@ -1232,12 +1341,12 @@ public class Wavelets{
 		while(curveEditorInPanel.getComponentCount()>1){//Get rid of the other panels
 			curveEditorInPanel.remove(1);
 		}
-		if(composition.curves.containsKey(composition.curvesSelection)){
-			Curve currentCurve = composition.curves.get(composition.curvesSelection);
+		if(composition.curves.containsKey(composition.curveSelection)){
+			Curve currentCurve = composition.curves.get(composition.curveSelection);
 			curveEditorInPanel.add(currentCurve.viewPanel,BorderLayout.CENTER);
 			curveEditorInPanel.add(currentCurve.editPanel, BorderLayout.PAGE_END);
-			curveEditorName.setText(composition.curvesSelection);
-			if(composition.curves.get(composition.curvesSelection).getSize()>0){
+			curveEditorName.setText(composition.curveSelection);
+			if(composition.curves.get(composition.curveSelection).getSize()>0){
 				curveEditorPreviewPlay.setEnabled(true);
 			}else{
 				curveEditorPreviewPlay.setEnabled(false);

@@ -1,6 +1,5 @@
 package components;
 
-import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -14,11 +13,11 @@ import main.Wavelets;
 public class WCurveViewerPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	
-	Curve trackCurve;
+	public Curve trackCurve;
 	
 	//Constructor
 	public WCurveViewerPanel(Curve curve){
-		super(new BorderLayout());
+		super();
 		trackCurve = curve;
 	}
 	

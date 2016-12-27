@@ -40,7 +40,7 @@ public class Nodes implements Serializable {
 	public transient JPanel scriptPanel;//Contains script stuff
 	public transient JPanel viewPanel;//TODO create a class to visualize nodes
 	public transient JPanel testPanel;//Preview with a temporary clip
-	public transient WGraphViewerPanel graphPanel;//TODO create a class to graph the preview
+	public transient WGraphViewerPanel graphPanel;//View final waveform
 	public transient JLabel scriptLabel;//Script
 	public transient JTextArea scriptArea;//Type script here
 	public transient JButton scriptSave;//Save and compile

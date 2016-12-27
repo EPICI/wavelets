@@ -15,9 +15,11 @@ public class Composition implements Serializable {
 	public ArrayList<JPanel> layerPanels = new ArrayList<JPanel>();
 	//Needed for current session
 	public transient String[] curvesKeysArray;
-	public transient String curvesSelection;
+	public transient String curveSelection;
 	public transient String[] nodesKeysArray;
 	public transient String nodesSelection;
+	public transient String[] layersKeysArray;
+	public transient String layerSelection;
 	public transient Layer nodeLayer;
 	//Audio format
 	public int samplesPerSecond = 44100;
@@ -38,8 +40,12 @@ public class Composition implements Serializable {
 		for(Layer currentLayer:layers.values()){
 			currentLayer.initTransient();
 		}
-		curvesSelection = "";
-		curvesKeysArray = curves.keySet().toArray(new String[0]);
+		curveSelection = "";
+		nodesSelection = "";
+		layerSelection = "";
+		updateCurves();
+		updateNodes();
+		updateLayers();
 	}
 	
 	//Update nodes
@@ -97,7 +103,7 @@ public class Composition implements Serializable {
 		Curve toAdd = new Curve();
 		curves.put(name, toAdd);
 		updateCurves();
-		curvesSelection = name;
+		curveSelection = name;
 		Wavelets.updateCurveSelection();
 	}
 	
@@ -115,7 +121,7 @@ public class Composition implements Serializable {
 		toAdd.updateSelection();
 		toAdd.setMode(original.getMode());
 		updateCurves();
-		curvesSelection = name;
+		curveSelection = name;
 		Wavelets.updateCurveSelection();
 	}
 	
@@ -132,8 +138,13 @@ public class Composition implements Serializable {
 		curves.put(newName, currentCurve);
 		curves.remove(oldName);
 		updateCurves();
-		curvesSelection = newName;
+		curveSelection = newName;
 		Wavelets.updateCurveSelection();
+	}
+	
+	//Update layers
+	public void updateLayers(){
+		layersKeysArray = layers.keySet().toArray(new String[0]);
 	}
 	
 	//Add a new layer
