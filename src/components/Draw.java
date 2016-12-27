@@ -11,14 +11,18 @@ public class Draw {
 	//Max size
 	public static final Dimension MAX_SIZE = new Dimension(Integer.MAX_VALUE,Integer.MAX_VALUE);
 	
-    //Copy of interpolation function
-    public static double lerp(double a,double b,double t){
-        return (1-t)*a+b*t;
-    }
-    
+	//Copy of interpolation function
+	public static double lerp(double a,double b,double t){
+		return (1-t)*a+b*t;
+	}
+	
 	//Colour from array
 	public static Color colorFromArray(float[] values){
 		return new Color(values[0],values[1],values[2],values[3]);
+	}
+	//Colour from array, override alpha
+	public static Color colorFromArray(float[] values,float alpha){
+		return new Color(values[0],values[1],values[2],alpha);
 	}
 	
 	//Used in interpolation for colours

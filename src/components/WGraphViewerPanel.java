@@ -5,11 +5,10 @@ import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.util.Arrays;
-
 import javax.swing.JPanel;
-
 import main.Wavelets;
 
+//Graph viewer
 public class WGraphViewerPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	

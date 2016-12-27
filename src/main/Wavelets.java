@@ -247,7 +247,7 @@ public class Wavelets{
 		composerLeftScrollPane = new JScrollPane(composerLeftInPanel);
 		composerLeftScrollPane.setPreferredSize(new Dimension(300,800));//TODO Temporary
 		composerRightScrollPane = new JScrollPane(composerRightInPanel);
-		composerCenterPanel = new JPanel(new BorderLayout());
+		composerCenterPanel = new WLayersViewerPanel();
 		composerPanels.add(composerTopScrollPane);
 		composerPanels.add(composerBottomPanel);
 		composerPanels.add(composerLeftScrollPane);

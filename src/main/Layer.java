@@ -1,6 +1,8 @@
 package main;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -359,6 +361,7 @@ public class Layer implements Serializable {
 		toAdd.nodesName = parentComposition.nodesSelection;
 		toAdd.initTransient();
 		toAdd.infoNodeSelector.setSelectedItem(parentComposition.nodesSelection);
+		toAdd.refreshInputs();
 		selectedClip = clipCount;
 		clips.add(toAdd);
 		updateClipSelection();
@@ -380,6 +383,36 @@ public class Layer implements Serializable {
 			clips.remove(index);
 		}
 		updateClipSelection();
+	}
+	
+	public double[] getFreqBounds(){
+		double minValue = Double.MAX_VALUE;
+		double maxValue = Double.MIN_VALUE;
+		for(Clip current:clips){
+			double[] bounds = current.getFreqBounds();
+			if(minValue>bounds[0]){
+				minValue=bounds[0];
+			}
+			if(maxValue<bounds[1]){
+				maxValue=bounds[1];
+			}
+		}
+		return new double[]{minValue,maxValue};
+	}
+	
+	public double[] getTimeBounds(){
+		double minValue = Double.MAX_VALUE;
+		double maxValue = Double.MIN_VALUE;
+		for(Clip current:clips){
+			double[] bounds = new double[]{current.startTime,current.endTime};
+			if(minValue>bounds[0]){
+				minValue=bounds[0];
+			}
+			if(maxValue<bounds[1]){
+				maxValue=bounds[1];
+			}
+		}
+		return new double[]{minValue,maxValue};
 	}
 	
 	public static void main(String[] args){

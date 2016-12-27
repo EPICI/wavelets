@@ -10,13 +10,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Set;
-
 import javax.swing.JPanel;
 import main.Nodes;
 import main.Node;
 import main.Wavelets;
 
-//Used to view a node network
+//Nodes viewer
 public class WNodesViewerPanel extends JPanel {
 	private static final long serialVersionUID = 1L;
 	

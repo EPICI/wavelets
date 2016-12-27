@@ -1,8 +1,7 @@
 package main;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.ArrayList;
+import java.util.*;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -207,7 +206,6 @@ public class Clip implements Serializable {
 			ArrayList<String> inputRequests = new ArrayList<String>(nodeNetwork.inputRequests);
 			inputRequests.add(0,START_TIME);
 			inputRequests.add(1,END_TIME);
-			inputPanel.removeAll();
 			for(String inputName:inputRequests){
 				inputPanel.add(new JLabel(inputName));
 				JTextField inField = new JTextField(10);
@@ -219,6 +217,10 @@ public class Clip implements Serializable {
 				}else if(inputName.equals(END_TIME)){
 					Wavelets.placeDoubleTextInField(inField,10,endTime);
 				}
+			}
+			int numRequests2 = inputRequests.size()*2;
+			while(inputPanel.getComponentCount()>numRequests2){
+				inputPanel.remove(numRequests2);
 			}
 		}
 		inputsRegistered = false;
@@ -305,6 +307,14 @@ public class Clip implements Serializable {
 		updateFreq();
 		return freqCacheValues;
 	}
+	
+	//Get boundaries
+	public double[] getFreqBounds(){
+		updateFreq();
+		DoubleSummaryStatistics stats = Arrays.stream(freqCacheValues).summaryStatistics();
+		return new double[]{stats.getMin(),stats.getMax()};
+	}
+	
 	public double getInput(String inputID){
 		return inputs.get(inputID);
 	}
@@ -333,6 +343,7 @@ public class Clip implements Serializable {
 		}
 		updateLength();
 		inputsRegistered = true;
+		refreshInputs();
 	}
 
 	public static void main(String[] args) {
