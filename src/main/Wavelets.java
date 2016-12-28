@@ -270,13 +270,9 @@ public class Wavelets{
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
 		composerTopPanelComponents.get(1).add(new JLabel("Composition"));
 		composerTopPanelComponents.get(1).add(new JButton("Play"));
-		composerTopPanelComponents.get(1).add(new JButton("Cache samples"));
-		composerTopPanelComponents.get(1).add(new JButton("Clear cache"));
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
 		composerTopPanelComponents.get(2).add(new JLabel("Layer"));
 		composerTopPanelComponents.get(2).add(new JButton("Play"));
-		composerTopPanelComponents.get(2).add(new JButton("Cache samples"));
-		composerTopPanelComponents.get(2).add(new JButton("Clear cache"));
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
 		composerTopPanelComponents.get(3).add(new JLabel("No clip selected"));//This should have the clip number
 		composerTopPanelComponents.get(3).add(new JButton("\u25C4"));//Left arrow
@@ -297,6 +293,45 @@ public class Wavelets{
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
 				mainPlayer.stopSound();
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseExited(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mousePressed(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		composerTopPanelComponents.get(2).get(1).addMouseListener(new MouseListener() {
+
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				if(composition.layers.containsKey(composition.layerSelection)){
+					Layer current = composition.layers.get(composition.layerSelection);
+					if(current.clipCount>0){
+						double[] soundDouble = current.getAudio();
+						short[] soundShort = Waveform.quickShort(soundDouble);
+						mainPlayer.playSound(soundShort);
+					}
+				}
 			}
 
 			@Override

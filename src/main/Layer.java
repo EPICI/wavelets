@@ -2,7 +2,6 @@ package main;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -24,6 +23,9 @@ public class Layer implements Serializable {
 	public String name = "";
 	//All filters, in order they are applied
 	public ArrayList<Filter> filters = new ArrayList<Filter>();
+	//Cache
+	public double[] cacheValues;
+	public int cacheHash = 0;
 	
 	//Display - left area
 	public transient JPanel parentPanel;
@@ -413,6 +415,32 @@ public class Layer implements Serializable {
 			}
 		}
 		return new double[]{minValue,maxValue};
+	}
+	
+	public double[] getAudio(){
+		int newHash = clips.hashCode()+filters.hashCode();
+		if(newHash!=cacheHash){
+			double[] timeBounds = getTimeBounds();
+			int total = (int) ((timeBounds[1]-timeBounds[0])*parentComposition.samplesPerSecond);
+			cacheValues = new double[total];
+			for(int i=0;i<total;i++){
+				cacheValues[i]=0d;
+			}
+			for(Clip current:clips){
+				double[] clipData = current.getAudio();
+				int offset = (int) (current.startTime*parentComposition.samplesPerSecond);
+				int target = (int) (current.endTime*parentComposition.samplesPerSecond);
+				int cap = Math.min(total, target);
+				for(int i=offset;i<cap;i++){
+					cacheValues[i]=clipData[i-offset];
+				}
+			}
+			for(Filter current:filters){
+				cacheValues = current.filter(cacheValues, timeBounds[0]);
+			}
+			cacheHash=newHash;
+		}
+		return cacheValues;
 	}
 	
 	public static void main(String[] args){

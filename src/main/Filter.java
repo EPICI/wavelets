@@ -15,7 +15,7 @@ public interface Filter extends Serializable{
 	
 	//The filter itself
 	//No changes should be made, so subsequent calls should be identical
-	public double[] filter(double[] inputData);
+	public double[] filter(double[] inputData,double offset);
 	
 	//Set parent composition
 	public void setParentComposition(Composition parent);

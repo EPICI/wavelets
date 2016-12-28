@@ -6,7 +6,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
-//Drawing class
+//Drawing utility class
 public class Draw {
 	//Max size
 	public static final Dimension MAX_SIZE = new Dimension(Integer.MAX_VALUE,Integer.MAX_VALUE);

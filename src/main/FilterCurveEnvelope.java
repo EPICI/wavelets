@@ -40,17 +40,17 @@ public class FilterCurveEnvelope implements Filter {
 	}
 
 	@Override
-	public double[] filter(double[] inputData) {
-		control = parentComposition.curves.get(controlName);
-		if(control==null){
-			return Arrays.copyOf(inputData,inputData.length);
-		}else{
-			int count = inputData.length;
+	public double[] filter(double[] inputData,double offset) {
+		int count = inputData.length;
+		if(parentComposition.curves.containsKey(controlName)){
+			control = parentComposition.curves.get(controlName);
 			double[] modified = new double[count];
 			for(int i=0;i<count;i++){
-				modified[i] = inputData[i]*control.valueAtPos(i/parentComposition.samplesPerSecond);
+				modified[i] = inputData[i]*control.valueAtPos(i/parentComposition.samplesPerSecond+offset);
 			}
 			return modified;
+		}else{
+			return Arrays.copyOf(inputData, count);
 		}
 	}
 
