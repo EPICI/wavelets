@@ -99,4 +99,11 @@ public class FilterCurveEnvelope implements Filter {
 		parentComposition = null;
 	}
 
+	public int hashCode(){
+		if(control==null){
+			return 0;
+		}else{
+			return control.hashCode();
+		}
+	}
 }

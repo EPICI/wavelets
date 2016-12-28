@@ -1,7 +1,6 @@
 package main;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
@@ -363,7 +362,6 @@ public class Layer implements Serializable {
 		toAdd.nodesName = parentComposition.nodesSelection;
 		toAdd.initTransient();
 		toAdd.infoNodeSelector.setSelectedItem(parentComposition.nodesSelection);
-		toAdd.refreshInputs();
 		selectedClip = clipCount;
 		clips.add(toAdd);
 		updateClipSelection();
@@ -376,8 +374,6 @@ public class Layer implements Serializable {
 			Clip source = clips.get(index);
 			selected.copyFrom(source);
 		}
-		selectedClip++;//Assumed invariant
-		updateClipSelection();
 	}
 	
 	public void removeClip(int index){
@@ -418,7 +414,7 @@ public class Layer implements Serializable {
 	}
 	
 	public double[] getAudio(){
-		int newHash = clips.hashCode()+filters.hashCode();
+		int newHash = hashCode();
 		if(newHash!=cacheHash){
 			double[] timeBounds = getTimeBounds();
 			int total = (int) ((timeBounds[1]-timeBounds[0])*parentComposition.samplesPerSecond);
@@ -429,9 +425,10 @@ public class Layer implements Serializable {
 			for(Clip current:clips){
 				double[] clipData = current.getAudio();
 				int offset = (int) (current.startTime*parentComposition.samplesPerSecond);
-				int target = (int) (current.endTime*parentComposition.samplesPerSecond);
+				int target = clipData.length+offset-1;
 				int cap = Math.min(total, target);
 				for(int i=offset;i<cap;i++){
+					//Double safety
 					cacheValues[i]=clipData[i-offset];
 				}
 			}
@@ -443,7 +440,7 @@ public class Layer implements Serializable {
 		return cacheValues;
 	}
 	
-	public static void main(String[] args){
-		//Leave empty
+	public int hashCode(){
+		return clips.hashCode()+filters.hashCode();
 	}
 }

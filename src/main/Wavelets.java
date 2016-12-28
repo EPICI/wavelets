@@ -240,7 +240,7 @@ public class Wavelets{
 		//Composer layout
 		composerTopInPanel = new JPanel(new FlowLayout());
 		composerTopScrollPane = new JScrollPane(composerTopInPanel);
-		composerTopScrollPane.setPreferredSize(new Dimension(1800,60));//TODO Temporary
+		composerTopScrollPane.setPreferredSize(new Dimension(1200,60));//TODO Temporary
 		composerBottomPanel = new JPanel(new BorderLayout());
 		composerLeftInPanel = new JPanel();
 		composerLeftInPanel.setLayout(new BoxLayout(composerLeftInPanel, BoxLayout.PAGE_AXIS));
@@ -1347,7 +1347,7 @@ public class Wavelets{
 			nodeEditorName.setText(composition.nodesSelection);
 			nodeEditorDupli.setEnabled(true);
 			//Temporary solution
-			currentNodes.graphPanel.setPreferredSize(new Dimension(mainFrame.getWidth(),200));
+			currentNodes.graphPanel.setPreferredSize(new Dimension(mainFrame.getWidth()-50,200));
 		}else{
 			nodeEditorName.setText("None selected");
 			nodeEditorDupli.setEnabled(false);

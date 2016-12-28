@@ -236,8 +236,7 @@ public class Nodes implements Serializable {
 		testPanel = testClip.parentPanel;
 	}
 
-	public static void main(String[] args) {
-		//Leave empty
+	public int hashCode(){
+		return nodes.hashCode();
 	}
-
 }

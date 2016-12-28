@@ -191,8 +191,14 @@ public class Composition implements Serializable {
 		layers.remove(oldName);
 	}
 
-	public static void main(String[] args) {
-		//Leave empty
+	public int hashCode(){
+		ArrayList<Object> settings = new ArrayList<Object>();
+		settings.add(samplesPerSecond);
+		ArrayList<Object> hashSource = new ArrayList<Object>();
+		hashSource.add(curves);
+		hashSource.add(nodes);
+		hashSource.add(layers);
+		hashSource.add(settings);
+		return hashSource.hashCode();
 	}
-
 }

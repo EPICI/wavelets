@@ -122,7 +122,7 @@ public class WLayersViewerPanel extends JPanel {
 					}
 				}
 				Clip clip = layer.clips.get(i);
-				if(clip.length>0){
+				if(clip.length>0&&clip.inputsRegistered){
 					double[] freqs = clip.getFreq();
 					int position = Draw.mapToRound(left, right, 2, xcap, clip.startTime);
 					int mapIndex = Draw.mapToRound(2, xcap, lsamples, rsamples, position);

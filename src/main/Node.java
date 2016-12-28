@@ -443,4 +443,11 @@ public class Node implements Serializable {
 		}
 		return cacheValue;
 	}
+	
+	public int hashCode(){
+		ArrayList<Object> hashSource = new ArrayList<Object>();
+		hashSource.add(args);
+		hashSource.add(type);
+		return hashSource.hashCode();
+	}
 }

@@ -60,7 +60,7 @@ public class Clip implements Serializable {
 		//Create objects
 		parentPanel = new JPanel(new BorderLayout());
 		infoPanel = new JPanel(new BorderLayout());
-		inputPanel = new JPanel(new GridLayout(0,2));
+		inputPanel = new JPanel(new GridBagLayout());
 		actionPanel = new JPanel(new GridLayout(1,2));//Not final
 		infoNodeLabel = new JLabel("Select nodes");
 		infoNodeSelector = new JComboBox<String>();
@@ -127,13 +127,14 @@ public class Clip implements Serializable {
 
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				double[] soundDouble = getAudio();
-				if(graphTargetSet){
-					graphTarget.graphData = soundDouble;
+				if(inputsRegistered){
+					double[] soundDouble = getAudio();
+					if(graphTargetSet){
+						graphTarget.graphData = soundDouble;
+					}
+					short[] soundShort = Waveform.quickShort(soundDouble);
+					Wavelets.mainPlayer.playSound(soundShort);
 				}
-				short[] soundShort = Waveform.quickShort(soundDouble);
-				Wavelets.mainPlayer.playSound(soundShort);
-				Wavelets.updateDisplay();
 			}
 
 			@Override
@@ -201,29 +202,45 @@ public class Clip implements Serializable {
 	//Refresh inputs
 	public void refreshInputs(){
 		HashMap<String, Nodes> compNodes = parentComposition().nodes;
+		ArrayList<String> inputRequests;
+		inputPanel.removeAll();
 		if(compNodes.containsKey(nodesName)){
 			nodeNetwork.refreshInputs();
-			ArrayList<String> inputRequests = new ArrayList<String>(nodeNetwork.inputRequests);
-			inputRequests.add(0,START_TIME);
-			inputRequests.add(1,END_TIME);
-			for(String inputName:inputRequests){
-				inputPanel.add(new JLabel(inputName));
-				JTextField inField = new JTextField(10);
-				inputPanel.add(inField);
-				if(inputs.containsKey(inputName)){
-					Wavelets.placeDoubleTextInField(inField,10,inputs.get(inputName));
-				}else if(inputName.equals(START_TIME)){
-					Wavelets.placeDoubleTextInField(inField,10,startTime);
-				}else if(inputName.equals(END_TIME)){
-					Wavelets.placeDoubleTextInField(inField,10,endTime);
-				}
+			inputRequests = new ArrayList<String>(nodeNetwork.inputRequests);
+		}else{
+			inputRequests = new ArrayList<String>();
+		}
+		inputRequests.add(0,START_TIME);
+		inputRequests.add(1,END_TIME);
+		int total = inputRequests.size();
+		GridBagConstraints constraint = new GridBagConstraints();
+		for(int i=0;i<total;i++){
+			String inputName = inputRequests.get(i);
+			constraint.gridx=0;
+			constraint.gridy=i;
+			inputPanel.add(new JLabel(inputName),constraint);
+			JTextField inField = new JTextField(10);
+			constraint.gridx=1;
+			if(inputs.containsKey(inputName)){
+				Wavelets.placeDoubleTextInField(inField,10,inputs.get(inputName));
+			}else if(inputName.equals(START_TIME)){
+				Wavelets.placeDoubleTextInField(inField,10,startTime);
+			}else if(inputName.equals(END_TIME)){
+				Wavelets.placeDoubleTextInField(inField,10,endTime);
 			}
-			int numRequests2 = inputRequests.size()*2;
-			while(inputPanel.getComponentCount()>numRequests2){
-				inputPanel.remove(numRequests2);
+			inputPanel.add(inField,constraint);
+		}
+		inputRequests.remove(1);
+		inputRequests.remove(0);
+		boolean invalidate = false;
+		for(String current:inputRequests){
+			if(!inputs.containsKey(current)){
+				invalidate = true;
 			}
 		}
-		inputsRegistered = false;
+		if(invalidate){
+			inputsRegistered = false;
+		}
 		freqCacheUpdated = false;
 		cacheUpdated = false;
 		actionPlay.setEnabled(false);
@@ -238,7 +255,6 @@ public class Clip implements Serializable {
 			String name = ((JLabel) inputPanel.getComponent(baseIndex)).getText();
 			String valueString = ((JTextField) inputPanel.getComponent(baseIndex+1)).getText();
 			double value = Double.valueOf(valueString);
-			//System.out.println(name+":"+value);
 			switch(name){
 			case(START_TIME):{
 				startTime = value;
@@ -283,7 +299,6 @@ public class Clip implements Serializable {
 	
 	//Ensure frequency data is updated
 	public void updateFreq(){
-		refreshNodes();
 		nodeNetwork.forceUpdateAll();
 		if(!freqCacheUpdated){
 			nodeNetwork.user = this;
@@ -324,30 +339,20 @@ public class Clip implements Serializable {
 	}
 	
 	public void copyFrom(Clip source){
+		inputs = new HashMap<String,Double>(source.inputs);
+		startTime = source.startTime;
+		endTime = source.endTime;
 		infoNodeSelector.setSelectedItem(source.nodesName);
-		HashMap<String,Double> sourceInputs = source.inputs;
-		for(String name:sourceInputs.keySet()){
-			double value = sourceInputs.get(name);
-			switch(name){
-			case(START_TIME):{
-				startTime = value;
-				break;
-			}case(END_TIME):{
-				endTime = value;
-				break;
-			}default:{
-				inputs.put(name, value);
-				break;
-			}
-			}
-		}
-		updateLength();
-		inputsRegistered = true;
-		refreshInputs();
+		refreshNodes();
 	}
 
-	public static void main(String[] args) {
-		//Leave empty
+	public int hashCode(){
+		ArrayList<Object> hashSource = new ArrayList<Object>();
+		hashSource.add(nodeNetwork);
+		hashSource.add(inputs);
+		hashSource.add(startTime);
+		hashSource.add(endTime);
+		return hashSource.hashCode();
 	}
 
 }
