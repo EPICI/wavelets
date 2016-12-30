@@ -8,6 +8,7 @@ import java.awt.event.*;
 import components.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import org.json.*;
 
 //A bunch of connected nodes
 public class Nodes implements Serializable {
@@ -234,6 +235,24 @@ public class Nodes implements Serializable {
 		testClip.infoNodeSelector.setSelectedItem(parentComposition.nodesSelection);
 		testClip.setGraphTarget(graphPanel);
 		testPanel = testClip.parentPanel;
+	}
+	
+	//Export as JSON
+	public JSONObject exportJson(){
+		JSONObject result = new JSONObject();
+		result.put("source", source);
+		return result;
+	}
+	
+	//Cleanup
+	public void destroy(){
+		for(Node current:nodes.values()){
+			current.destroy();
+		}
+		source = null;
+		nodes = null;
+		inputRequests = null;
+		parentComposition = null;
 	}
 
 	public int hashCode(){

@@ -105,6 +105,19 @@ public class Waveform {
 		}
 		return shortArray;
 	}
+	
+	public static double arrayInterp(double[] inputArray,double index){
+		int cap = inputArray.length-1;
+		if(index<=0){
+			return inputArray[0];
+		}else if(index>=cap){
+			return inputArray[cap];
+		}else{
+			int first = (int) Math.floor(index);
+			double offset = index-first;
+			return offset*inputArray[first+1]+(1-offset)*inputArray[first];
+		}
+	}
 
 	public static void main(String[] args) {
 		//Leave empty

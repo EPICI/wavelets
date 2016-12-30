@@ -2,6 +2,7 @@ package main;
 
 import java.util.ArrayList;
 import javax.swing.*;
+import org.json.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.Serializable;
@@ -367,6 +368,13 @@ public class Layer implements Serializable {
 		updateClipSelection();
 	}
 	
+	public void addClip(Clip toAdd){
+		toAdd.parentLayer = self;
+		selectedClip = clipCount;
+		clips.add(toAdd);
+		updateClipSelection();
+	}
+	
 	public void dupliClip(int index){
 		addClip();
 		if(index<clipCount&&selectedClip!=index){//Safety
@@ -438,6 +446,29 @@ public class Layer implements Serializable {
 			cacheHash=newHash;
 		}
 		return cacheValues;
+	}
+	
+	//Export as JSON
+	public JSONObject exportJson(){
+		JSONObject result = new JSONObject();
+		JSONArray clipJson = new JSONArray();
+		result.put("clips", clipJson);
+		for(Clip current:clips){
+			clipJson.put(current.exportJson());
+		}
+		return result;
+	}
+	
+	//Cleanup
+	public void destroy(){
+		parentComposition = null;
+		self = null;
+		for(Clip current:clips){
+			current.destroy();
+		}
+		clips = null;
+		filters = null;
+		cacheValues = null;
 	}
 	
 	public int hashCode(){

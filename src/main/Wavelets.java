@@ -11,6 +11,9 @@ public class Wavelets{
 	
 	//The main frame
 	public static JFrame mainFrame;
+	//Secondary frames
+	public static JFrame popupFrame;
+	public static JPanel popupPanel;
 	//The top menu bar
 	public static JMenuBar menuBar = new JMenuBar();
 	//Menus
@@ -102,6 +105,52 @@ public class Wavelets{
 	public static float[] rgbaNodeInter = {0.3f,0.7f,0.7f,1.0f};//Intermediate
 	public static float[] rgbaNodeOutput = {0.7f,0.3f,0.7f,1.0f};
 	
+	//Common window listeners
+	public static WindowListener wlHide = new WindowListener() {
+
+		@Override
+		public void windowActivated(WindowEvent arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void windowClosed(WindowEvent arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void windowClosing(WindowEvent e) {
+			((JFrame) e.getSource()).dispose();
+		}
+
+		@Override
+		public void windowDeactivated(WindowEvent arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void windowDeiconified(WindowEvent arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void windowIconified(WindowEvent arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void windowOpened(WindowEvent arg0) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+	};
+	
 	//Set default font
 	//Source: http://stackoverflow.com/questions/7434845/setting-the-default-font-of-swing-program
 	public static void setUIFont (javax.swing.plaf.FontUIResource f){
@@ -144,7 +193,9 @@ public class Wavelets{
 	
 	//Add a new layer
 	public static void addNewLayer(){
-		JPanel firstLayerPanel = composition.addLayer();
+		addLayerPanel(composition.addLayer());
+	}
+	public static void addLayerPanel(JPanel firstLayerPanel){
 		firstLayerPanel.setPreferredSize(new Dimension(280,60));//TODO Temporary
 		composerLeftInPanel.add(firstLayerPanel);
 	}
@@ -1048,6 +1099,13 @@ public class Wavelets{
 		menuItems.get(1).add(new JButton("Curve Editor"));
 		menuItems.get(1).add(new JButton("Node Editor"));
 		addMenu(menus.get(1),menuItems.get(1));
+		menus.add(new JMenu("JSON"));
+		menuItems.add(new ArrayList<JButton>());
+		menuItems.get(2).add(new JButton("Import from text"));
+		menuItems.get(2).add(new JButton("Import from file"));
+		menuItems.get(2).add(new JButton("Export to text"));
+		menuItems.get(2).add(new JButton("Export to file"));
+		addMenu(menus.get(2),menuItems.get(2));
 		mainFrame.setJMenuBar(menuBar);
 		//Set up events
 		initMenuEvents();
@@ -1311,6 +1369,202 @@ public class Wavelets{
 			}
 			
 		});
+		menuItems.get(2).get(0).addMouseListener(new MouseListener() {//Import from text
+
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				clearPopupWindowListeners();
+				popupFrame.addWindowListener(wlHide);
+				JTextArea inputArea = new JTextArea(20,20);//Size is temporary solution
+				JScrollPane inputScroll = new JScrollPane(inputArea);
+				JButton closeButton = new JButton("Close");
+				JButton importButton = new JButton("Import");
+				JCheckBox replaceCheck = new JCheckBox("Replace");
+				closeButton.addMouseListener(new MouseListener() {
+
+					@Override
+					public void mouseClicked(MouseEvent arg0) {
+						popupFrame.dispose();
+					}
+
+					@Override
+					public void mouseEntered(MouseEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void mouseExited(MouseEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void mousePressed(MouseEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void mouseReleased(MouseEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+					
+				});
+				importButton.addMouseListener(new MouseListener(){
+
+					@Override
+					public void mouseClicked(MouseEvent arg0) {
+						composition.importDataFromJson(inputArea.getText(), replaceCheck.isSelected());
+					}
+
+					@Override
+					public void mouseEntered(MouseEvent e) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void mouseExited(MouseEvent e) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void mousePressed(MouseEvent e) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void mouseReleased(MouseEvent e) {
+						// TODO Auto-generated method stub
+						
+					}
+					
+				});
+				popupPanel.removeAll();
+				GridBagConstraints constraint = new GridBagConstraints();
+				constraint.gridx=0;
+				constraint.gridy=0;
+				constraint.gridwidth=3;
+				popupPanel.add(inputScroll,constraint);
+				constraint.gridwidth=1;
+				constraint.gridy=1;
+				popupPanel.add(replaceCheck,constraint);
+				constraint.gridx=1;
+				popupPanel.add(importButton,constraint);
+				constraint.gridx=2;
+				popupPanel.add(closeButton,constraint);
+				popupFrame.pack();
+				popupFrame.setVisible(true);
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseExited(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mousePressed(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		menuItems.get(2).get(2).addMouseListener(new MouseListener() {//Export to text
+
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				clearPopupWindowListeners();
+				popupFrame.addWindowListener(wlHide);
+				String exported = composition.exportJson().toString(2);
+				JTextArea outputArea = new JTextArea(exported,20,20);//Size is temporary solution
+				JScrollPane outputScroll = new JScrollPane(outputArea);
+				outputArea.setText(exported);
+				JButton closeButton = new JButton("Close");
+				closeButton.addMouseListener(new MouseListener() {
+
+					@Override
+					public void mouseClicked(MouseEvent arg0) {
+						popupFrame.dispose();
+					}
+
+					@Override
+					public void mouseEntered(MouseEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void mouseExited(MouseEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void mousePressed(MouseEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void mouseReleased(MouseEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+					
+				});
+				popupPanel.removeAll();
+				GridBagConstraints constraint = new GridBagConstraints();
+				constraint.gridx=0;
+				constraint.gridy=0;
+				popupPanel.add(outputScroll,constraint);
+				constraint.gridy=1;
+				popupPanel.add(closeButton,constraint);
+				popupFrame.pack();
+				popupFrame.setVisible(true);
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseExited(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mousePressed(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
 	}
 	
 	//Adds a menu
@@ -1401,6 +1655,14 @@ public class Wavelets{
 		updateDisplay();
 	}
 	
+	//Clear window listeners on popup window
+	public static void clearPopupWindowListeners(){
+		WindowListener[] listeners = popupFrame.getWindowListeners();
+		for(WindowListener current:listeners){
+			popupFrame.removeWindowListener(current);
+		}
+	}
+	
 	public static void main(String[] args){
 		working = true;
 		mainThread.setName("Wavelets - Main");
@@ -1474,6 +1736,10 @@ public class Wavelets{
 			}
 			
 		});
+		popupFrame = new JFrame("Wavelets [Secondary]");
+		popupPanel = new JPanel(new GridBagLayout());
+		popupFrame.add(popupPanel);
+		popupFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		//Load
 		initComposition();
 		//Continue setup

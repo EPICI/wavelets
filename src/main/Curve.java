@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import javax.swing.*;
 import components.*;
+import org.json.*;
 
 //Curve made of samples
 public class Curve implements Serializable {
@@ -514,9 +515,27 @@ public class Curve implements Serializable {
 	public ArrayList<Double> getValues(){
 		return values;
 	}
-
-	public static void main(String[] args) {
-		//Leave empty
+	
+	//Export as JSON
+	public JSONObject exportJson(){
+		JSONObject result = new JSONObject();
+		result.put("locations", new JSONArray(locations));
+		result.put("values", new JSONArray(values));
+		result.put("mode", mode);
+		return result;
+	}
+	
+	//Cleanup
+	public void destroy(){
+		locations = null;
+		values = null;
 	}
 
+	public int hashCode(){
+		ArrayList<Object> hashSource = new ArrayList<Object>();
+		hashSource.add(locations);
+		hashSource.add(values);
+		hashSource.add(mode);
+		return hashSource.hashCode();
+	}
 }

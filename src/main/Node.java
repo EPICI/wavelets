@@ -3,6 +3,7 @@ package main;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+//import org.json.*;
 
 //Generic node object used in a network
 public class Node implements Serializable {
@@ -442,6 +443,11 @@ public class Node implements Serializable {
 			recalculate();
 		}
 		return cacheValue;
+	}
+	
+	//Cleanup
+	public void destroy(){
+		args = null;
 	}
 	
 	public int hashCode(){

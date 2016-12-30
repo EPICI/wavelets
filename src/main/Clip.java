@@ -6,6 +6,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import components.*;
+import org.json.*;
 
 //An individual clip
 public class Clip implements Serializable {
@@ -344,6 +345,25 @@ public class Clip implements Serializable {
 		endTime = source.endTime;
 		infoNodeSelector.setSelectedItem(source.nodesName);
 		refreshNodes();
+	}
+	
+	//Export as JSON
+	public JSONObject exportJson(){
+		JSONObject result = new JSONObject();
+		result.put("nodes", nodesName);
+		result.put("start", startTime);
+		result.put("end", endTime);
+		result.put("inputs", inputs);
+		return result;
+	}
+	
+	//Cleanup
+	public void destroy(){
+		parentLayer = null;
+		nodeNetwork = null;
+		inputs = null;
+		cacheValues = null;
+		freqCacheValues = null;
 	}
 
 	public int hashCode(){
