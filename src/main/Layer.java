@@ -471,6 +471,15 @@ public class Layer implements Serializable {
 		cacheValues = null;
 	}
 	
+	//Cleanup layer but not clips
+	public void destroyLayer(){
+		parentComposition = null;
+		self = null;
+		clips = null;
+		filters = null;
+		cacheValues = null;
+	}
+	
 	public int hashCode(){
 		return clips.hashCode()+filters.hashCode();
 	}

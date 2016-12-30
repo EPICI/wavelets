@@ -19,7 +19,8 @@ public class Wavelets{
 	//Menus
 	public static ArrayList<JMenu> menus = new ArrayList<JMenu>();
 	//Menu items
-	public static ArrayList<ArrayList<JButton>> menuItems = new ArrayList<ArrayList<JButton>>();
+	public static ArrayList<ArrayList<JMenuItem>> menuItems = new ArrayList<ArrayList<JMenuItem>>();
+	public static ArrayList<ArrayList<JMenuItem>> submenuItems = new ArrayList<ArrayList<JMenuItem>>();
 	//Composer panes
 	public static JScrollPane composerTopScrollPane;//Top panel is toolbar
 	public static JPanel composerTopInPanel;//Inside panel
@@ -104,6 +105,15 @@ public class Wavelets{
 	public static float[] rgbaNodeInput = {0.7f,0.7f,0.3f,1.0f};
 	public static float[] rgbaNodeInter = {0.3f,0.7f,0.7f,1.0f};//Intermediate
 	public static float[] rgbaNodeOutput = {0.7f,0.3f,0.7f,1.0f};
+	
+	//String finders
+	public static HashMap<String,StringFinder> stringFinders = new HashMap<String,StringFinder>();
+	public static String[] stringFindersKeysArray;
+	
+	public interface StringFinder{
+		//Check if a string matches in some way
+		public boolean match(String body,String search);
+	}
 	
 	//Common window listeners
 	public static WindowListener wlHide = new WindowListener() {
@@ -1085,27 +1095,81 @@ public class Wavelets{
 	
 	//Initialize menus
 	public static void initMenus(){
+		stringFinders.put("Contains", new StringFinder(){
+			public boolean match(String base, String search){
+				return base.contains(search);
+			}
+		});
+		stringFinders.put("Exactly matches", new StringFinder(){
+			public boolean match(String base, String search){
+				return base.equals(search);
+			}
+		});
+		stringFinders.put("Contained by", new StringFinder(){
+			public boolean match(String base, String search){
+				return search.contains(base);
+			}
+		});
+		stringFinders.put("Matches keywords", new StringFinder(){
+			public boolean match(String base, String search){
+				boolean result = true;
+				ArrayList<String> origWords = new ArrayList(Arrays.asList(base.split(" ")));
+				String[] searches = search.split(" ");
+				for(String current:searches){
+					char searchType = current.charAt(0);
+					String searchTerm = current.substring(1);
+					switch(searchType){
+					case '+':{
+						result &= origWords.contains(searchTerm);
+						break;
+					}case '-':{
+						result &= !origWords.contains(searchTerm);
+						break;
+					}
+					}
+				}
+				return result;
+			}
+		});
+		stringFindersKeysArray = stringFinders.keySet().toArray(new String[0]);
 		//Add menu bar
 		menus.add(new JMenu("File"));
-		menuItems.add(new ArrayList<JButton>());
-		menuItems.get(0).add(new JButton("Save"));
-		menuItems.get(0).add(new JButton("Save As"));
-		menuItems.get(0).add(new JButton("Open"));
-		menuItems.get(0).add(new JButton("Export"));
+		menuItems.add(new ArrayList<JMenuItem>());
+		menuItems.get(0).add(new JMenuItem("Save"));
+		menuItems.get(0).add(new JMenuItem("Save As"));
+		menuItems.get(0).add(new JMenuItem("Open"));
+		menuItems.get(0).add(new JMenu("Import"));
+		menuItems.get(0).add(new JMenu("Export"));
 		addMenu(menus.get(0),menuItems.get(0));
+		menuBar.add(menus.get(0));
 		menus.add(new JMenu("Window"));
-		menuItems.add(new ArrayList<JButton>());
-		menuItems.get(1).add(new JButton("Composer"));
-		menuItems.get(1).add(new JButton("Curve Editor"));
-		menuItems.get(1).add(new JButton("Node Editor"));
+		menuItems.add(new ArrayList<JMenuItem>());
+		menuItems.get(1).add(new JMenuItem("Composer"));
+		menuItems.get(1).add(new JMenuItem("Curve Editor"));
+		menuItems.get(1).add(new JMenuItem("Node Editor"));
 		addMenu(menus.get(1),menuItems.get(1));
-		menus.add(new JMenu("JSON"));
-		menuItems.add(new ArrayList<JButton>());
-		menuItems.get(2).add(new JButton("Import from text"));
-		menuItems.get(2).add(new JButton("Import from file"));
-		menuItems.get(2).add(new JButton("Export to text"));
-		menuItems.get(2).add(new JButton("Export to file"));
+		menuBar.add(menus.get(1));
+		menus.add(new JMenu("Tools"));
+		menuItems.add(new ArrayList<JMenuItem>());
+		menuItems.get(2).add(new JMenu("Layer"));
+		menuItems.get(2).add(new JMenu("Curve"));
+		menuItems.get(2).add(new JMenu("Nodes"));
 		addMenu(menus.get(2),menuItems.get(2));
+		menuBar.add(menus.get(2));
+		submenuItems.add(new ArrayList<JMenuItem>());//File > Import
+		submenuItems.get(0).add(new JMenuItem("Data as JSON from file"));
+		submenuItems.get(0).add(new JMenuItem("Data as JSON from text"));
+		addMenu((JMenu) menuItems.get(0).get(3),submenuItems.get(0));
+		submenuItems.add(new ArrayList<JMenuItem>());//File > Export
+		submenuItems.get(1).add(new JMenuItem("Data as JSON to file"));
+		submenuItems.get(1).add(new JMenuItem("Data as JSON to text"));
+		addMenu((JMenu) menuItems.get(0).get(4),submenuItems.get(1));
+		submenuItems.add(new ArrayList<JMenuItem>());//Tools > Layer
+		submenuItems.get(2).add(new JMenuItem("Quick draw"));
+		submenuItems.get(2).add(new JMenuItem("Time mapping"));
+		submenuItems.get(2).add(new JMenuItem("Input mapping"));
+		submenuItems.get(2).add(new JMenuItem("Merge"));
+		addMenu((JMenu) menuItems.get(2).get(0),submenuItems.get(2));
 		mainFrame.setJMenuBar(menuBar);
 		//Set up events
 		initMenuEvents();
@@ -1117,142 +1181,9 @@ public class Wavelets{
 	
 	//Initialize menu events
 	public static void initMenuEvents(){
-		menuItems.get(0).get(0).addMouseListener(new MouseListener() {
-
+		menuItems.get(1).get(0).addActionListener(new ActionListener() {//Composer
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-		});
-		menuItems.get(0).get(1).addMouseListener(new MouseListener() {
-
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-		});
-		menuItems.get(0).get(2).addMouseListener(new MouseListener() {
-
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-		});
-		menuItems.get(0).get(3).addMouseListener(new MouseListener() {
-
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-		});
-		menuItems.get(1).get(0).addMouseListener(new MouseListener() {//Composer
-
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent arg0) {
 				switch(window){//Must contain all other layouts
 				case("Curve Editor"):{
 					disableCurveEditor();
@@ -1263,36 +1194,10 @@ public class Wavelets{
 				enableComposer();
 				updateDisplay();
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		menuItems.get(1).get(1).addMouseListener(new MouseListener() {//Curve Editor
-
+		menuItems.get(1).get(1).addActionListener(new ActionListener() {//Composer
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent arg0) {
 				switch(window){//Must contain all other layouts
 				case("Composer"):{
 					disableComposer();
@@ -1303,36 +1208,10 @@ public class Wavelets{
 				enableCurveEditor();
 				updateDisplay();
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		menuItems.get(1).get(2).addMouseListener(new MouseListener() {//Node Editor
-
+		menuItems.get(1).get(2).addActionListener(new ActionListener() {//Composer
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent arg0) {
 				switch(window){//Must contain all other layouts
 				case("Composer"):{
 					disableComposer();
@@ -1343,37 +1222,12 @@ public class Wavelets{
 				enableNodeEditor();
 				updateDisplay();
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		menuItems.get(2).get(0).addMouseListener(new MouseListener() {//Import from text
-
+		submenuItems.get(0).get(1).addActionListener(new ActionListener() {//Composer
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent arg0) {
 				clearPopupWindowListeners();
+				popupFrame.setTitle("Wavelets [JSON Import]");
 				popupFrame.addWindowListener(wlHide);
 				JTextArea inputArea = new JTextArea(20,20);//Size is temporary solution
 				JScrollPane inputScroll = new JScrollPane(inputArea);
@@ -1460,37 +1314,12 @@ public class Wavelets{
 				popupFrame.pack();
 				popupFrame.setVisible(true);
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		menuItems.get(2).get(2).addMouseListener(new MouseListener() {//Export to text
-
+		submenuItems.get(1).get(1).addActionListener(new ActionListener() {//Export to text
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent arg0) {
 				clearPopupWindowListeners();
+				popupFrame.setTitle("Wavelets [JSON Export]");
 				popupFrame.addWindowListener(wlHide);
 				String exported = composition.exportJson().toString(2);
 				JTextArea outputArea = new JTextArea(exported,20,20);//Size is temporary solution
@@ -1539,40 +1368,401 @@ public class Wavelets{
 				popupFrame.pack();
 				popupFrame.setVisible(true);
 			}
-
+		});
+		submenuItems.get(2).get(1).addActionListener(new ActionListener() {//Time mapping
 			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
+			public void actionPerformed(ActionEvent arg0) {
+				if(composition.layers.containsKey(composition.layerSelection)){
+					Layer currentLayer = composition.layers.get(composition.layerSelection);
+					if(currentLayer.clipCount>0){
+						double[] timeBounds = currentLayer.getTimeBounds();
+						clearPopupWindowListeners();
+						popupFrame.setTitle("Wavelets [Layer time mapping]");
+						popupFrame.addWindowListener(wlHide);
+						JLabel upperLabel = new JLabel("Map range");
+						JTextField oldStart = new JTextField(30);
+						oldStart.setText(Double.toString(timeBounds[0]));
+						JLabel oldLabel = new JLabel("to");
+						JTextField oldEnd = new JTextField(30);
+						oldEnd.setText(Double.toString(timeBounds[1]));
+						JLabel lowerLabel = new JLabel("to range");
+						JTextField newStart = new JTextField(30);
+						newStart.setText(Double.toString(timeBounds[1]));
+						JLabel newLabel = new JLabel("to");
+						JTextField newEnd = new JTextField(30);
+						newEnd.setText(Double.toString(2*timeBounds[1]-timeBounds[0]));
+						JLabel layerLabel = new JLabel("in layer \""+currentLayer.name+"\"");
+						JButton confirmButton = new JButton("Apply");
+						JButton closeButton = new JButton("Close");
+						confirmButton.addMouseListener(new MouseListener() {
 
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
+							@Override
+							public void mouseClicked(MouseEvent arg0) {
+								double a = Double.valueOf(oldStart.getText());
+								double b = Double.valueOf(oldEnd.getText());
+								double c = Double.valueOf(newStart.getText());
+								double d = Double.valueOf(newEnd.getText());
+								double rate = (d-c)/(b-a);
+								for(Clip current:currentLayer.clips){
+									current.startTime = (current.startTime-a)*rate+c;
+									current.endTime = (current.endTime-a)*rate+c;
+									current.refreshInputs();
+								}
+								popupFrame.dispose();
+							}
 
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
+							@Override
+							public void mouseEntered(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
 
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
+							@Override
+							public void mouseExited(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mousePressed(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseReleased(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+							
+						});
+						closeButton.addMouseListener(new MouseListener() {
+
+							@Override
+							public void mouseClicked(MouseEvent arg0) {
+								popupFrame.dispose();
+							}
+
+							@Override
+							public void mouseEntered(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseExited(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mousePressed(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseReleased(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+							
+						});
+						popupPanel.removeAll();
+						GridBagConstraints constraint = new GridBagConstraints();
+						constraint.gridx=0;
+						constraint.gridy=0;
+						constraint.gridwidth=3;
+						popupPanel.add(upperLabel,constraint);
+						constraint.gridy=2;
+						popupPanel.add(lowerLabel,constraint);
+						constraint.gridx=0;
+						constraint.gridy=4;
+						constraint.gridwidth=1;
+						popupPanel.add(layerLabel,constraint);
+						constraint.gridx=1;
+						popupPanel.add(confirmButton,constraint);
+						constraint.gridx=2;
+						popupPanel.add(closeButton,constraint);
+						constraint.gridx=0;
+						constraint.gridy=1;
+						popupPanel.add(oldStart,constraint);
+						constraint.gridx=1;
+						popupPanel.add(oldLabel,constraint);
+						constraint.gridx=2;
+						popupPanel.add(oldEnd,constraint);
+						constraint.gridx=0;
+						constraint.gridy=3;
+						popupPanel.add(newStart,constraint);
+						constraint.gridx=1;
+						popupPanel.add(newLabel,constraint);
+						constraint.gridx=2;
+						popupPanel.add(newEnd,constraint);
+						popupFrame.pack();
+						popupFrame.setVisible(true);
+					}
+				}
 			}
-			
+		});
+		submenuItems.get(2).get(2).addActionListener(new ActionListener() {//Input mapping
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if(composition.layers.containsKey(composition.layerSelection)){
+					Layer currentLayer = composition.layers.get(composition.layerSelection);
+					if(currentLayer.clipCount>0){
+						clearPopupWindowListeners();
+						popupFrame.setTitle("Wavelets [Layer input mapping]");
+						popupFrame.addWindowListener(wlHide);
+						JLabel inputLabel = new JLabel("If input");
+						JComboBox<String> finderSelector = new JComboBox<String>(stringFindersKeysArray);
+						JTextField searchField = new JTextField(60);
+						JLabel upperLabel = new JLabel("Map range");
+						JTextField oldStart = new JTextField(30);
+						oldStart.setText("0.0");
+						JLabel oldLabel = new JLabel("to");
+						JTextField oldEnd = new JTextField(30);
+						oldEnd.setText("1.0");
+						JLabel lowerLabel = new JLabel("to range");
+						JTextField newStart = new JTextField(30);
+						newStart.setText("0.0");
+						JLabel newLabel = new JLabel("to");
+						JTextField newEnd = new JTextField(30);
+						newEnd.setText("1.0");
+						JLabel layerLabel = new JLabel("in layer \""+currentLayer.name+"\"");
+						JButton confirmButton = new JButton("Apply");
+						JButton closeButton = new JButton("Close");
+						confirmButton.addMouseListener(new MouseListener() {
+
+							@Override
+							public void mouseClicked(MouseEvent arg0) {
+								StringFinder finder = stringFinders.get(finderSelector.getSelectedItem());
+								String search = searchField.getText();
+								double a = Double.valueOf(oldStart.getText());
+								double b = Double.valueOf(oldEnd.getText());
+								double c = Double.valueOf(newStart.getText());
+								double d = Double.valueOf(newEnd.getText());
+								double rate = (d-c)/(b-a);
+								for(Clip current:currentLayer.clips){
+									for(String inputName:current.inputs.keySet()){
+										if(finder.match(inputName,search)){
+											current.inputs.put(inputName, (current.inputs.get(inputName)-a)*rate+c);
+										}
+									}
+									current.refreshInputs();
+								}
+								popupFrame.dispose();
+							}
+
+							@Override
+							public void mouseEntered(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseExited(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mousePressed(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseReleased(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+							
+						});
+						closeButton.addMouseListener(new MouseListener() {
+
+							@Override
+							public void mouseClicked(MouseEvent arg0) {
+								popupFrame.dispose();
+							}
+
+							@Override
+							public void mouseEntered(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseExited(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mousePressed(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseReleased(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+							
+						});
+						popupPanel.removeAll();
+						GridBagConstraints constraint = new GridBagConstraints();
+						constraint.gridx=0;
+						constraint.gridy=0;
+						constraint.gridwidth=3;
+						popupPanel.add(inputLabel,constraint);
+						constraint.gridy=2;
+						popupPanel.add(upperLabel,constraint);
+						constraint.gridy=4;
+						popupPanel.add(lowerLabel,constraint);
+						constraint.gridx=0;
+						constraint.gridy=6;
+						constraint.gridwidth=1;
+						popupPanel.add(layerLabel,constraint);
+						constraint.gridx=1;
+						popupPanel.add(confirmButton,constraint);
+						constraint.gridx=2;
+						popupPanel.add(closeButton,constraint);
+						constraint.gridx=0;
+						constraint.gridy=3;
+						popupPanel.add(oldStart,constraint);
+						constraint.gridx=1;
+						popupPanel.add(oldLabel,constraint);
+						constraint.gridx=2;
+						popupPanel.add(oldEnd,constraint);
+						constraint.gridx=0;
+						constraint.gridy=5;
+						popupPanel.add(newStart,constraint);
+						constraint.gridx=1;
+						popupPanel.add(newLabel,constraint);
+						constraint.gridx=2;
+						popupPanel.add(newEnd,constraint);
+						constraint.gridx=0;
+						constraint.gridy=1;
+						popupPanel.add(finderSelector,constraint);
+						constraint.gridx=1;
+						constraint.gridwidth=2;
+						popupPanel.add(searchField,constraint);
+						popupFrame.pack();
+						popupFrame.setVisible(true);
+					}
+				}
+			}
+		});
+		submenuItems.get(2).get(3).addActionListener(new ActionListener() {//Merge
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				String currentName = composition.layerSelection;
+				if(composition.layers.containsKey(currentName)){
+					Layer currentLayer = composition.layers.get(currentName);
+					if(currentLayer.clipCount>0){
+						clearPopupWindowListeners();
+						popupFrame.setTitle("Wavelets [Layer merge]");
+						popupFrame.addWindowListener(wlHide);
+						JLabel infoLabel = new JLabel("Move clips from layer \""+currentLayer.name+"\" to ");
+						JComboBox<String> targetSelector = new JComboBox<String>(composition.layersKeysArray);
+						targetSelector.removeItem(currentLayer.name);
+						JButton confirmButton = new JButton("Apply");
+						JButton closeButton = new JButton("Close");
+						confirmButton.addMouseListener(new MouseListener() {
+
+							@Override
+							public void mouseClicked(MouseEvent arg0) {
+								Layer targetLayer = composition.layers.get(targetSelector.getSelectedItem());
+								for(Clip original:currentLayer.clips){
+									targetLayer.addClip(original);
+								}
+								composition.removeLayerOnly(currentName);
+								popupFrame.dispose();
+							}
+
+							@Override
+							public void mouseEntered(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseExited(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mousePressed(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseReleased(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+							
+						});
+						closeButton.addMouseListener(new MouseListener() {
+
+							@Override
+							public void mouseClicked(MouseEvent arg0) {
+								popupFrame.dispose();
+							}
+
+							@Override
+							public void mouseEntered(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseExited(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mousePressed(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseReleased(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+							
+						});
+						popupPanel.removeAll();
+						GridBagConstraints constraint = new GridBagConstraints();
+						constraint.gridx=0;
+						constraint.gridy=0;
+						popupPanel.add(infoLabel,constraint);
+						constraint.gridx=1;
+						popupPanel.add(targetSelector,constraint);
+						constraint.gridy=1;
+						popupPanel.add(closeButton,constraint);
+						constraint.gridx=0;
+						popupPanel.add(confirmButton,constraint);
+						popupFrame.pack();
+						popupFrame.setVisible(true);
+					}
+				}
+			}
 		});
 	}
 	
 	//Adds a menu
-	public static void addMenu(JMenu currentMenu,ArrayList<JButton> currentMenuItems){
-		for(JButton currentMenuItem : currentMenuItems){
+	public static void addMenu(JMenu currentMenu,ArrayList<JMenuItem> currentMenuItems){
+		for(JMenuItem currentMenuItem : currentMenuItems){
 			currentMenu.add(currentMenuItem);
 		}
-		menuBar.add(currentMenu);
+		//menuBar.add(currentMenu);
 	}
 	
 	//Update combo box for node selector

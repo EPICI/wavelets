@@ -186,6 +186,15 @@ public class Composition implements Serializable {
 		updateLayers();
 		Wavelets.updateDisplay();
 	}
+	public void removeLayerOnly(String key){
+		Layer currentLayer = layers.get(key);
+		Wavelets.composerLeftInPanel.remove(currentLayer.parentPanel);
+		layerPanels.remove(layers.get(key));
+		layers.get(key).destroyLayer();//Call destructor
+		layers.remove(key);
+		updateLayers();
+		Wavelets.updateDisplay();
+	}
 	
 	public void removeLayer(Layer layer){
 		String toRemove = "";
