@@ -133,7 +133,7 @@ public class Clip implements Serializable {
 					if(graphTargetSet){
 						graphTarget.graphData = soundDouble;
 					}
-					short[] soundShort = Waveform.quickShort(soundDouble);
+					short[] soundShort = WaveUtils.quickShort(soundDouble);
 					Wavelets.mainPlayer.playSound(soundShort);
 				}
 			}
@@ -352,6 +352,7 @@ public class Clip implements Serializable {
 		endTime = source.endTime;
 		nodesName = source.nodesName;
 		infoNodeSelector.setSelectedItem(source.nodesName);
+		inputsRegistered = true;
 		refreshNodes();
 	}
 	
@@ -382,12 +383,7 @@ public class Clip implements Serializable {
 	}
 
 	public int hashCode(){
-		ArrayList<Object> hashSource = new ArrayList<Object>();
-		hashSource.add(nodeNetwork);
-		hashSource.add(inputs);
-		hashSource.add(startTime);
-		hashSource.add(endTime);
-		return hashSource.hashCode();
+		return WaveUtils.quickHash(4391, nodeNetwork, inputs, startTime, endTime);
 	}
 
 }

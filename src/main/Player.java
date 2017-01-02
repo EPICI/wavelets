@@ -50,9 +50,7 @@ public class Player extends Thread {
 				byteBuffer = ByteBuffer.wrap(audioData);
 				shortBuffer = byteBuffer.asShortBuffer();
 				
-				for(int i=0;i<audioDataShort.length;i++){
-					shortBuffer.put(i, audioDataShort[i]);
-				}
+				shortBuffer.put(audioDataShort);
 				
 				audioFormat = new AudioFormat(sampleRate,sampleSizeInBits,channels,signed,bigEndian);
 				InputStream byteArrayInputStream = new ByteArrayInputStream(audioData);

@@ -229,10 +229,10 @@ public class Node implements Serializable {
 			cacheValue = parentNodes.parentComposition.curves.get(args.get(0)).valueAtPos(parentNodes.getValueOf(args.get(1)));
 			break;
 		}case "curf":{
-			cacheValue = Waveform.curf(parentNodes.getValueOf(args.get(1)), parentNodes.parentComposition.curves.get(args.get(0)));
+			cacheValue = WaveUtils.curf(parentNodes.getValueOf(args.get(1)), parentNodes.parentComposition.curves.get(args.get(0)));
 			break;
 		}case "harmonic":{
-			cacheValue = Waveform.harmonic(parentNodes.getValueOf(args.get(1)), parentNodes.getValueOf(args.get(2)), parentNodes.getValueOf(args.get(3)), parentNodes.getValueOf(args.get(4)), parentNodes.getValueOf(args.get(5)), parentNodes.getValueOf(args.get(6)), parentNodes.getValueOf(args.get(7)), parentNodes.getValueOf(args.get(8)), parentNodes.parentComposition.curves.get(args.get(0)));
+			cacheValue = WaveUtils.harmonic(parentNodes.getValueOf(args.get(1)), parentNodes.getValueOf(args.get(2)), parentNodes.getValueOf(args.get(3)), parentNodes.getValueOf(args.get(4)), parentNodes.getValueOf(args.get(5)), parentNodes.getValueOf(args.get(6)), parentNodes.getValueOf(args.get(7)), parentNodes.getValueOf(args.get(8)), parentNodes.parentComposition.curves.get(args.get(0)));
 			break;
 		}case "input":{
 			cacheValue = parentNodes.user.getInput(args.get(0));
@@ -245,16 +245,16 @@ public class Node implements Serializable {
 			}
 			switch(type){
 			case "sinf":{
-				cacheValue = Waveform.sinf(values.get(0));
+				cacheValue = WaveUtils.sinf(values.get(0));
 				break;
 			}case "squf":{
-				cacheValue = Waveform.squf(values.get(0));
+				cacheValue = WaveUtils.squf(values.get(0));
 				break;
 			}case "sawf":{
-				cacheValue = Waveform.sawf(values.get(0));
+				cacheValue = WaveUtils.sawf(values.get(0));
 				break;
 			}case "trif":{
-				cacheValue = Waveform.trif(values.get(0));
+				cacheValue = WaveUtils.trif(values.get(0));
 				break;
 			}case "+":{
 				cacheValue = 0d;
@@ -451,9 +451,6 @@ public class Node implements Serializable {
 	}
 	
 	public int hashCode(){
-		ArrayList<Object> hashSource = new ArrayList<Object>();
-		hashSource.add(args);
-		hashSource.add(type);
-		return hashSource.hashCode();
+		return WaveUtils.quickHash(1873, type, args);
 	}
 }

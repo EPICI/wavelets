@@ -161,17 +161,15 @@ public class WLayerQuickDrawPanel extends JPanel {
 						endx = newEndx;
 						endy = newEndy;
 						behaviour.updateClip(activeClip, startx, starty, endx, endy, mapMultiplier, targetLeft);
-						restartPlayer();
+						repaint();
 					}
-					repaint();
 				}
+				restartPlayer();
 			}
 
 			@Override
 			public void mouseMoved(MouseEvent arg0) {
-				if(!isDrawing){
-					restartPlayer();
-				}
+				restartPlayer();
 			}
 			
 		});
@@ -272,13 +270,16 @@ public class WLayerQuickDrawPanel extends JPanel {
 	
 	public void restartPlayer(){
 		double[] timeBounds = activeLayer.getTimeBounds();
-		msDelay = (long) ((timeBounds[1]-timeBounds[0])*1000d)+50l;
-		long currentTime = System.currentTimeMillis();
-		if(currentTime-lastPlayed>msDelay){
-			lastPlayed = currentTime;
-			double[] doubleArray = activeLayer.getAudio();
-			short[] shortArray = Waveform.quickShort(doubleArray);
-			Wavelets.mainPlayer.playSound(shortArray);
+		double difference = timeBounds[1]-timeBounds[0];
+		if(difference>0){
+			msDelay = (long) ((difference)*1000d)+50l;
+			long currentTime = System.currentTimeMillis();
+			if(currentTime-lastPlayed>msDelay){
+				lastPlayed = currentTime;
+				double[] doubleArray = activeLayer.getAudio();
+				short[] shortArray = WaveUtils.quickShort(doubleArray);
+				Wavelets.mainPlayer.playSound(shortArray);
+			}
 		}
 	}
 	
@@ -361,6 +362,7 @@ public class WLayerQuickDrawPanel extends JPanel {
 		constraint.weighty=1;
 		constraint.fill = GridBagConstraints.BOTH;
 		Wavelets.popupPanel.add(drawPanel, constraint);
+		constraint.weighty=0.1;
 		constraint.gridwidth=1;
 		constraint.gridy=1;
 		constraint.fill = GridBagConstraints.NONE;

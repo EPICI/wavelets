@@ -301,6 +301,7 @@ public class Wavelets{
 	//Create node editor layout and enable buttons
 	public static void enableNodeEditor(){
 		mainFrame.add(nodeEditorScrollPane);
+		updateNodeSelection();
 		menuItems.get(1).get(2).setEnabled(false);
 		window = "Node Editor";
 	}
@@ -404,10 +405,76 @@ public class Wavelets{
 					Layer current = composition.layers.get(composition.layerSelection);
 					if(current.clipCount>0){
 						double[] soundDouble = current.getAudio();
-						short[] soundShort = Waveform.quickShort(soundDouble);
+						short[] soundShort = WaveUtils.quickShort(soundDouble);
 						mainPlayer.playSound(soundShort);
 					}
 				}
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseExited(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mousePressed(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		composerTopPanelComponents.get(1).get(2).addMouseListener(new MouseListener() {
+
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				composition.clearCache();
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseExited(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mousePressed(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		composerTopPanelComponents.get(1).get(1).addMouseListener(new MouseListener() {
+
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				double[] soundDouble = composition.getAudio();
+				short[] soundShort = WaveUtils.quickShort(soundDouble);
+				mainPlayer.playSound(soundShort);
 			}
 
 			@Override
@@ -605,14 +672,12 @@ public class Wavelets{
 		Curve.previewModes.put("As waveform: 220Hz flat tone", 0);
 		Curve.previewModes.put("As waveform: 440Hz flat tone", 1);
 		Curve.previewModes.put("As waveform: 880Hz flat tone", 2);
-		//TODO set 100 range as "as envelope"
-		Curve.previewModes.put("As frequency-amplitude graph: 220Hz filtered saw (increment 1, base 1, exponent 1)", 200);
-		Curve.previewModes.put("As frequency-amplitude graph: 220Hz filtered square (increment 2, base 1, exponent 1)", 201);
-		Curve.previewModes.put("As frequency-amplitude graph: 220Hz filtered triangle (increment 2, base -1, exponent 2)", 202);
-		//Curve.previewModes.put("As frequency-amplitude graph: 220Hz filtered inharmonic (increment 50/49, base 1, exponent 1)", 203);
-		//Curve.previewModes.put("As frequency-amplitude graph: 220Hz filtered inharmonic (increment 22/21, base 1, exponent 1)", 204);
-		//Curve.previewModes.put("As frequency-amplitude graph: 220Hz filtered inharmonic (increment 18/17, base 1, exponent 1)", 205);
-		//Curve.previewModes.put("As frequency-amplitude graph: 220Hz filtered inharmonic (increment 14/13, base 1, exponent 1)", 206);
+		Curve.previewModes.put("As envelope: 440Hz default harmonic", 100);
+		Curve.previewModes.put("As envelope: 440Hz default harmonic, 1/4 time scale", 101);
+		Curve.previewModes.put("As envelope: 440Hz default harmonic, 1/16 time scale", 102);
+		Curve.previewModes.put("As frequency-amplitude graph: 440Hz filtered saw (increment 1, base 1, exponent 1)", 200);
+		Curve.previewModes.put("As frequency-amplitude graph: 440Hz filtered square (increment 2, base 1, exponent 1)", 201);
+		Curve.previewModes.put("As frequency-amplitude graph: 440Hz filtered triangle (increment 2, base -1, exponent 2)", 202);
 		Curve.updateModeNames();
 		composition.updateCurves();
 		//Initialize layout
@@ -853,7 +918,7 @@ public class Wavelets{
 						for(int i=0;i<32768;i++){
 							doubleArray[i] = selectedCurve.valueAtPos((rate*i)%1);
 						}
-						short[] shortArray = Waveform.quickShort(doubleArray);
+						short[] shortArray = WaveUtils.quickShort(doubleArray);
 						mainPlayer.playSound(shortArray);
 						break;
 					}case 1:{
@@ -862,7 +927,7 @@ public class Wavelets{
 						for(int i=0;i<32768;i++){
 							doubleArray[i] = selectedCurve.valueAtPos((rate*i)%1);
 						}
-						short[] shortArray = Waveform.quickShort(doubleArray);
+						short[] shortArray = WaveUtils.quickShort(doubleArray);
 						mainPlayer.playSound(shortArray);
 						break;
 					}case 2:{
@@ -871,62 +936,63 @@ public class Wavelets{
 						for(int i=0;i<32768;i++){
 							doubleArray[i] = selectedCurve.valueAtPos((rate*i)%1);
 						}
-						short[] shortArray = Waveform.quickShort(doubleArray);
+						short[] shortArray = WaveUtils.quickShort(doubleArray);
+						mainPlayer.playSound(shortArray);
+						break;
+					}case 100:{
+						double sampleRate = composition.samplesPerSecond;
+						double[] doubleArray = WaveUtils.testTone(selectedCurve.getLocations().get(selectedCurve.listSize-1), sampleRate);
+						for(int i=0;i<doubleArray.length;i++){
+							doubleArray[i] *= selectedCurve.valueAtPos(i/sampleRate);
+						}
+						short[] shortArray = WaveUtils.quickShort(doubleArray);
+						mainPlayer.playSound(shortArray);
+						break;
+					}case 101:{
+						double sampleRate = composition.samplesPerSecond;
+						double[] doubleArray = WaveUtils.testTone(selectedCurve.getLocations().get(selectedCurve.listSize-1)/4d, sampleRate);
+						sampleRate/=4d;//This value will not be used again anyways
+						for(int i=0;i<doubleArray.length;i++){
+							doubleArray[i] *= selectedCurve.valueAtPos(i/sampleRate);
+						}
+						short[] shortArray = WaveUtils.quickShort(doubleArray);
+						mainPlayer.playSound(shortArray);
+						break;
+					}case 102:{
+						double sampleRate = composition.samplesPerSecond;
+						double[] doubleArray = WaveUtils.testTone(selectedCurve.getLocations().get(selectedCurve.listSize-1)/16d, sampleRate);
+						sampleRate/=16d;//This value will not be used again anyways
+						for(int i=0;i<doubleArray.length;i++){
+							doubleArray[i] *= selectedCurve.valueAtPos(i/sampleRate);
+						}
+						short[] shortArray = WaveUtils.quickShort(doubleArray);
 						mainPlayer.playSound(shortArray);
 						break;
 					}case 200:{
 						double[] doubleArray = new double[32768];
 						for(int i=0;i<32768;i++){
-							doubleArray[i] = Waveform.harmonic(220d, 1d, 1d, 1d, 1d, 100d, 20000d, i/44100d, selectedCurve);
+							doubleArray[i] = WaveUtils.harmonic(220d, 1d, 1d, 1d, 1d, 100d, 20000d, i/44100d, selectedCurve);
 						}
-						short[] shortArray = Waveform.quickShort(doubleArray);
+						short[] shortArray = WaveUtils.quickShort(doubleArray);
 						mainPlayer.playSound(shortArray);
 						break;
 					}case 201:{
 						double[] doubleArray = new double[32768];
 						for(int i=0;i<32768;i++){
-							doubleArray[i] = Waveform.harmonic(220d, 2d, 1d, 1d, 1d, 100d, 20000d, i/44100d, selectedCurve);
+							doubleArray[i] = WaveUtils.harmonic(220d, 2d, 1d, 1d, 1d, 100d, 20000d, i/44100d, selectedCurve);
 						}
-						short[] shortArray = Waveform.quickShort(doubleArray);
+						short[] shortArray = WaveUtils.quickShort(doubleArray);
 						mainPlayer.playSound(shortArray);
 						break;
 					}case 202:{
 						double[] doubleArray = new double[32768];
 						for(int i=0;i<32768;i++){
-							doubleArray[i] = Waveform.harmonic(220d, 2d, 1d, -1d, 2d, 100d, 20000d, i/44100d, selectedCurve);
+							doubleArray[i] = WaveUtils.harmonic(220d, 2d, 1d, -1d, 2d, 100d, 20000d, i/44100d, selectedCurve);
 						}
-						short[] shortArray = Waveform.quickShort(doubleArray);
+						short[] shortArray = WaveUtils.quickShort(doubleArray);
 						mainPlayer.playSound(shortArray);
 						break;
-					}/*case 203:{
-						short[] soundArray = new short[32768];
-						for(int i=0;i<32768;i++){
-							soundArray[i] = (short) (16384*Waveform.harmonic(220d, 50d/49d, 1d, 1d, 1d, 100d, 20000d, i/44100d, selectedCurve));
-						}
-						mainPlayer.playSound(soundArray);
-						break;
-					}case 204:{
-						short[] soundArray = new short[32768];
-						for(int i=0;i<32768;i++){
-							soundArray[i] = (short) (16384*Waveform.harmonic(220d, 22d/21d, 1d, 1d, 1d, 100d, 20000d, i/44100d, selectedCurve));
-						}
-						mainPlayer.playSound(soundArray);
-						break;
-					}case 205:{
-						short[] soundArray = new short[32768];
-						for(int i=0;i<32768;i++){
-							soundArray[i] = (short) (16384*Waveform.harmonic(220d, 18d/17d, 1d, 1d, 1d, 100d, 20000d, i/44100d, selectedCurve));
-						}
-						mainPlayer.playSound(soundArray);
-						break;
-					}case 206:{
-						short[] soundArray = new short[32768];
-						for(int i=0;i<32768;i++){
-							soundArray[i] = (short) (16384*Waveform.harmonic(220d, 14d/13d, 1d, 1d, 1d, 100d, 20000d, i/44100d, selectedCurve));
-						}
-						mainPlayer.playSound(soundArray);
-						break;
-					}*/
+					}
 					}
 				}
 			}
@@ -1571,6 +1637,8 @@ public class Wavelets{
 										
 									});
 									GridBagConstraints constraint = new GridBagConstraints();
+									constraint.weightx=1;
+									constraint.weighty=1;
 									constraint.gridx=0;
 									constraint.gridy=0;
 									constraint.gridwidth=2;
@@ -1665,6 +1733,8 @@ public class Wavelets{
 										
 									});
 									GridBagConstraints constraint = new GridBagConstraints();
+									constraint.weightx=1;
+									constraint.weighty=1;
 									constraint.gridx=0;
 									constraint.gridy=0;
 									constraint.gridwidth=2;
@@ -1752,6 +1822,8 @@ public class Wavelets{
 					});
 					popupPanel.removeAll();
 					GridBagConstraints constraint = new GridBagConstraints();
+					constraint.weightx=1;
+					constraint.weighty=1;
 					constraint.gridx=0;
 					constraint.gridy=0;
 					constraint.gridwidth=4;
@@ -1909,6 +1981,8 @@ public class Wavelets{
 						});
 						popupPanel.removeAll();
 						GridBagConstraints constraint = new GridBagConstraints();
+						constraint.weightx=1;
+						constraint.weighty=1;
 						constraint.gridx=0;
 						constraint.gridy=0;
 						constraint.gridwidth=3;
@@ -2052,6 +2126,8 @@ public class Wavelets{
 						});
 						popupPanel.removeAll();
 						GridBagConstraints constraint = new GridBagConstraints();
+						constraint.weightx=1;
+						constraint.weighty=1;
 						constraint.gridx=0;
 						constraint.gridy=0;
 						constraint.gridwidth=3;
@@ -2181,6 +2257,8 @@ public class Wavelets{
 						});
 						popupPanel.removeAll();
 						GridBagConstraints constraint = new GridBagConstraints();
+						constraint.weightx=1;
+						constraint.weighty=1;
 						constraint.gridx=0;
 						constraint.gridy=0;
 						popupPanel.add(infoLabel,constraint);
@@ -2283,6 +2361,8 @@ public class Wavelets{
 						});
 						popupPanel.removeAll();
 						GridBagConstraints constraint = new GridBagConstraints();
+						constraint.weightx=1;
+						constraint.weighty=1;
 						constraint.gridx=0;
 						constraint.gridy=0;
 						constraint.gridwidth=2;
@@ -2387,6 +2467,8 @@ public class Wavelets{
 						});
 						popupPanel.removeAll();
 						GridBagConstraints constraint = new GridBagConstraints();
+						constraint.weightx=1;
+						constraint.weighty=1;
 						constraint.gridx=0;
 						constraint.gridy=0;
 						constraint.gridwidth=2;
@@ -2498,6 +2580,8 @@ public class Wavelets{
 						});
 						popupPanel.removeAll();
 						GridBagConstraints constraint = new GridBagConstraints();
+						constraint.weightx=1;
+						constraint.weighty=1;
 						constraint.gridx=0;
 						constraint.gridy=0;
 						popupPanel.add(infoLabel,constraint);
@@ -2527,6 +2611,7 @@ public class Wavelets{
 	public static void updateNodeEditorSelector(){
 		nodeEditorSelectorChanging = true;
 		nodeEditorSelector.removeAllItems();
+		composition.updateNodes();
 		for(String name:composition.nodesKeysArray){
 			nodeEditorSelector.addItem(name);
 		}
@@ -2567,6 +2652,7 @@ public class Wavelets{
 	public static void updateCurveEditorSelector(){
 		curveEditorSelectorChanging = true;
 		curveEditorSelector.removeAllItems();
+		composition.updateCurves();
 		for(String name:composition.curvesKeysArray){
 			curveEditorSelector.addItem(name);
 		}
@@ -2696,8 +2782,8 @@ public class Wavelets{
 		initMenus();
 		initPanels();
 		enableComposer();
-		//Set Synth UI
-		//initUISkin(skinFileName);
+		//Initialize utility static class
+		WaveUtils.init();
 		//Set default font
 		setUIFont(new javax.swing.plaf.FontUIResource("Arial Unicode MS",Font.PLAIN,14));
 		//Finish composition setup

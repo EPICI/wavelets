@@ -256,6 +256,6 @@ public class Nodes implements Serializable {
 	}
 
 	public int hashCode(){
-		return nodes.hashCode();
+		return 4457*nodes.hashCode();
 	}
 }

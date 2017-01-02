@@ -526,10 +526,6 @@ public class Curve implements Serializable {
 	}
 
 	public int hashCode(){
-		ArrayList<Object> hashSource = new ArrayList<Object>();
-		hashSource.add(locations);
-		hashSource.add(values);
-		hashSource.add(mode);
-		return hashSource.hashCode();
+		return WaveUtils.quickHash(7057, locations, values, mode);
 	}
 }

@@ -104,7 +104,7 @@ public class FilterCurveEnvelope implements Filter {
 		if(control==null){
 			return 0;
 		}else{
-			return control.hashCode()*33;//To make it unique
+			return 1667*control.hashCode();
 		}
 	}
 }

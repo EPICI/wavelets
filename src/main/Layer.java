@@ -758,6 +758,6 @@ public class Layer implements Serializable {
 	}
 	
 	public int hashCode(){
-		return 17*clips.hashCode()+filters.hashCode();
+		return WaveUtils.quickHash(1021, clips, filters);
 	}
 }

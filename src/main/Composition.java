@@ -25,6 +25,10 @@ public class Composition implements Serializable {
 	//Audio format
 	public int samplesPerSecond = 44100;
 	
+	//Cached audio
+	public double[] cacheValues;
+	public int cacheHash;
+	
 	//Current clip
 	public Clip currentClip;
 	
@@ -214,6 +218,53 @@ public class Composition implements Serializable {
 		layers.put(newName, currentLayer);
 		layers.remove(oldName);
 		updateLayers();
+	}
+	
+	public double[] getAudio(){
+		int newHash = hashCode();
+		if(newHash!=cacheHash){
+			double min = Double.MAX_VALUE;
+			double max = Double.MIN_VALUE;
+			Collection<Layer> layerValues = layers.values();
+			HashMap<Layer,double[]> layerTimeBounds = new HashMap<Layer,double[]>();
+			for(Layer current:layerValues){
+				double[] timeBounds = current.getTimeBounds();
+				if(timeBounds[0]<min){
+					min=timeBounds[0];
+				}
+				if(timeBounds[1]>max){
+					max=timeBounds[1];
+				}
+				layerTimeBounds.put(current, timeBounds);
+			}
+			double difference = max-min;
+			if(difference>0){
+				int total = (int) (difference*samplesPerSecond);
+				cacheValues = new double[total];
+				for(Layer current:layerValues){
+					double[] timeBounds = layerTimeBounds.get(current);
+					double[] layerData = current.getAudio();
+					int offset = (int) ((timeBounds[0]-min)*samplesPerSecond);
+					int target = layerData.length+offset-1;
+					int cap = Math.min(total, target);
+					for(int i=offset;i<cap;i++){
+						//Double safety
+						cacheValues[i]+=layerData[i-offset];
+					}
+				}
+			}else{
+				cacheValues = new double[0];//Return empty array to not break other code
+			}
+			cacheHash = newHash;
+		}
+		return cacheValues;
+	}
+	
+	public void clearCache(){
+		cacheHash = 0;
+		for(Layer current:layers.values()){
+			current.clearCache();
+		}
 	}
 	
 	public void importDataFromJson(String data,boolean replace){
@@ -420,13 +471,6 @@ public class Composition implements Serializable {
 	}
 
 	public int hashCode(){
-		ArrayList<Object> settings = new ArrayList<Object>();
-		settings.add(samplesPerSecond);
-		ArrayList<Object> hashSource = new ArrayList<Object>();
-		hashSource.add(curves);
-		hashSource.add(nodes);
-		hashSource.add(layers);
-		hashSource.add(settings);
-		return hashSource.hashCode();
+		return WaveUtils.quickHash(2801, layers, curves, nodes, samplesPerSecond);
 	}
 }
