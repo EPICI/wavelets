@@ -1,5 +1,5 @@
 # wavelets
-Open source DAW. Freedom shouldn't have a price.
+Open source DAW. Creativity shouldn't have a price.
 
 Still very early. I'm currently building the framework and haven't made my plans public, but that doesn't mean you can't try to help out. 
 Besides, eventually, probably around when I finish, I'll hit my skill cap and until I learn more development will halt without contributors.
