@@ -29,7 +29,12 @@ public class WCurveViewerPanel extends JPanel {
 		Dimension dimensions = getSize();
 		Rectangle clipBounds = new Rectangle(0,0,dimensions.width,dimensions.height);
 		//Get curve boundaries
-		int size = trackCurve.getSize();
+		int size;
+		if(trackCurve==null){
+			size = 0;
+		}else{
+			size = trackCurve.getSize();
+		}
 		double multiplier = 1.3;
 		double leftt = 0.5-0.5*multiplier;
 		double rightt = 0.5+0.5*multiplier;

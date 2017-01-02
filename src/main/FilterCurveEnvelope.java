@@ -79,6 +79,7 @@ public class FilterCurveEnvelope implements Filter {
 					controlName = (String) event.getItem();
 					control = parentComposition.curves.get(controlName);
 					viewPanel.trackCurve = control;
+					viewPanel.repaint();
 				}
 			}
 			

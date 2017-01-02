@@ -114,12 +114,8 @@ public class Curve implements Serializable {
 
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
-				if(listSize>0){
-					selected = Math.floorMod(selected-1,listSize);
-					updateSelection();
-				}else{
-					selected = -1;
-				}
+				selected--;
+				updateSelection();
 			}
 
 			@Override
@@ -151,12 +147,8 @@ public class Curve implements Serializable {
 
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
-				if(listSize>0){
-					selected = Math.floorMod(selected+1,listSize);
-					updateSelection();
-				}else{
-					selected = -1;
-				}
+				selected++;
+				updateSelection();
 			}
 
 			@Override
@@ -225,11 +217,6 @@ public class Curve implements Serializable {
 			public void mouseClicked(MouseEvent arg0) {
 				if(listSize>0&&selected>-1){
 					removePoint(selected);
-					if(listSize>0){
-						selected = Math.floorMod(selected, listSize);
-					}else{
-						selected = -1;
-					}
 					updateSelection();
 				}
 			}
@@ -298,6 +285,7 @@ public class Curve implements Serializable {
 	
 	public void updateSelection(){
 		if(listSize>0){
+			selected = Math.floorMod(selected,listSize);
 			editPanelLocationField.setText(Double.toString(locations.get(selected)));
 			editPanelValueField.setText(Double.toString(values.get(selected)));
 			editPanelIndex.setText(Integer.toString(selected+1));
@@ -306,6 +294,7 @@ public class Curve implements Serializable {
 			editPanelSave.setEnabled(true);
 			editPanelDelete.setEnabled(true);
 		}else{
+			selected = -1;
 			editPanelIndex.setText("Curve is empty");
 			editPanelPrev.setEnabled(false);
 			editPanelNext.setEnabled(false);
@@ -364,8 +353,13 @@ public class Curve implements Serializable {
 	}
 	
 	public void tryEditPoint(int index, double location, double value){
-		if(locations.get(index)!=location||values.get(index)!=value){
-			if(!locations.contains(location)){
+		boolean locationsMatch = locations.get(index)==location;
+		if((!locationsMatch)||values.get(index)!=value){
+			if(locations.contains(location)){
+				if(locationsMatch){
+					values.set(index, value);
+				}
+			}else{
 				editPoint(index,location,value);
 			}
 		}

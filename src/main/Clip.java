@@ -179,6 +179,11 @@ public class Clip implements Serializable {
 	}
 	
 	public void updateLength(){
+		if(startTime>endTime){
+			double swap = startTime;
+			startTime = endTime;
+			endTime = swap;
+		}
 		length = (int) Math.round((endTime-startTime)*parentComposition().samplesPerSecond);
 	}
 	
@@ -280,6 +285,7 @@ public class Clip implements Serializable {
 	public double[] getAudio(){
 		updateFreq();
 		if(!cacheUpdated){
+			double sampleRate = parentComposition().samplesPerSecond;
 			nodeNetwork.user = this;
 			cacheValues = new double[length];
 			nodeNetwork.phase = 0.0;
@@ -287,7 +293,7 @@ public class Clip implements Serializable {
 				for(Node j : nodeNetwork.nodes.values()){
 					j.updateFrameCache();
 				}
-				nodeNetwork.position = i/parentComposition().samplesPerSecond;
+				nodeNetwork.position = i/sampleRate;
 				double currentTime = startTime+nodeNetwork.position;
 				nodeNetwork.time = currentTime;
 				nodeNetwork.rate = ((double) i)/length;
@@ -302,13 +308,14 @@ public class Clip implements Serializable {
 	public void updateFreq(){
 		nodeNetwork.forceUpdateAll();
 		if(!freqCacheUpdated){
+			double sampleRate = parentComposition().samplesPerSecond;
 			nodeNetwork.user = this;
 			freqCacheValues = new double[length];
 			for(int i=0;i<length;i++){
 				for(Node j : nodeNetwork.nodes.values()){
 					j.updateFrameCache();
 				}
-				nodeNetwork.position = i/parentComposition().samplesPerSecond;
+				nodeNetwork.position = i/sampleRate;
 				double currentTime = startTime+nodeNetwork.position;
 				nodeNetwork.time = currentTime;
 				nodeNetwork.rate = ((double) i)/length;
@@ -343,8 +350,16 @@ public class Clip implements Serializable {
 		inputs = new HashMap<String,Double>(source.inputs);
 		startTime = source.startTime;
 		endTime = source.endTime;
+		nodesName = source.nodesName;
 		infoNodeSelector.setSelectedItem(source.nodesName);
 		refreshNodes();
+	}
+	
+	public void clearCache(){
+		cacheUpdated = false;
+		freqCacheUpdated = false;
+		cacheValues = null;
+		freqCacheValues = null;
 	}
 	
 	//Export as JSON

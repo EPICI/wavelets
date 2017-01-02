@@ -110,6 +110,14 @@ public class Wavelets{
 	public static HashMap<String,StringFinder> stringFinders = new HashMap<String,StringFinder>();
 	public static String[] stringFindersKeysArray;
 	
+	//Clip comparators
+	public static HashMap<String,Comparator<Clip>> clipComparators = new HashMap<String,Comparator<Clip>>();
+	public static String[] clipComparatorsKeysArray;
+	
+	//Layer quick draw clip behaviours
+	public static HashMap<String,Integer> layerQdBehaviours = new HashMap<String,Integer>();
+	public static String[] layerQdBehavioursKeysArray;
+	
 	public interface StringFinder{
 		//Check if a string matches in some way
 		public boolean match(String body,String search);
@@ -185,6 +193,13 @@ public class Wavelets{
 		SwingUtilities.updateComponentTreeUI(mainFrame);
 		//TODO redraw all
 	}
+	
+	//Update the display
+	public static void updateDisplay(JFrame target){
+		//Update components
+		SwingUtilities.updateComponentTreeUI(target);
+		//TODO redraw all
+	}
 		
 	//Re-add all components, useful for loading or refreshing
 	public static void reAddAll(){
@@ -203,10 +218,9 @@ public class Wavelets{
 	
 	//Add a new layer
 	public static void addNewLayer(){
-		addLayerPanel(composition.addLayer());
+		addLayerScroll(composition.addLayer());
 	}
-	public static void addLayerPanel(JPanel firstLayerPanel){
-		firstLayerPanel.setPreferredSize(new Dimension(280,60));//TODO Temporary
+	public static void addLayerScroll(JScrollPane firstLayerPanel){
 		composerLeftInPanel.add(firstLayerPanel);
 	}
 	
@@ -223,8 +237,8 @@ public class Wavelets{
 			//TODO load file
 		}else{
 			composition = new Composition();
-			composition.initTransient();
 		}
+		composition.initTransient();
 	}
 	
 	//Complete composition initialization
@@ -233,7 +247,7 @@ public class Wavelets{
 			//Refresh the display
 			reAddAll();
 		}else{
-			addNewLayer();
+			
 		}
 	}
 	
@@ -301,12 +315,11 @@ public class Wavelets{
 		//Composer layout
 		composerTopInPanel = new JPanel(new FlowLayout());
 		composerTopScrollPane = new JScrollPane(composerTopInPanel);
-		composerTopScrollPane.setPreferredSize(new Dimension(1200,60));//TODO Temporary
 		composerBottomPanel = new JPanel(new BorderLayout());
 		composerLeftInPanel = new JPanel();
 		composerLeftInPanel.setLayout(new BoxLayout(composerLeftInPanel, BoxLayout.PAGE_AXIS));
 		composerLeftScrollPane = new JScrollPane(composerLeftInPanel);
-		composerLeftScrollPane.setPreferredSize(new Dimension(300,800));//TODO Temporary
+		composerLeftScrollPane.setHorizontalScrollBarPolicy(ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
 		composerRightScrollPane = new JScrollPane(composerRightInPanel);
 		composerCenterPanel = new WLayersViewerPanel();
 		composerPanels.add(composerTopScrollPane);
@@ -331,9 +344,11 @@ public class Wavelets{
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
 		composerTopPanelComponents.get(1).add(new JLabel("Composition"));
 		composerTopPanelComponents.get(1).add(new JButton("Play"));
+		composerTopPanelComponents.get(1).add(new JButton("Clear cache"));
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
 		composerTopPanelComponents.get(2).add(new JLabel("Layer"));
 		composerTopPanelComponents.get(2).add(new JButton("Play"));
+		composerTopPanelComponents.get(2).add(new JButton("Clear cache"));
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
 		composerTopPanelComponents.get(3).add(new JLabel("No clip selected"));//This should have the clip number
 		composerTopPanelComponents.get(3).add(new JButton("\u25C4"));//Left arrow
@@ -392,6 +407,41 @@ public class Wavelets{
 						short[] soundShort = Waveform.quickShort(soundDouble);
 						mainPlayer.playSound(soundShort);
 					}
+				}
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseExited(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mousePressed(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+		composerTopPanelComponents.get(2).get(2).addMouseListener(new MouseListener() {
+
+			@Override
+			public void mouseClicked(MouseEvent arg0) {
+				if(composition.layers.containsKey(composition.layerSelection)){
+					Layer current = composition.layers.get(composition.layerSelection);
+					current.clearCache();
 				}
 			}
 
@@ -506,7 +556,7 @@ public class Wavelets{
 		//Left panel
 		composerLeftPanelSubpanel = new JPanel(new BorderLayout());
 		composerLeftPanelSubpanel.setPreferredSize(new Dimension(280,60));//TODO temporary
-		composerLeftPanelAddButton = new JButton("+");
+		composerLeftPanelAddButton = new JButton("Add new layer");
 		//composerLeftPanelAddButton.setToolTipText("Creates a new blank layer.");
 		composerLeftPanelSubpanel.add(composerLeftPanelAddButton,BorderLayout.CENTER);
 		composerLeftPanelAddButton.addMouseListener(new MouseListener() {
@@ -1113,7 +1163,7 @@ public class Wavelets{
 		stringFinders.put("Matches keywords", new StringFinder(){
 			public boolean match(String base, String search){
 				boolean result = true;
-				ArrayList<String> origWords = new ArrayList(Arrays.asList(base.split(" ")));
+				ArrayList<String> origWords = new ArrayList<String>(Arrays.asList(base.split(" ")));
 				String[] searches = search.split(" ");
 				for(String current:searches){
 					char searchType = current.charAt(0);
@@ -1132,6 +1182,34 @@ public class Wavelets{
 			}
 		});
 		stringFindersKeysArray = stringFinders.keySet().toArray(new String[0]);
+		clipComparators.put("Start time", new Comparator<Clip>(){
+			@Override
+			public int compare(Clip a, Clip b) {
+				if(b.startTime>a.startTime){
+					return 1;
+				}else if(a.startTime>b.startTime){
+					return -1;
+				}else{
+					return 0;
+				}
+			}
+		});
+		clipComparators.put("End time", new Comparator<Clip>(){
+			@Override
+			public int compare(Clip a, Clip b) {
+				if(b.endTime>a.endTime){
+					return 1;
+				}else if(a.endTime>b.endTime){
+					return -1;
+				}else{
+					return 0;
+				}
+			}
+		});
+		clipComparatorsKeysArray = clipComparators.keySet().toArray(new String[0]);
+		layerQdBehaviours.put("1 control (constant pitch)", 0);
+		layerQdBehaviours.put("2 controls (linear pitch)", 1);
+		layerQdBehavioursKeysArray = layerQdBehaviours.keySet().toArray(new String[0]);
 		//Add menu bar
 		menus.add(new JMenu("File"));
 		menuItems.add(new ArrayList<JMenuItem>());
@@ -1169,6 +1247,9 @@ public class Wavelets{
 		submenuItems.get(2).add(new JMenuItem("Time mapping"));
 		submenuItems.get(2).add(new JMenuItem("Input mapping"));
 		submenuItems.get(2).add(new JMenuItem("Merge"));
+		submenuItems.get(2).add(new JMenuItem("Sort"));
+		submenuItems.get(2).add(new JMenuItem("Time shift"));
+		submenuItems.get(2).add(new JMenuItem("Duplicate"));
 		addMenu((JMenu) menuItems.get(2).get(0),submenuItems.get(2));
 		mainFrame.setJMenuBar(menuBar);
 		//Set up events
@@ -1369,6 +1450,363 @@ public class Wavelets{
 				popupFrame.setVisible(true);
 			}
 		});
+		submenuItems.get(2).get(0).addActionListener(new ActionListener() {//Quick draw
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if(composition.layers.containsKey(composition.layerSelection)){
+					Layer currentLayer = composition.layers.get(composition.layerSelection);
+					clearPopupWindowListeners();
+					popupFrame.setTitle("Wavelets [Layer quick draw]");
+					popupFrame.addWindowListener(wlHide);
+					Clip copyClip = new Clip();
+					copyClip.parentLayer = composition.nodeLayer;
+					copyClip.nodesName = composition.nodesSelection;
+					copyClip.initTransient();
+					copyClip.infoNodeSelector.setSelectedItem(composition.nodesSelection);
+					JLabel topLabel = new JLabel("Setup");
+					JTextField timeField = new JTextField(30);
+					JLabel timeLabel = new JLabel("Time divisions");
+					JLabel timeMapLabel = new JLabel("Map time range to");
+					JTextField timeMapLowerField = new JTextField(30);
+					JLabel timeMapRangeLabel = new JLabel("to");
+					JTextField timeMapUpperField = new JTextField(30);
+					JLabel pitchLabel = new JLabel("Pitch range");
+					JTextField pitchRangeLowerField = new JTextField(30);
+					JLabel pitchRangeLabel = new JLabel("to");
+					JTextField pitchRangeUpperField = new JTextField(30);
+					JLabel templateLabel = new JLabel("Clip template");
+					JLabel drawModeLabel = new JLabel("Drawing behaviour:");
+					JComboBox<String> drawModeSelector = new JComboBox<String>(layerQdBehavioursKeysArray);
+					JButton confirmButton = new JButton("Continue");
+					JButton closeButton = new JButton("Close");
+					confirmButton.addMouseListener(new MouseListener() {
+
+						@Override
+						public void mouseClicked(MouseEvent arg0) {
+							if(copyClip.inputsRegistered){
+								final double right = Double.valueOf(timeField.getText());
+								final double bottom = Double.valueOf(pitchRangeLowerField.getText());
+								final double top = Double.valueOf(pitchRangeUpperField.getText());
+								final double mapLeft = Double.valueOf(timeMapLowerField.getText());
+								final double mapRight = Double.valueOf(timeMapUpperField.getText());
+								final String behaviourName = (String) drawModeSelector.getSelectedItem();
+								final int behaviourId = layerQdBehaviours.get(behaviourName);
+								final Nodes nodesUsed = copyClip.nodeNetwork;
+								nodesUsed.refreshInputs();
+								final ArrayList<String> nodeInputs = nodesUsed.inputRequests;
+								final String[] nodeInputsArray = nodeInputs.toArray(new String[0]);
+								switch(behaviourId){
+								case 0:{
+									popupPanel.removeAll();
+									JLabel topLabel = new JLabel("Setup");
+									JLabel inputLabel1 = new JLabel("Pitch control input:");
+									JComboBox<String> inputSelector1 = new JComboBox<String>(nodeInputsArray);
+									JButton confirmButton = new JButton("Continue");
+									JButton closeButton = new JButton("Close");
+									confirmButton.addMouseListener(new MouseListener(){
+
+										@Override
+										public void mouseClicked(MouseEvent arg0) {
+											final String input1 = (String) inputSelector1.getSelectedItem();
+											final WLayerQuickDrawPanel.ClipBehaviour behaviour = new WLayerQuickDrawPanel.CbFlatTone(input1);
+											WLayerQuickDrawPanel.initPopup(currentLayer, copyClip, behaviour, new double[]{right,bottom,top,mapLeft,mapRight});
+										}
+
+										@Override
+										public void mouseEntered(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+
+										@Override
+										public void mouseExited(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+
+										@Override
+										public void mousePressed(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+
+										@Override
+										public void mouseReleased(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+										
+									});
+									closeButton.addMouseListener(new MouseListener(){
+
+										@Override
+										public void mouseClicked(MouseEvent arg0) {
+											copyClip.destroy();
+											popupFrame.dispose();
+										}
+
+										@Override
+										public void mouseEntered(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+
+										@Override
+										public void mouseExited(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+
+										@Override
+										public void mousePressed(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+
+										@Override
+										public void mouseReleased(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+										
+									});
+									GridBagConstraints constraint = new GridBagConstraints();
+									constraint.gridx=0;
+									constraint.gridy=0;
+									constraint.gridwidth=2;
+									popupPanel.add(topLabel,constraint);
+									constraint.gridwidth=1;
+									constraint.gridy=1;
+									popupPanel.add(inputLabel1,constraint);
+									constraint.gridx=1;
+									popupPanel.add(inputSelector1, constraint);
+									constraint.gridy=2;
+									constraint.gridx=0;
+									popupPanel.add(confirmButton,constraint);
+									constraint.gridx=1;
+									popupPanel.add(closeButton, constraint);
+									updateDisplay(popupFrame);
+									break;
+								}case 1:{
+									popupPanel.removeAll();
+									JLabel topLabel = new JLabel("Setup");
+									JLabel inputLabel1 = new JLabel("Starting pitch control input:");
+									JComboBox<String> inputSelector1 = new JComboBox<String>(nodeInputsArray);
+									JLabel inputLabel2 = new JLabel("Ending pitch control input:");
+									JComboBox<String> inputSelector2 = new JComboBox<String>(nodeInputsArray);
+									JButton confirmButton = new JButton("Continue");
+									JButton closeButton = new JButton("Close");
+									confirmButton.addMouseListener(new MouseListener(){
+
+										@Override
+										public void mouseClicked(MouseEvent arg0) {
+											final String input1 = (String) inputSelector1.getSelectedItem();
+											final String input2 = (String) inputSelector2.getSelectedItem();
+											final WLayerQuickDrawPanel.ClipBehaviour behaviour = new WLayerQuickDrawPanel.CbLinearTone(input1,input2);
+											WLayerQuickDrawPanel.initPopup(currentLayer, copyClip, behaviour, new double[]{right,bottom,top,mapLeft,mapRight});
+										}
+
+										@Override
+										public void mouseEntered(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+
+										@Override
+										public void mouseExited(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+
+										@Override
+										public void mousePressed(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+
+										@Override
+										public void mouseReleased(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+										
+									});
+									closeButton.addMouseListener(new MouseListener(){
+
+										@Override
+										public void mouseClicked(MouseEvent arg0) {
+											copyClip.destroy();
+											popupFrame.dispose();
+										}
+
+										@Override
+										public void mouseEntered(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+
+										@Override
+										public void mouseExited(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+
+										@Override
+										public void mousePressed(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+
+										@Override
+										public void mouseReleased(MouseEvent arg0) {
+											// TODO Auto-generated method stub
+											
+										}
+										
+									});
+									GridBagConstraints constraint = new GridBagConstraints();
+									constraint.gridx=0;
+									constraint.gridy=0;
+									constraint.gridwidth=2;
+									popupPanel.add(topLabel,constraint);
+									constraint.gridwidth=1;
+									constraint.gridy=1;
+									popupPanel.add(inputLabel1,constraint);
+									constraint.gridx=1;
+									popupPanel.add(inputSelector1, constraint);
+									constraint.gridy=2;
+									constraint.gridx=0;
+									popupPanel.add(inputLabel2,constraint);
+									constraint.gridx=1;
+									popupPanel.add(inputSelector2, constraint);
+									constraint.gridy=3;
+									constraint.gridx=0;
+									popupPanel.add(confirmButton,constraint);
+									constraint.gridx=1;
+									popupPanel.add(closeButton, constraint);
+									updateDisplay(popupFrame);
+									break;
+								}
+								}
+								updateDisplay(popupFrame);
+							}
+						}
+
+						@Override
+						public void mouseEntered(MouseEvent arg0) {
+							// TODO Auto-generated method stub
+							
+						}
+
+						@Override
+						public void mouseExited(MouseEvent arg0) {
+							// TODO Auto-generated method stub
+							
+						}
+
+						@Override
+						public void mousePressed(MouseEvent arg0) {
+							// TODO Auto-generated method stub
+							
+						}
+
+						@Override
+						public void mouseReleased(MouseEvent arg0) {
+							// TODO Auto-generated method stub
+							
+						}
+						
+					});
+					closeButton.addMouseListener(new MouseListener() {
+
+						@Override
+						public void mouseClicked(MouseEvent arg0) {
+							copyClip.destroy();
+							popupFrame.dispose();
+						}
+
+						@Override
+						public void mouseEntered(MouseEvent arg0) {
+							// TODO Auto-generated method stub
+							
+						}
+
+						@Override
+						public void mouseExited(MouseEvent arg0) {
+							// TODO Auto-generated method stub
+							
+						}
+
+						@Override
+						public void mousePressed(MouseEvent arg0) {
+							// TODO Auto-generated method stub
+							
+						}
+
+						@Override
+						public void mouseReleased(MouseEvent arg0) {
+							// TODO Auto-generated method stub
+							
+						}
+						
+					});
+					popupPanel.removeAll();
+					GridBagConstraints constraint = new GridBagConstraints();
+					constraint.gridx=0;
+					constraint.gridy=0;
+					constraint.gridwidth=4;
+					popupPanel.add(topLabel,constraint);
+					constraint.gridy=1;
+					constraint.gridwidth=2;
+					popupPanel.add(timeField,constraint);
+					constraint.gridx=2;
+					constraint.gridwidth=1;
+					popupPanel.add(timeLabel,constraint);
+					constraint.gridx=0;
+					constraint.gridy=2;
+					constraint.gridwidth=3;
+					popupPanel.add(timeMapLabel,constraint);
+					constraint.gridwidth=1;
+					constraint.gridy=3;
+					popupPanel.add(timeMapLowerField,constraint);
+					constraint.gridx=1;
+					popupPanel.add(timeMapRangeLabel,constraint);
+					constraint.gridx=2;
+					popupPanel.add(timeMapUpperField,constraint);
+					constraint.gridx=0;
+					constraint.gridy=4;
+					constraint.gridwidth=3;
+					popupPanel.add(pitchLabel,constraint);
+					constraint.gridy=5;
+					constraint.gridwidth=1;
+					popupPanel.add(pitchRangeLowerField,constraint);
+					constraint.gridx=1;
+					popupPanel.add(pitchRangeLabel,constraint);
+					constraint.gridx=2;
+					popupPanel.add(pitchRangeUpperField,constraint);
+					constraint.gridy=6;
+					constraint.gridx=0;
+					popupPanel.add(drawModeLabel,constraint);
+					constraint.gridx=1;
+					constraint.gridwidth=2;
+					popupPanel.add(drawModeSelector,constraint);
+					constraint.gridx=0;
+					constraint.gridy=7;
+					popupPanel.add(confirmButton,constraint);
+					constraint.gridx=2;
+					popupPanel.add(closeButton,constraint);
+					constraint.gridx=3;
+					constraint.gridy=1;
+					constraint.gridwidth=1;
+					popupPanel.add(templateLabel,constraint);
+					constraint.gridy=2;
+					constraint.gridheight=5;
+					popupPanel.add(copyClip.parentPanel,constraint);
+					popupFrame.pack();
+					popupFrame.setVisible(true);
+				}
+			}
+		});
 		submenuItems.get(2).get(1).addActionListener(new ActionListener() {//Time mapping
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -1408,6 +1846,7 @@ public class Wavelets{
 									current.endTime = (current.endTime-a)*rate+c;
 									current.refreshInputs();
 								}
+								currentLayer.clearCache();
 								popupFrame.dispose();
 							}
 
@@ -1550,6 +1989,7 @@ public class Wavelets{
 									}
 									current.refreshInputs();
 								}
+								currentLayer.clearCache();
 								popupFrame.dispose();
 							}
 
@@ -1664,7 +2104,7 @@ public class Wavelets{
 						clearPopupWindowListeners();
 						popupFrame.setTitle("Wavelets [Layer merge]");
 						popupFrame.addWindowListener(wlHide);
-						JLabel infoLabel = new JLabel("Move clips from layer \""+currentLayer.name+"\" to ");
+						JLabel infoLabel = new JLabel("Move clips from layer \""+currentLayer.name+"\" to");
 						JComboBox<String> targetSelector = new JComboBox<String>(composition.layersKeysArray);
 						targetSelector.removeItem(currentLayer.name);
 						JButton confirmButton = new JButton("Apply");
@@ -1678,6 +2118,7 @@ public class Wavelets{
 									targetLayer.addClip(original);
 								}
 								composition.removeLayerOnly(currentName);
+								targetLayer.clearCache();
 								popupFrame.dispose();
 							}
 
@@ -1745,6 +2186,323 @@ public class Wavelets{
 						popupPanel.add(infoLabel,constraint);
 						constraint.gridx=1;
 						popupPanel.add(targetSelector,constraint);
+						constraint.gridy=1;
+						popupPanel.add(closeButton,constraint);
+						constraint.gridx=0;
+						popupPanel.add(confirmButton,constraint);
+						popupFrame.pack();
+						popupFrame.setVisible(true);
+					}
+				}
+			}
+		});
+		submenuItems.get(2).get(4).addActionListener(new ActionListener() {//Sort
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				String currentName = composition.layerSelection;
+				if(composition.layers.containsKey(currentName)){
+					Layer currentLayer = composition.layers.get(currentName);
+					if(currentLayer.clipCount>0){
+						clearPopupWindowListeners();
+						popupFrame.setTitle("Wavelets [Layer sort]");
+						popupFrame.addWindowListener(wlHide);
+						JLabel infoLabel = new JLabel("Sort clips in layer \""+currentLayer.name+"\" by");
+						JComboBox<String> compSelector = new JComboBox<String>(clipComparatorsKeysArray);
+						JCheckBox invertCheck = new JCheckBox("Reverse order");
+						JButton confirmButton = new JButton("Apply");
+						JButton closeButton = new JButton("Close");
+						confirmButton.addMouseListener(new MouseListener() {
+
+							@Override
+							public void mouseClicked(MouseEvent arg0) {
+								Comparator<Clip> clipComparator = clipComparators.get(compSelector.getSelectedItem());
+								if(invertCheck.isSelected()){
+									clipComparator = Collections.reverseOrder(clipComparator);
+								}
+								Collections.sort(currentLayer.clips,clipComparator);
+								currentLayer.updateClipSelection();
+								popupFrame.dispose();
+							}
+
+							@Override
+							public void mouseEntered(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseExited(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mousePressed(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseReleased(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+							
+						});
+						closeButton.addMouseListener(new MouseListener() {
+
+							@Override
+							public void mouseClicked(MouseEvent arg0) {
+								popupFrame.dispose();
+							}
+
+							@Override
+							public void mouseEntered(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseExited(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mousePressed(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseReleased(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+							
+						});
+						popupPanel.removeAll();
+						GridBagConstraints constraint = new GridBagConstraints();
+						constraint.gridx=0;
+						constraint.gridy=0;
+						constraint.gridwidth=2;
+						popupPanel.add(infoLabel,constraint);
+						constraint.gridwidth=1;
+						constraint.gridx=2;
+						popupPanel.add(compSelector,constraint);
+						constraint.gridy=1;
+						popupPanel.add(closeButton,constraint);
+						constraint.gridx=1;
+						popupPanel.add(confirmButton,constraint);
+						constraint.gridx=0;
+						popupPanel.add(invertCheck,constraint);
+						popupFrame.pack();
+						popupFrame.setVisible(true);
+					}
+				}
+			}
+		});
+		submenuItems.get(2).get(5).addActionListener(new ActionListener() {//Time shift
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				String currentName = composition.layerSelection;
+				if(composition.layers.containsKey(currentName)){
+					Layer currentLayer = composition.layers.get(currentName);
+					if(currentLayer.clipCount>0){
+						clearPopupWindowListeners();
+						popupFrame.setTitle("Wavelets [Layer time shift]");
+						popupFrame.addWindowListener(wlHide);
+						JLabel infoLabel = new JLabel("Shift time of clips in layer \""+currentLayer.name+"\" using method:");
+						JComboBox<String> compSelector = new JComboBox<String>(Layer.timeManipulatorsKeysArray);
+						JTextField inputField = new JTextField(30);
+						JButton confirmButton = new JButton("Apply");
+						JButton closeButton = new JButton("Close");
+						confirmButton.addMouseListener(new MouseListener() {
+
+							@Override
+							public void mouseClicked(MouseEvent arg0) {
+								double setting = Double.valueOf(inputField.getText());
+								Layer.TimeManipulator tm = Layer.timeManipulators.get(compSelector.getSelectedItem());
+								tm.applyTo(currentLayer, setting);
+								currentLayer.clearCache();
+								popupFrame.dispose();
+							}
+
+							@Override
+							public void mouseEntered(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseExited(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mousePressed(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseReleased(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+							
+						});
+						closeButton.addMouseListener(new MouseListener() {
+
+							@Override
+							public void mouseClicked(MouseEvent arg0) {
+								popupFrame.dispose();
+							}
+
+							@Override
+							public void mouseEntered(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseExited(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mousePressed(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseReleased(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+							
+						});
+						popupPanel.removeAll();
+						GridBagConstraints constraint = new GridBagConstraints();
+						constraint.gridx=0;
+						constraint.gridy=0;
+						constraint.gridwidth=2;
+						popupPanel.add(infoLabel,constraint);
+						constraint.gridy=1;
+						constraint.gridwidth=1;
+						popupPanel.add(compSelector,constraint);
+						constraint.gridx=1;
+						popupPanel.add(inputField,constraint);
+						constraint.gridx=0;
+						constraint.gridy=2;
+						popupPanel.add(confirmButton,constraint);
+						constraint.gridx=1;
+						popupPanel.add(closeButton,constraint);
+						popupFrame.pack();
+						popupFrame.setVisible(true);
+					}
+				}
+			}
+		});
+		submenuItems.get(2).get(6).addActionListener(new ActionListener() {//Duplicate
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				String currentName = composition.layerSelection;
+				if(composition.layers.containsKey(currentName)){
+					Layer currentLayer = composition.layers.get(currentName);
+					if(currentLayer.clipCount>0){
+						clearPopupWindowListeners();
+						popupFrame.setTitle("Wavelets [Layer duplicate]");
+						popupFrame.addWindowListener(wlHide);
+						JLabel infoLabel = new JLabel("Create duplicate of layer \""+currentLayer.name+"\" with name");
+						JTextField inputField = new JTextField(30);
+						JButton confirmButton = new JButton("Apply");
+						JButton closeButton = new JButton("Close");
+						confirmButton.addMouseListener(new MouseListener() {
+
+							@Override
+							public void mouseClicked(MouseEvent arg0) {
+								String newName = inputField.getText();
+								if(!composition.layers.containsKey(newName)){
+									Layer toAdd = new Layer();
+									toAdd.setName(newName);
+									toAdd.parentComposition = composition;
+									for(Clip current:currentLayer.clips){
+										toAdd.dupliClip(current);
+									}
+									//TODO copy filters
+									composition.addLayer(toAdd);
+								}
+								popupFrame.dispose();
+							}
+
+							@Override
+							public void mouseEntered(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseExited(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mousePressed(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseReleased(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+							
+						});
+						closeButton.addMouseListener(new MouseListener() {
+
+							@Override
+							public void mouseClicked(MouseEvent arg0) {
+								popupFrame.dispose();
+							}
+
+							@Override
+							public void mouseEntered(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseExited(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mousePressed(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseReleased(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+							
+						});
+						popupPanel.removeAll();
+						GridBagConstraints constraint = new GridBagConstraints();
+						constraint.gridx=0;
+						constraint.gridy=0;
+						popupPanel.add(infoLabel,constraint);
+						constraint.gridx=1;
+						popupPanel.add(inputField,constraint);
 						constraint.gridy=1;
 						popupPanel.add(closeButton,constraint);
 						constraint.gridx=0;
@@ -1932,6 +2690,8 @@ public class Wavelets{
 		popupFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		//Load
 		initComposition();
+		//Initialize data classes
+		Layer.init(composition);
 		//Continue setup
 		initMenus();
 		initPanels();

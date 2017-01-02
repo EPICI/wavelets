@@ -44,14 +44,14 @@ public class ViewNode {
 		switch(original.type){
 		//Ignoring constants and inputs
 		case("curve"):{
-			comments.add(original.args.get(1));
+			comments.add(original.args.get(0));
 			links = new ArrayList<String>();
-			links.add(original.args.get(0));
+			links.add(original.args.get(1));
 			break;
 		}case("curf"):{
-			comments.add(original.args.get(1));
+			comments.add(original.args.get(0));
 			links = new ArrayList<String>();
-			links.add(original.args.get(0));
+			links.add(original.args.get(1));
 			break;
 		}default:{
 			links = original.nodeArgs();
@@ -75,15 +75,15 @@ public class ViewNode {
 		switch(original.type){
 		case("curve"):{
 			type = "inter";
-			comments.add(original.args.get(1));
+			comments.add(original.args.get(0));
 			links = new ArrayList<String>();
-			links.add(original.args.get(0));
+			links.add(original.args.get(1));
 			break;
 		}case("curf"):{
 			type = "inter";
-			comments.add(original.args.get(1));
+			comments.add(original.args.get(0));
 			links = new ArrayList<String>();
-			links.add(original.args.get(0));
+			links.add(original.args.get(1));
 			break;
 		}case("constant"):{
 			type = "input";

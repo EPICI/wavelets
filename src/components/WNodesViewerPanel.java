@@ -166,8 +166,11 @@ public class WNodesViewerPanel extends JPanel {
 		for(ViewNode first:nodeTree.values()){
 			//System.out.println(first.links);
 			for(String secondKey:first.links){
-				ViewNode second = nodeTree.get(secondKey);
-				g.drawLine(first.drawx,first.drawy,second.drawx,second.drawy);
+				//More safety
+				if(nodeTree.containsKey(secondKey)){
+					ViewNode second = nodeTree.get(secondKey);
+					g.drawLine(first.drawx,first.drawy,second.drawx,second.drawy);
+				}
 			}
 		}
 		//Draw icons for all of them

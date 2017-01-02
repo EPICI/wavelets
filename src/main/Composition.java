@@ -151,7 +151,7 @@ public class Composition implements Serializable {
 	}
 	
 	//Add a new layer
-	public JPanel addLayer(){
+	public JScrollPane addLayer(){
 		Layer toAdd = new Layer();
 		int count = 1;
 		String name = "Layer 1";
@@ -164,7 +164,7 @@ public class Composition implements Serializable {
 		layers.put(name,toAdd);
 		layerPanels.add(toAdd.parentPanel);
 		updateLayers();
-		return toAdd.parentPanel;
+		return toAdd.parentScroll;
 	}
 	
 	//Add a new layer
@@ -173,13 +173,13 @@ public class Composition implements Serializable {
 		layers.put(toAdd.name,toAdd);
 		layerPanels.add(toAdd.parentPanel);
 		updateLayers();
-		Wavelets.addLayerPanel(toAdd.parentPanel);
+		Wavelets.addLayerScroll(toAdd.parentScroll);
 	}
 	
 	//Remove a layer
 	public void removeLayer(String key){
 		Layer currentLayer = layers.get(key);
-		Wavelets.composerLeftInPanel.remove(currentLayer.parentPanel);
+		Wavelets.composerLeftInPanel.remove(currentLayer.parentScroll);
 		layerPanels.remove(layers.get(key));
 		layers.get(key).destroy();//Call destructor
 		layers.remove(key);
@@ -188,7 +188,7 @@ public class Composition implements Serializable {
 	}
 	public void removeLayerOnly(String key){
 		Layer currentLayer = layers.get(key);
-		Wavelets.composerLeftInPanel.remove(currentLayer.parentPanel);
+		Wavelets.composerLeftInPanel.remove(currentLayer.parentScroll);
 		layerPanels.remove(layers.get(key));
 		layers.get(key).destroyLayer();//Call destructor
 		layers.remove(key);

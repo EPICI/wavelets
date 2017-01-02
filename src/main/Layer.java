@@ -1,6 +1,6 @@
 package main;
 
-import java.util.ArrayList;
+import java.util.*;
 import javax.swing.*;
 import org.json.*;
 import java.awt.*;
@@ -29,6 +29,7 @@ public class Layer implements Serializable {
 	
 	//Display - left area
 	public transient JPanel parentPanel;
+	public transient JScrollPane parentScroll;
 	public transient GroupLayout layout;
 	public transient JLabel nameLabel;
 	public transient JTextField nameTextArea;
@@ -44,6 +45,76 @@ public class Layer implements Serializable {
 	public transient JButton clipDelete;
 	public transient JButton clipAdd;
 	public transient JButton clipDupli;
+	//Display - filters panel
+	public transient JPanel filterPanel;
+	public transient JScrollPane filterScroll;
+	public transient JButton filterAdd;
+	public transient JComboBox<String> filterTypeSelector;
+	
+	//Filter generators
+	public static HashMap<String,FilterGenerator> filterGenerators;
+	public static String[] filterGeneratorsKeysArray = new String[0];
+	
+	//Time manipulators
+	public static HashMap<String,TimeManipulator> timeManipulators;
+	public static String[] timeManipulatorsKeysArray = new String[0];
+	
+	public static void init(Composition parent){
+		filterGenerators = new HashMap<String,FilterGenerator>();
+		filterGenerators.put("Curve envelope", new FilterGenerator(){
+			public Filter createNew(){
+				FilterCurveEnvelope result = new FilterCurveEnvelope();
+				result.setParentComposition(parent);
+				result.initTransient();
+				return result;
+			}
+		});
+		filterGeneratorsKeysArray = filterGenerators.keySet().toArray(new String[0]);
+		timeManipulators = new HashMap<String,TimeManipulator>();
+		timeManipulators.put("Shift start by", new TimeManipulator(){
+			public void applyTo(Layer inputLayer,double setting){
+				for(Clip current:inputLayer.clips){
+					current.startTime += setting;
+					current.updateLength();
+				}
+			}
+			public double[] transform(double[] inputData,double setting){
+				return new double[]{inputData[0]+setting,inputData[1]};
+			}
+		});
+		timeManipulators.put("Shift end by", new TimeManipulator(){
+			public void applyTo(Layer inputLayer,double setting){
+				for(Clip current:inputLayer.clips){
+					current.endTime += setting;
+					current.updateLength();
+				}
+			}
+			public double[] transform(double[] inputData,double setting){
+				return new double[]{inputData[0],inputData[1]+setting};
+			}
+		});
+		timeManipulators.put("Fix start, multiply length by", new TimeManipulator(){
+			public void applyTo(Layer inputLayer,double setting){
+				for(Clip current:inputLayer.clips){
+					current.endTime = current.startTime + (current.endTime-current.startTime)*setting;
+					current.updateLength();
+				}
+			}
+			public double[] transform(double[] inputData,double setting){
+				return new double[]{inputData[0],inputData[0]+(inputData[1]-inputData[0])*setting};
+			}
+		});
+		timeManipulatorsKeysArray = timeManipulators.keySet().toArray(new String[0]);
+	}
+	
+	public interface FilterGenerator{
+		public Filter createNew();
+	}
+	
+	public interface TimeManipulator{
+		public void applyTo(Layer inputLayer,double setting);
+		public double[] transform(double[] inputData,double setting);
+	}
 	
 	public Layer(){
 		initTransient();
@@ -80,14 +151,12 @@ public class Layer implements Serializable {
 		layout = new GroupLayout(parentPanel);
 		nameLabel = new JLabel(name);
 		nameTextArea = new JTextField(30);
-		buttonRename = new JButton("\u270D");//Writing hand
-		//buttonRename.setToolTipText("Brings up a text field for changing the name.");
-		buttonEdit = new JButton("\u3030");//Wave
-		//buttonEdit.setToolTipText("Selects the layer so it can be edited.");
-		buttonDelete = new JButton("\u00D7");//Multiplication sign
-		//buttonDelete.setToolTipText("Deletes the layer.");
+		buttonRename = new JButton("Rename");
+		buttonEdit = new JButton("Edit");
+		buttonDelete = new JButton("Delete");
 		editMode = false;
 		parentPanel.setLayout(layout);
+		parentScroll = new JScrollPane(parentPanel);
 		layout.setAutoCreateGaps(true);
 		layout.setAutoCreateContainerGaps(true);
 		layout.setHorizontalGroup(
@@ -105,6 +174,11 @@ public class Layer implements Serializable {
 			.addComponent(buttonDelete)
 		);
 		nameTextArea.setText(name);
+		filterPanel = new JPanel(new GridBagLayout());
+		filterScroll = new JScrollPane(filterPanel);
+		filterAdd = new JButton("Add new");
+		filterTypeSelector = new JComboBox<String>(filterGeneratorsKeysArray);
+		refreshFilters();
 		buttonRename.addMouseListener(new MouseListener(){
 
 			@Override
@@ -145,6 +219,9 @@ public class Layer implements Serializable {
 				JPanel addTo = Wavelets.composerRightInPanel;
 				addTo.removeAll();
 				addTo.add(editPanel);
+				addTo = Wavelets.composerBottomPanel;
+				addTo.removeAll();
+				addTo.add(filterScroll,BorderLayout.CENTER);
 				Wavelets.updateDisplay();
 			}
 
@@ -301,6 +378,40 @@ public class Layer implements Serializable {
 			}
 			
 		});
+		filterAdd.addMouseListener(new MouseListener(){
+
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				Filter toAdd = filterGenerators.get(filterTypeSelector.getSelectedItem()).createNew();
+				filters.add(toAdd);
+				refreshFilters();
+			}
+
+			@Override
+			public void mouseEntered(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseExited(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mousePressed(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void mouseReleased(MouseEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
 	}
 	
 	public void edit(){
@@ -309,7 +420,7 @@ public class Layer implements Serializable {
 			if(parentComposition.layers.keySet().contains(newName)){
 				if(name.equals(newName)){
 					setName(newName);
-					buttonRename.setText("\u270D");//Writing hand
+					buttonRename.setText("Rename");
 					//buttonRename.setToolTipText("Brings up a text field for changing the name.");
 					layout.replace(nameTextArea, nameLabel);
 				}else{
@@ -318,13 +429,13 @@ public class Layer implements Serializable {
 			}else{
 				parentComposition.renameLayer(name,newName);
 				setName(newName);
-				buttonRename.setText("\u270D");//Writing hand
+				buttonRename.setText("Rename");
 				//buttonRename.setToolTipText("Brings up a text field for changing the name.");
 				layout.replace(nameTextArea, nameLabel);
 			}
 		}else{
 			setName(nameLabel.getText());
-			buttonRename.setText("\u2714");//Checkmark
+			buttonRename.setText("Confirm");
 			//buttonRename.setToolTipText("Renames the layer. Will not work if the name is already taken.");
 			layout.replace(nameLabel, nameTextArea);
 		}
@@ -384,11 +495,164 @@ public class Layer implements Serializable {
 		}
 	}
 	
+	public void dupliClip(Clip source){
+		addClip();
+		Clip selected = clips.get(selectedClip);
+		selected.copyFrom(source);
+	}
+	
 	public void removeClip(int index){
 		if(index>=0&&index<clipCount){
 			clips.remove(index);
 		}
 		updateClipSelection();
+	}
+	
+	public void refreshFilters(){
+		filterPanel.removeAll();
+		GridBagConstraints constraint = new GridBagConstraints();
+		constraint.weightx=1;
+		constraint.weighty=1;
+		constraint.gridx=0;
+		constraint.gridy=0;
+		constraint.gridwidth=2;
+		constraint.gridheight=1;
+		filterPanel.add(filterAdd,constraint);
+		constraint.gridx=2;
+		filterPanel.add(filterTypeSelector,constraint);
+		int numFilters = filters.size();
+		for(int i=0;i<numFilters;i++){
+			Filter current = filters.get(i);
+			JButton swapPrev = new JButton("\u25b2");//Up arrow
+			final int index=i;
+			swapPrev.addMouseListener(new MouseListener(){
+
+				@Override
+				public void mouseClicked(MouseEvent arg0) {
+					Collections.swap(filters, index-1, index);
+					refreshFilters();
+				}
+
+				@Override
+				public void mouseEntered(MouseEvent arg0) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				@Override
+				public void mouseExited(MouseEvent arg0) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				@Override
+				public void mousePressed(MouseEvent arg0) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				@Override
+				public void mouseReleased(MouseEvent arg0) {
+					// TODO Auto-generated method stub
+					
+				}
+				
+			});
+			JButton swapNext = new JButton("\u25bc");//Down arrow
+			swapNext.addMouseListener(new MouseListener(){
+
+				@Override
+				public void mouseClicked(MouseEvent arg0) {
+					Collections.swap(filters, index, index+1);
+					refreshFilters();
+				}
+
+				@Override
+				public void mouseEntered(MouseEvent arg0) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				@Override
+				public void mouseExited(MouseEvent arg0) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				@Override
+				public void mousePressed(MouseEvent arg0) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				@Override
+				public void mouseReleased(MouseEvent arg0) {
+					// TODO Auto-generated method stub
+					
+				}
+				
+			});
+			JButton delete = new JButton("\u00d7");//Multiplication sign
+			delete.addMouseListener(new MouseListener(){
+
+				@Override
+				public void mouseClicked(MouseEvent arg0) {
+					filters.remove(index);
+					refreshFilters();
+				}
+
+				@Override
+				public void mouseEntered(MouseEvent arg0) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				@Override
+				public void mouseExited(MouseEvent arg0) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				@Override
+				public void mousePressed(MouseEvent arg0) {
+					// TODO Auto-generated method stub
+					
+				}
+
+				@Override
+				public void mouseReleased(MouseEvent arg0) {
+					// TODO Auto-generated method stub
+					
+				}
+				
+			});
+			constraint.gridx=0;
+			constraint.gridy=3*i+1;
+			constraint.gridwidth=1;
+			filterPanel.add(swapPrev, constraint);
+			constraint.gridy=3*i+2;
+			filterPanel.add(delete, constraint);
+			constraint.gridy=3*i+3;
+			filterPanel.add(swapNext, constraint);
+			constraint.gridy=3*i+1;
+			constraint.gridx=1;
+			constraint.gridwidth=2;
+			constraint.gridheight=3;
+			constraint.fill = GridBagConstraints.BOTH;
+			JPanel previewPanel = current.getPreviewPanel();
+			//previewPanel.setPreferredSize(new Dimension(Wavelets.mainFrame.getSize().width/2,100));//Temporary solution
+			filterPanel.add(previewPanel, constraint);
+			constraint.gridx=3;
+			constraint.gridwidth=1;
+			constraint.fill = GridBagConstraints.NONE;
+			filterPanel.add(current.getEditingPanel(), constraint);
+			if(i==0){
+				swapPrev.setEnabled(false);
+			}else if(i==numFilters-1){
+				swapNext.setEnabled(false);
+			}
+		}
+		Wavelets.updateDisplay();
 	}
 	
 	public double[] getFreqBounds(){
@@ -426,18 +690,23 @@ public class Layer implements Serializable {
 		if(newHash!=cacheHash){
 			double[] timeBounds = getTimeBounds();
 			int total = (int) ((timeBounds[1]-timeBounds[0])*parentComposition.samplesPerSecond);
+			//System.out.println("Generated array of length "+total);
 			cacheValues = new double[total];
 			for(int i=0;i<total;i++){
 				cacheValues[i]=0d;
 			}
 			for(Clip current:clips){
-				double[] clipData = current.getAudio();
-				int offset = (int) (current.startTime*parentComposition.samplesPerSecond);
-				int target = clipData.length+offset-1;
-				int cap = Math.min(total, target);
-				for(int i=offset;i<cap;i++){
-					//Double safety
-					cacheValues[i]=clipData[i-offset];
+				//System.out.println("Next clip");
+				if(current.inputsRegistered){
+					double[] clipData = current.getAudio();
+					int offset = (int) ((current.startTime-timeBounds[0])*parentComposition.samplesPerSecond);
+					int target = clipData.length+offset-1;
+					int cap = Math.min(total, target);
+					for(int i=offset;i<cap;i++){
+						//Double safety
+						cacheValues[i]+=clipData[i-offset];
+					}
+					//System.out.println("Added "+(cap-offset)+" values");
 				}
 			}
 			for(Filter current:filters){
@@ -446,6 +715,14 @@ public class Layer implements Serializable {
 			cacheHash=newHash;
 		}
 		return cacheValues;
+	}
+	
+	public void clearCache(){
+		cacheHash = 0;
+		cacheValues = null;
+		for(Clip current:clips){
+			current.clearCache();
+		}
 	}
 	
 	//Export as JSON
@@ -481,6 +758,6 @@ public class Layer implements Serializable {
 	}
 	
 	public int hashCode(){
-		return clips.hashCode()+filters.hashCode();
+		return 17*clips.hashCode()+filters.hashCode();
 	}
 }

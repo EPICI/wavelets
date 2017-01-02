@@ -90,8 +90,8 @@ public class WLayersViewerPanel extends JPanel {
 		gridInc = 1d;
 		gridPos = Math.ceil(top-gridInc);
 		while(gridPos>bottom){
-			int mapping = (int) Math.floor((top-gridPos)/(top-bottom)*clipBounds.height);
-			if(mapping>0 && mapping<clipBounds.height){
+			int mapping = (int) Math.floor((top-gridPos)/(top-bottom)*ycap+2);
+			if(mapping>2 && mapping<clipBounds.height-2){
 				g.fillRect(2, mapping, xcap, 1);
 			}
 			gridPos-=gridInc;
@@ -100,8 +100,8 @@ public class WLayersViewerPanel extends JPanel {
 		gridInc = Math.pow(10, Math.floor(Math.log10(right-left)-0.6));
 		gridPos = Math.floor(left+gridInc);
 		while(gridPos<right){
-			int mapping = (int) Math.floor((gridPos-left)/(right-left)*clipBounds.width);
-			if(mapping>0 && mapping<clipBounds.width){
+			int mapping = (int) Math.floor((gridPos-left)/(right-left)*xcap+2);
+			if(mapping>2 && mapping<clipBounds.width-2){
 				g.fillRect(mapping, 2, 1, ycap);
 			}
 			gridPos+=gridInc;
