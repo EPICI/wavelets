@@ -267,7 +267,7 @@ public class Composition implements Serializable {
 		}
 	}
 	
-	public void importDataFromJson(String data,boolean replace){
+	public void importDataFromJson(String data,boolean replace,boolean copyProperties){
 		/*
 		 * Reads off of a string, which could come from a file
 		 * Should be in JSON format
@@ -278,6 +278,10 @@ public class Composition implements Serializable {
 		 */
 		try{
 			JSONObject json = new JSONObject(data);
+			if(copyProperties){
+				JSONObject jsonProperties = json.getJSONObject("properties");
+				samplesPerSecond = (int) Math.round(jsonProperties.getDouble("sample rate"));
+			}
 			JSONObject jsonData = json.getJSONObject("data");
 			JSONArray jsonCurves = jsonData.getJSONArray("curves");
 			JSONArray jsonNodes = jsonData.getJSONArray("nodes");
