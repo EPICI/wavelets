@@ -11,8 +11,8 @@ public class WLayerQuickDrawPanel extends JPanel {
 	//Constant
 	public static final double SEMITONE = Math.pow(2d, 1d/12d);
 	public static final double LOG_SEMITONE = Math.log(SEMITONE);
-	//In order: layer, selected clip
-	public static float[] alphas = {0.3f,0.6f};
+	//In order: layer, selected clip, light grid line, dark grid line
+	public static float[] alphas = {0.3f,0.6f,0.4f,0.8f};
 	
 	public Layer targetLayer;
 	public double left;
@@ -27,10 +27,14 @@ public class WLayerQuickDrawPanel extends JPanel {
 	public Layer activeLayer;
 	public ClipBehaviour clipBehaviour;
 	public boolean isDrawing;
+	public boolean mouseDrawing;
+	public boolean movingEnd;
 	public double startx;
 	public double starty;
 	public double endx;
 	public double endy;
+	public double currentx;
+	public double currenty;
 	public long lastPlayed;
 	public long msDelay;
 	
@@ -121,28 +125,23 @@ public class WLayerQuickDrawPanel extends JPanel {
 
 			@Override
 			public void mousePressed(MouseEvent e) {
-				//Get object boundaries
-				//Rectangle clipBounds = g.getClipBounds();
-				Dimension dimensions = getSize();
-				Rectangle clipBounds = new Rectangle(0,0,dimensions.width,dimensions.height);
-				isDrawing = true;
-				startx = Draw.mapToRound(2, clipBounds.width-2, left, right, e.getX());
-				starty = Draw.mapToRound(2, clipBounds.height-2, top, bottom, e.getY());
-				endx = startx;
-				endy = starty;
-				activeClip = new Clip();
-				activeClip.parentLayer = activeLayer;
-				activeClip.nodesName = copyClip.nodesName;
-				activeClip.initTransient();
-				activeClip.copyFrom(copyClip);
-				behaviour.updateClip(activeClip, startx, starty, endx, endy, mapMultiplier, targetLeft);
-				activeLayer.addClip(activeClip);
-				repaint();
+				if(!isDrawing){
+					//Get object boundaries
+					//Rectangle clipBounds = g.getClipBounds();
+					Dimension dimensions = getSize();
+					Rectangle clipBounds = new Rectangle(0,0,dimensions.width,dimensions.height);
+					currentx = Draw.mapToRound(2, clipBounds.width-2, left, right, e.getX());
+					currenty = Draw.mapToRound(2, clipBounds.height-2, top, bottom, e.getY());
+					startDraw();
+					mouseDrawing = true;
+					movingEnd = true;
+				}
 			}
 
 			@Override
 			public void mouseReleased(MouseEvent arg0) {
-				isDrawing = false;
+				endDraw();
+				mouseDrawing = false;
 			}
 			
 		});
@@ -155,24 +154,113 @@ public class WLayerQuickDrawPanel extends JPanel {
 					//Rectangle clipBounds = g.getClipBounds();
 					Dimension dimensions = getSize();
 					Rectangle clipBounds = new Rectangle(0,0,dimensions.width,dimensions.height);
-					double newEndx = Draw.mapToRound(2, clipBounds.width-2, left, right, e.getX());
-					double newEndy = Draw.mapToRound(2, clipBounds.height-2, top, bottom, e.getY());
-					if(newEndx!=endx || newEndy!=endy){
-						endx = newEndx;
-						endy = newEndy;
-						behaviour.updateClip(activeClip, startx, starty, endx, endy, mapMultiplier, targetLeft);
-						repaint();
+					currentx = Draw.mapToRound(2, clipBounds.width-2, left, right, e.getX());
+					currenty = Draw.mapToRound(2, clipBounds.height-2, top, bottom, e.getY());
+					if(movingEnd){
+						replaceEnd();
+					}else{
+						replaceStart();
 					}
 				}
 				restartPlayer();
 			}
 
 			@Override
-			public void mouseMoved(MouseEvent arg0) {
+			public void mouseMoved(MouseEvent e) {
+				//Get object boundaries
+				//Rectangle clipBounds = g.getClipBounds();
+				Dimension dimensions = getSize();
+				Rectangle clipBounds = new Rectangle(0,0,dimensions.width,dimensions.height);
+				currentx = Draw.mapToRound(2, clipBounds.width-2, left, right, e.getX());
+				currenty = Draw.mapToRound(2, clipBounds.height-2, top, bottom, e.getY());
 				restartPlayer();
 			}
 			
 		});
+		addKeyListener(new KeyListener() {
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+				int keyCode = e.getKeyCode();
+				switch(keyCode){
+				case KeyEvent.VK_A:{
+					startDraw();
+					mouseDrawing = false;
+					break;
+				}case KeyEvent.VK_S:{
+					if(isDrawing){
+						if(mouseDrawing){
+							movingEnd = !movingEnd;
+						}else{
+							replaceStart();
+						}
+					}
+					break;
+				}case KeyEvent.VK_D:{
+					if(isDrawing && !mouseDrawing){
+						replaceEnd();
+					}
+					break;
+				}case KeyEvent.VK_F:{
+					if(isDrawing && !mouseDrawing){
+						endDraw();
+					}
+					break;
+				}
+				}
+			}
+
+			@Override
+			public void keyReleased(KeyEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void keyTyped(KeyEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
+	}
+	
+	public void startDraw(){
+		isDrawing = true;
+		startx = currentx;
+		starty = currenty;
+		endx = currentx;
+		endy = currenty;
+		activeClip = new Clip();
+		activeClip.parentLayer = activeLayer;
+		activeClip.nodesName = copyClip.nodesName;
+		activeClip.initTransient();
+		activeClip.copyFrom(copyClip);
+		clipBehaviour.updateClip(activeClip, startx, starty, endx, endy, mapMultiplier, targetLeft);
+		activeLayer.addClip(activeClip);
+		repaint();
+	}
+	
+	public void endDraw(){
+		isDrawing = false;
+	}
+	
+	public void replaceStart(){
+		if(currentx!=startx || currenty!=starty){
+			startx = currentx;
+			starty = currenty;
+			clipBehaviour.updateClip(activeClip, startx, starty, endx, endy, mapMultiplier, targetLeft);
+			repaint();
+		}
+	}
+	
+	public void replaceEnd(){
+		if(currentx!=endx || currenty!=endy){
+			endx = currentx;
+			endy = currenty;
+			clipBehaviour.updateClip(activeClip, startx, starty, endx, endy, mapMultiplier, targetLeft);
+			repaint();
+		}
 	}
 	
 	public void paintComponent(Graphics g){
@@ -185,7 +273,8 @@ public class WLayerQuickDrawPanel extends JPanel {
 		//Create colour object from theme colours
 		Color colOuter = Draw.colorFromArray(Wavelets.rgbaOuter);
 		Color colInner = Draw.colorFromArray(Wavelets.rgbaInner);
-		Color colGridLine = Draw.colorFromArray(Wavelets.rgbaGridLine);
+		Color colGridLine = Draw.colorFromArray(Wavelets.rgbaGridLine,alphas[2]);
+		Color colGridLineDark = Draw.colorFromArray(Wavelets.rgbaGridLine,alphas[3]);
 		Color colHighlight = Draw.colorFromArray(Wavelets.rgbaHighlight,alphas[0]);
 		Color colActive = Draw.colorFromArray(Wavelets.rgbaActive,alphas[1]);
 		int samples = activeLayer.parentComposition.samplesPerSecond;
@@ -196,30 +285,9 @@ public class WLayerQuickDrawPanel extends JPanel {
 		g.fillRect(0,0,clipBounds.width,clipBounds.height);
 		g.setColor(colInner);
 		g.fillRect(2,2,xcap,ycap);
-		//Grid lines setup
-		g.setColor(colGridLine);
-		double gridPos;
-		double gridInc;
-		//Horizontal
-		gridInc = 1d;
-		gridPos = top;
-		while(gridPos>bottom){
-			int mapping = (int) Math.floor((top-gridPos)/(top-bottom)*ycap+2);
-			if(mapping>2 && mapping<clipBounds.height-2){
-				g.fillRect(2, mapping, xcap, 1);
-			}
-			gridPos-=gridInc;
-		}
-		//Vertical
-		gridInc = 1;
-		gridPos = left;
-		while(gridPos<right){
-			int mapping = (int) Math.floor((gridPos-left)/(right-left)*xcap+2);
-			if(mapping>2 && mapping<clipBounds.width-2){
-				g.fillRect(mapping, 2, 1, ycap);
-			}
-			gridPos+=gridInc;
-		}
+		//Grid lines
+		drawGrid(g,clipBounds,colGridLine,1d,1d);
+		drawGrid(g,clipBounds,colGridLineDark,4d,12d);
 		//Draw
 		for(int i=0;i<activeLayer.clipCount;i++){
 			if(i==activeLayer.selectedClip){
@@ -280,6 +348,36 @@ public class WLayerQuickDrawPanel extends JPanel {
 				short[] shortArray = WaveUtils.quickShort(doubleArray);
 				Wavelets.mainPlayer.playSound(shortArray);
 			}
+		}
+	}
+	
+	public void drawGrid(Graphics g,Rectangle clipBounds,Color color,double horizInc, double vertInc){
+		int xcap = clipBounds.width-4;//Efficiency
+		int ycap = clipBounds.height-4;//Same here
+		//Setup
+		g.setColor(color);
+		double gridPos;
+		//Horizontal
+		gridPos = top;
+		while(gridPos>bottom){
+			if(WaveUtils.isNear(gridPos%vertInc, 0)){
+				int mapping = (int) Math.floor((top-gridPos)/(top-bottom)*ycap+2);
+				if(mapping>2 && mapping<clipBounds.height-2){
+					g.fillRect(2, mapping, xcap, 1);
+				}
+			}
+			gridPos-=1d;
+		}
+		//Vertical
+		gridPos = left;
+		while(gridPos<right){
+			if(WaveUtils.isNear(gridPos%horizInc, 0)){
+				int mapping = (int) Math.floor((gridPos-left)/(right-left)*xcap+2);
+				if(mapping>2 && mapping<clipBounds.width-2){
+					g.fillRect(mapping, 2, 1, ycap);
+				}
+			}
+			gridPos+=1d;
 		}
 	}
 	
@@ -370,5 +468,6 @@ public class WLayerQuickDrawPanel extends JPanel {
 		constraint.gridx=1;
 		Wavelets.popupPanel.add(closeButton, constraint);
 		Wavelets.updateDisplay(Wavelets.popupFrame);
+		drawPanel.requestFocusInWindow();
 	}
 }

@@ -1,10 +1,18 @@
 package main;
 
+import java.util.Arrays;
+
+import javax.swing.JTextField;
+
 //Wavelets generic utility class
-public class WaveUtils {
+public final class WaveUtils {
 	
 	public final static double twopi = Math.PI*2;
+	public final static double epsilon = 1e-6;
 	public static Curve testHarmonic;
+	
+	//Disallow invoking constructor
+	private WaveUtils(){}
 	
 	public static void init(){
 		testHarmonic = new Curve();
@@ -133,6 +141,58 @@ public class WaveUtils {
 			int first = (int) Math.floor(index);
 			double offset = index-first;
 			return offset*inputArray[first+1]+(1-offset)*inputArray[first];
+		}
+	}
+	
+	//Place double as text in field
+	public static void placeDoubleTextInField(JTextField inField,int length,double toPlace){
+		char[] valArray = Double.toString(toPlace).toCharArray();
+		inField.setText(new String(Arrays.copyOf(valArray,Math.min(valArray.length, length))));
+	}
+	
+	//Read double from text in field
+	public static double readDoubleFromField(JTextField inField,double defaultValue){
+		try{
+			return Double.valueOf(inField.getText());
+		}catch(Exception e){
+			return defaultValue;
+		}
+	}
+	
+	public static boolean isNear(double a, double b, double threshold){
+		return Math.abs(a-b)<threshold;
+	}
+	
+	public static boolean isNear(double a, double b){
+		return Math.abs(a-b)<epsilon;
+	}
+	
+	public static double correctRound(double n, double scale, double threshold){
+		double scaled = n*scale;
+		double rounded = Math.round(scaled);
+		if(isNear(scaled,rounded,threshold)){
+			return rounded/scale;
+		}else{
+			return n;
+		}
+	}
+	
+	public static double correctRound(double n, double scale){
+		double scaled = n*scale;
+		double rounded = Math.round(scaled);
+		if(isNear(scaled,rounded)){
+			return rounded/scale;
+		}else{
+			return n;
+		}
+	}
+	
+	public static double correctRound(double n){
+		double rounded = Math.round(n);
+		if(isNear(n,rounded)){
+			return rounded;
+		}else{
+			return n;
 		}
 	}
 	

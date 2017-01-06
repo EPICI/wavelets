@@ -3,6 +3,7 @@ package main;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.*;
 import java.util.*;
 import components.*;
 
@@ -14,6 +15,8 @@ public class Wavelets{
 	//Secondary frames
 	public static JFrame popupFrame;
 	public static JPanel popupPanel;
+	public static JFrame confirmFrame;
+	public static JPanel confirmPanel;
 	//The top menu bar
 	public static JMenuBar menuBar = new JMenuBar();
 	//Menus
@@ -118,9 +121,58 @@ public class Wavelets{
 	public static HashMap<String,Integer> layerQdBehaviours = new HashMap<String,Integer>();
 	public static String[] layerQdBehavioursKeysArray;
 	
+	public static Saver saveSerial = new Saver() {
+
+		@Override
+		public void save(Composition toSave, File saveTo) {
+			working = true;
+			boolean unclosed = false;
+			FileOutputStream fos = null;
+			try{
+				fos = new FileOutputStream(saveTo,false);
+				unclosed = true;
+				ObjectOutputStream oos = new ObjectOutputStream(fos);
+				oos.writeObject(composition);
+				fos.close();
+				unclosed = false;
+			}catch(FileNotFoundException e){
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}catch(IOException e){
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}finally{
+				if(unclosed){
+					try{
+						fos.close();
+					}catch(IOException e){
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+			fileName = saveTo.getPath();
+			fileNamed = true;
+			working = false;
+		}
+
+		@Override
+		public String getName() {
+			return "Save as";
+		}
+		
+	};
+	
 	public interface StringFinder{
 		//Check if a string matches in some way
 		public boolean match(String body,String search);
+	}
+	
+	public interface Saver{
+		//Save the composition in some way
+		public void save(Composition toSave,File saveTo);
+		//Name used in popup
+		public String getName();
 	}
 	
 	//Common window listeners
@@ -181,12 +233,6 @@ public class Wavelets{
 		}
 	}
 	
-	//Place double as text in field
-	public static void placeDoubleTextInField(JTextField inField,int length,double toPlace){
-		char[] valArray = Double.toString(toPlace).toCharArray();
-		inField.setText(new String(Arrays.copyOf(valArray,Math.min(valArray.length, length))));
-	}
-	
 	//Update the display
 	public static void updateDisplay(){
 		//Update components
@@ -207,8 +253,8 @@ public class Wavelets{
 		case "Composer":{
 			composerLeftInPanel.removeAll();
 			initComposerLeftPanelSubpanel();
-			for(JPanel currentPanel : composition.layerPanels){
-				composerLeftInPanel.add(currentPanel);
+			for(JScrollPane currentScroll : composition.layerPanels){
+				composerLeftInPanel.add(currentScroll);
 			}
 			break;
 		}
@@ -233,12 +279,82 @@ public class Wavelets{
 	
 	//Initialize composition
 	public static void initComposition(){
+		working = true;//Should not be interrupted
 		if(fileNamed){
-			//TODO load file
+			String origFileName = fileName;
+			String[] dotParts = fileName.split(".");
+			String extension = dotParts[dotParts.length-1].toLowerCase();
+			switch(extension){
+			case "txt":
+			case "json":{
+				//Interpret as JSON
+				fileNamed = false;//Avoid resaving to it
+				fileName = "";
+				composition = new Composition();
+				//From https://www.thepolyglotdeveloper.com/2015/03/parse-json-file-java/
+				boolean unclosed = false;
+				BufferedReader br = null;
+				try{
+					br = new BufferedReader(new FileReader(origFileName));
+					unclosed = true;
+					StringBuilder sb = new StringBuilder();
+					String line = br.readLine();
+					while (line != null) {
+						sb.append(line);
+						line = br.readLine();
+					}
+					br.close();
+					unclosed = false;
+					composition.importDataFromJson(sb.toString(), true, true);
+				}catch(FileNotFoundException e){
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}catch(IOException e){
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}finally{
+					if(unclosed){
+						try{
+							br.close();
+						}catch(IOException e){
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}
+				composition.initTransient();
+				break;
+			}case "wlc1":{
+				//Interpret as serialized composition v1
+				//Add something like this when updating:
+				//fileName.replaceAll("wlc1", "wlc2");
+				try{
+					FileInputStream fis = new FileInputStream(origFileName);
+					ObjectInputStream ois = new ObjectInputStream(fis);
+					Object first = ois.readObject();
+					if(first instanceof Composition){
+						composition = (Composition) first;
+					}
+					fis.close();
+				}catch(FileNotFoundException e){
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}catch(IOException e){
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}catch(ClassNotFoundException e){
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				composition.initTransient();
+				break;
+			}
+			}
 		}else{
 			composition = new Composition();
+			composition.initTransient();
 		}
-		composition.initTransient();
+		working = false;
 	}
 	
 	//Complete composition initialization
@@ -971,7 +1087,7 @@ public class Wavelets{
 					}case 200:{
 						double[] doubleArray = new double[32768];
 						for(int i=0;i<32768;i++){
-							doubleArray[i] = WaveUtils.harmonic(220d, 1d, 1d, 1d, 1d, 100d, 20000d, i/44100d, selectedCurve);
+							doubleArray[i] = WaveUtils.harmonic(440d, 1d, 1d, 1d, 1d, 100d, 20000d, i/44100d, selectedCurve);
 						}
 						short[] shortArray = WaveUtils.quickShort(doubleArray);
 						mainPlayer.playSound(shortArray);
@@ -979,7 +1095,7 @@ public class Wavelets{
 					}case 201:{
 						double[] doubleArray = new double[32768];
 						for(int i=0;i<32768;i++){
-							doubleArray[i] = WaveUtils.harmonic(220d, 2d, 1d, 1d, 1d, 100d, 20000d, i/44100d, selectedCurve);
+							doubleArray[i] = WaveUtils.harmonic(440d, 2d, 1d, 1d, 1d, 100d, 20000d, i/44100d, selectedCurve);
 						}
 						short[] shortArray = WaveUtils.quickShort(doubleArray);
 						mainPlayer.playSound(shortArray);
@@ -987,7 +1103,7 @@ public class Wavelets{
 					}case 202:{
 						double[] doubleArray = new double[32768];
 						for(int i=0;i<32768;i++){
-							doubleArray[i] = WaveUtils.harmonic(220d, 2d, 1d, -1d, 2d, 100d, 20000d, i/44100d, selectedCurve);
+							doubleArray[i] = WaveUtils.harmonic(440d, 2d, 1d, -1d, 2d, 100d, 20000d, i/44100d, selectedCurve);
 						}
 						short[] shortArray = WaveUtils.quickShort(doubleArray);
 						mainPlayer.playSound(shortArray);
@@ -1316,18 +1432,31 @@ public class Wavelets{
 		submenuItems.get(2).add(new JMenuItem("Sort"));
 		submenuItems.get(2).add(new JMenuItem("Time shift"));
 		submenuItems.get(2).add(new JMenuItem("Duplicate"));
+		submenuItems.get(2).add(new JMenuItem("Round"));
 		addMenu((JMenu) menuItems.get(2).get(0),submenuItems.get(2));
 		mainFrame.setJMenuBar(menuBar);
 		//Set up events
 		initMenuEvents();
-		//Disable save if not named
-		if(!fileNamed){
-			menuItems.get(0).get(0).setEnabled(false);
-		}
 	}
 	
 	//Initialize menu events
 	public static void initMenuEvents(){
+		menuItems.get(0).get(0).addActionListener(new ActionListener() {//Save
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				if(fileNamed){
+					saveSerial.save(composition,new File(fileName));
+				}else{
+					openSaveDialog(saveSerial);
+				}
+			}
+		});
+		menuItems.get(0).get(1).addActionListener(new ActionListener() {//Save as
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				openSaveDialog(saveSerial);
+			}
+		});
 		menuItems.get(1).get(0).addActionListener(new ActionListener() {//Composer
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
@@ -1342,7 +1471,7 @@ public class Wavelets{
 				updateDisplay();
 			}
 		});
-		menuItems.get(1).get(1).addActionListener(new ActionListener() {//Composer
+		menuItems.get(1).get(1).addActionListener(new ActionListener() {//Curve editor
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				switch(window){//Must contain all other layouts
@@ -1356,7 +1485,7 @@ public class Wavelets{
 				updateDisplay();
 			}
 		});
-		menuItems.get(1).get(2).addActionListener(new ActionListener() {//Composer
+		menuItems.get(1).get(2).addActionListener(new ActionListener() {//Node editor
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				switch(window){//Must contain all other layouts
@@ -1370,17 +1499,18 @@ public class Wavelets{
 				updateDisplay();
 			}
 		});
-		submenuItems.get(0).get(1).addActionListener(new ActionListener() {//Composer
+		submenuItems.get(0).get(1).addActionListener(new ActionListener() {//Import JSON from text
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				clearPopupWindowListeners();
-				popupFrame.setTitle("Wavelets [JSON Import]");
+				popupFrame.setTitle("Wavelets [Import JSON from text]");
 				popupFrame.addWindowListener(wlHide);
 				JTextArea inputArea = new JTextArea(20,20);//Size is temporary solution
 				JScrollPane inputScroll = new JScrollPane(inputArea);
 				JButton closeButton = new JButton("Close");
 				JButton importButton = new JButton("Import");
 				JCheckBox replaceCheck = new JCheckBox("Replace");
+				JCheckBox propertyCheck = new JCheckBox("Copy properties");
 				closeButton.addMouseListener(new MouseListener() {
 
 					@Override
@@ -1417,7 +1547,7 @@ public class Wavelets{
 
 					@Override
 					public void mouseClicked(MouseEvent arg0) {
-						composition.importDataFromJson(inputArea.getText(), replaceCheck.isSelected());
+						composition.importDataFromJson(inputArea.getText(), replaceCheck.isSelected(), propertyCheck.isSelected());
 					}
 
 					@Override
@@ -1449,24 +1579,27 @@ public class Wavelets{
 				GridBagConstraints constraint = new GridBagConstraints();
 				constraint.gridx=0;
 				constraint.gridy=0;
-				constraint.gridwidth=3;
+				constraint.gridwidth=2;
 				popupPanel.add(inputScroll,constraint);
 				constraint.gridwidth=1;
 				constraint.gridy=1;
 				popupPanel.add(replaceCheck,constraint);
 				constraint.gridx=1;
+				popupPanel.add(propertyCheck,constraint);
+				constraint.gridy=2;
+				constraint.gridx=0;
 				popupPanel.add(importButton,constraint);
-				constraint.gridx=2;
+				constraint.gridx=1;
 				popupPanel.add(closeButton,constraint);
 				popupFrame.pack();
 				popupFrame.setVisible(true);
 			}
 		});
-		submenuItems.get(1).get(1).addActionListener(new ActionListener() {//Export to text
+		submenuItems.get(1).get(1).addActionListener(new ActionListener() {//Export JSON to text
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				clearPopupWindowListeners();
-				popupFrame.setTitle("Wavelets [JSON Export]");
+				popupFrame.setTitle("Wavelets [Export JSON to text]");
 				popupFrame.addWindowListener(wlHide);
 				String exported = composition.exportJson().toString(2);
 				JTextArea outputArea = new JTextArea(exported,20,20);//Size is temporary solution
@@ -1550,11 +1683,11 @@ public class Wavelets{
 						@Override
 						public void mouseClicked(MouseEvent arg0) {
 							if(copyClip.inputsRegistered){
-								final double right = Double.valueOf(timeField.getText());
-								final double bottom = Double.valueOf(pitchRangeLowerField.getText());
-								final double top = Double.valueOf(pitchRangeUpperField.getText());
-								final double mapLeft = Double.valueOf(timeMapLowerField.getText());
-								final double mapRight = Double.valueOf(timeMapUpperField.getText());
+								final double right = WaveUtils.readDoubleFromField(timeField, 32d);
+								final double bottom = WaveUtils.readDoubleFromField(pitchRangeLowerField, -12d);
+								final double top = WaveUtils.readDoubleFromField(pitchRangeUpperField, bottom + 24d);
+								final double mapLeft = WaveUtils.readDoubleFromField(timeMapLowerField, 0d);
+								final double mapRight = WaveUtils.readDoubleFromField(timeMapUpperField, mapLeft + 8d);
 								final String behaviourName = (String) drawModeSelector.getSelectedItem();
 								final int behaviourId = layerQdBehaviours.get(behaviourName);
 								final Nodes nodesUsed = copyClip.nodeNetwork;
@@ -1908,10 +2041,10 @@ public class Wavelets{
 
 							@Override
 							public void mouseClicked(MouseEvent arg0) {
-								double a = Double.valueOf(oldStart.getText());
-								double b = Double.valueOf(oldEnd.getText());
-								double c = Double.valueOf(newStart.getText());
-								double d = Double.valueOf(newEnd.getText());
+								double a = WaveUtils.readDoubleFromField(oldStart, timeBounds[0]);
+								double b = WaveUtils.readDoubleFromField(oldEnd, timeBounds[1]);
+								double c = WaveUtils.readDoubleFromField(newStart, a);
+								double d = WaveUtils.readDoubleFromField(newEnd, c+b-a);
 								double rate = (d-c)/(b-a);
 								for(Clip current:currentLayer.clips){
 									current.startTime = (current.startTime-a)*rate+c;
@@ -2050,10 +2183,10 @@ public class Wavelets{
 							public void mouseClicked(MouseEvent arg0) {
 								StringFinder finder = stringFinders.get(finderSelector.getSelectedItem());
 								String search = searchField.getText();
-								double a = Double.valueOf(oldStart.getText());
-								double b = Double.valueOf(oldEnd.getText());
-								double c = Double.valueOf(newStart.getText());
-								double d = Double.valueOf(newEnd.getText());
+								double a = WaveUtils.readDoubleFromField(oldStart, 0d);
+								double b = WaveUtils.readDoubleFromField(oldEnd, 1d);
+								double c = WaveUtils.readDoubleFromField(newStart, a);
+								double d = WaveUtils.readDoubleFromField(newEnd, c+b-a);
 								double rate = (d-c)/(b-a);
 								for(Clip current:currentLayer.clips){
 									for(String inputName:current.inputs.keySet()){
@@ -2401,7 +2534,7 @@ public class Wavelets{
 
 							@Override
 							public void mouseClicked(MouseEvent arg0) {
-								double setting = Double.valueOf(inputField.getText());
+								double setting = WaveUtils.readDoubleFromField(inputField, 0d);
 								Layer.TimeManipulator tm = Layer.timeManipulators.get(compSelector.getSelectedItem());
 								tm.applyTo(currentLayer, setting);
 								currentLayer.clearCache();
@@ -2597,6 +2730,128 @@ public class Wavelets{
 				}
 			}
 		});
+		submenuItems.get(2).get(7).addActionListener(new ActionListener() {//Round
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				String currentName = composition.layerSelection;
+				if(composition.layers.containsKey(currentName)){
+					Layer currentLayer = composition.layers.get(currentName);
+					if(currentLayer.clipCount>0){
+						clearPopupWindowListeners();
+						popupFrame.setTitle("Wavelets [Layer round]");
+						popupFrame.addWindowListener(wlHide);
+						JLabel infoLabel = new JLabel("Round values of clips in layer \""+currentLayer.name+"\" with scale");
+						JTextField inputField = new JTextField(30);
+						inputField.setText("60");
+						JLabel epLabel = new JLabel("Threshold (epsilon)");
+						JTextField epField = new JTextField(30);
+						WaveUtils.placeDoubleTextInField(epField, 30, WaveUtils.epsilon);
+						JCheckBox inputCheck = new JCheckBox("Round inputs");
+						JButton confirmButton = new JButton("Apply");
+						JButton closeButton = new JButton("Close");
+						confirmButton.addMouseListener(new MouseListener() {
+
+							@Override
+							public void mouseClicked(MouseEvent arg0) {
+								double scale = WaveUtils.correctRound(WaveUtils.readDoubleFromField(inputField, 21600d));
+								double threshold = WaveUtils.readDoubleFromField(epField, WaveUtils.epsilon);
+								boolean roundInputs = inputCheck.isSelected();
+								for(Clip current:currentLayer.clips){
+									current.startTime = WaveUtils.correctRound(current.startTime,scale,threshold);
+									current.endTime = WaveUtils.correctRound(current.endTime,scale,threshold);
+									if(roundInputs){
+										for(String key:current.inputs.keySet()){
+											current.inputs.put(key, WaveUtils.correctRound(current.inputs.get(key),scale,threshold));
+										}
+									}
+								}
+								popupFrame.dispose();
+							}
+
+							@Override
+							public void mouseEntered(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseExited(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mousePressed(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseReleased(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+							
+						});
+						closeButton.addMouseListener(new MouseListener() {
+
+							@Override
+							public void mouseClicked(MouseEvent arg0) {
+								popupFrame.dispose();
+							}
+
+							@Override
+							public void mouseEntered(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseExited(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mousePressed(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+
+							@Override
+							public void mouseReleased(MouseEvent arg0) {
+								// TODO Auto-generated method stub
+								
+							}
+							
+						});
+						popupPanel.removeAll();
+						GridBagConstraints constraint = new GridBagConstraints();
+						constraint.weightx=1;
+						constraint.weighty=1;
+						constraint.gridx=0;
+						constraint.gridy=0;
+						popupPanel.add(infoLabel,constraint);
+						constraint.gridx=1;
+						constraint.gridwidth=2;
+						popupPanel.add(inputField,constraint);
+						constraint.gridy=1;
+						popupPanel.add(epField, constraint);
+						constraint.gridx=0;
+						constraint.gridwidth=1;
+						popupPanel.add(epLabel, constraint);
+						constraint.gridy=2;
+						popupPanel.add(inputCheck,constraint);
+						constraint.gridx=1;
+						popupPanel.add(confirmButton,constraint);
+						constraint.gridx=2;
+						popupPanel.add(closeButton,constraint);
+						popupFrame.pack();
+						popupFrame.setVisible(true);
+					}
+				}
+			}
+		});
 	}
 	
 	//Adds a menu
@@ -2622,6 +2877,9 @@ public class Wavelets{
 	public static void updateNodeSelection(){
 		while(nodeEditorInPanel.getComponentCount()>1){//Get rid of the other panels
 			nodeEditorInPanel.remove(1);
+		}
+		if(composition.nodes.size()==1){
+			composition.nodesSelection = composition.nodes.keySet().iterator().next();
 		}
 		if(composition.nodes.containsKey(composition.nodesSelection)){
 			Nodes currentNodes = composition.nodes.get(composition.nodesSelection);
@@ -2664,6 +2922,9 @@ public class Wavelets{
 		while(curveEditorInPanel.getComponentCount()>1){//Get rid of the other panels
 			curveEditorInPanel.remove(1);
 		}
+		if(composition.curves.size()==1){
+			composition.curveSelection = composition.curves.keySet().iterator().next();
+		}
 		if(composition.curves.containsKey(composition.curveSelection)){
 			Curve currentCurve = composition.curves.get(composition.curveSelection);
 			curveEditorInPanel.add(currentCurve.viewPanel,BorderLayout.CENTER);
@@ -2697,32 +2958,104 @@ public class Wavelets{
 		}
 	}
 	
+	//Attempt to parse command line argument
+	public static void parseCmdArg(String arg){
+		String[] parts = arg.split(";");
+		switch(parts[0]){
+		case "-scale":{
+			try{
+				windowX=Double.valueOf(parts[1]);
+				windowY=Double.valueOf(parts[2]);
+			}catch(Exception e){
+				e.printStackTrace();
+			}
+			break;
+		}
+		}
+	}
+	
+	//Open save as dialog
+	public static void openSaveDialog(Saver saver){
+		clearPopupWindowListeners();
+		String saverName = saver.getName();
+		popupFrame.setTitle("Wavelets ["+saverName+"]");
+		popupFrame.addWindowListener(wlHide);
+		JFileChooser fileChooser = new JFileChooser(){
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void approveSelection() {
+				trySaveTo(saver,getSelectedFile());
+				super.approveSelection();
+			}
+		};
+		JButton confirmButton = new JButton(saverName);
+		JButton closeButton = new JButton("Close");
+		confirmButton.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				trySaveTo(saver,fileChooser.getSelectedFile());
+			}
+			
+		});
+		closeButton.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				popupFrame.dispose();
+			}
+			
+		});
+		popupPanel.removeAll();
+		GridBagConstraints constraint = new GridBagConstraints();
+		constraint.gridx=0;
+		constraint.gridy=0;
+		constraint.gridwidth=2;
+		popupPanel.add(fileChooser,constraint);
+		constraint.gridy=1;
+		constraint.gridwidth=1;
+		popupPanel.add(confirmButton,constraint);
+		constraint.gridx=1;
+		popupPanel.add(closeButton,constraint);
+		popupFrame.pack();
+		popupFrame.setVisible(true);
+	}
+	
+	public static void trySaveTo(Saver saver,File file){
+		if(file!=null){
+			if(file.isFile()){//If file exists and is a file
+				int dialogResult = JOptionPane.showConfirmDialog(null,"File already exists. Continuing will overwrite it.","Confirm overwrite",JOptionPane.YES_NO_OPTION);
+				if(dialogResult==JOptionPane.YES_OPTION){
+					saver.save(composition, file);
+				}
+			}else if(!file.exists()){//If file doesn't exist
+				saver.save(composition, file);
+			}
+		}
+	}
+	
 	public static void main(String[] args){
 		working = true;
 		mainThread.setName("Wavelets - Main");
 		initPlayer();
 		//Run through arguments
-		//String skinFileName = "DefaultSkin.xml";
-		for(String cString : args){
-			String[] parts = cString.split(":");
-			switch(parts[0]){
-			case "scale":{
-				try{
-					windowX=Double.valueOf(parts[1]);
-					windowY=Double.valueOf(parts[2]);
-				}catch(Exception e){
-					
-				}
-			}case "load":{
+		if(args.length>0){
+			//Expected file is first argument
+			String firstArg = args[0];
+			if(firstArg.startsWith("-")){
+				parseCmdArg(firstArg);
+			}else{
+				fileName = firstArg;
 				fileNamed = true;
-				fileName = parts[1];
-			}/*case "skin":{
-				skinFileName = parts[1];
-			}*/
+			}
+			for(int i=1;i<args.length;i++){
+				String arg = args[i];
+				parseCmdArg(arg);
 			}
 		}
 		//Set up the window
-		mainFrame = new JFrame("Wavelets");
+		mainFrame = new JFrame("Wavelets (\""+Arrays.toString(args)+"\")");
 		mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		mainFrame.addWindowListener(new WindowListener() {
 
@@ -2774,6 +3107,10 @@ public class Wavelets{
 		popupPanel = new JPanel(new GridBagLayout());
 		popupFrame.add(popupPanel);
 		popupFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		confirmFrame = new JFrame("Wavelets [Tertiary]");
+		confirmPanel = new JPanel(new GridBagLayout());
+		confirmFrame.add(confirmPanel);
+		confirmFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		//Load
 		initComposition();
 		//Initialize data classes

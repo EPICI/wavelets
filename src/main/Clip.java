@@ -228,11 +228,11 @@ public class Clip implements Serializable {
 			JTextField inField = new JTextField(10);
 			constraint.gridx=1;
 			if(inputs.containsKey(inputName)){
-				Wavelets.placeDoubleTextInField(inField,10,inputs.get(inputName));
+				WaveUtils.placeDoubleTextInField(inField,10,inputs.get(inputName));
 			}else if(inputName.equals(START_TIME)){
-				Wavelets.placeDoubleTextInField(inField,10,startTime);
+				WaveUtils.placeDoubleTextInField(inField,10,startTime);
 			}else if(inputName.equals(END_TIME)){
-				Wavelets.placeDoubleTextInField(inField,10,endTime);
+				WaveUtils.placeDoubleTextInField(inField,10,endTime);
 			}
 			inputPanel.add(inField,constraint);
 		}

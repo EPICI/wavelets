@@ -181,7 +181,7 @@ public class Curve implements Serializable {
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
 				if(listSize>0&&selected>-1){
-					tryEditPoint(selected,Double.valueOf(editPanelLocationField.getText()),Double.valueOf(editPanelValueField.getText()));
+					tryEditPoint(selected,WaveUtils.readDoubleFromField(editPanelLocationField, 0d),WaveUtils.readDoubleFromField(editPanelValueField, 0d));
 					updateSelection();
 				}
 			}
@@ -250,7 +250,7 @@ public class Curve implements Serializable {
 
 			@Override
 			public void mouseClicked(MouseEvent arg0) {
-				selected = tryAddPoint(Double.valueOf(editPanelLocationField.getText()),Double.valueOf(editPanelValueField.getText()));
+				selected = tryAddPoint(WaveUtils.readDoubleFromField(editPanelLocationField, 0d),WaveUtils.readDoubleFromField(editPanelValueField, 0d));
 				updateSelection();
 			}
 

@@ -13,7 +13,7 @@ public class Composition implements Serializable {
 	public HashMap<String,Curve> curves = new HashMap<String,Curve>();
 	public HashMap<String,Nodes> nodes = new HashMap<String,Nodes>();
 	public HashMap<String,Layer> layers = new HashMap<String,Layer>();
-	public ArrayList<JPanel> layerPanels = new ArrayList<JPanel>();
+	public transient ArrayList<JScrollPane> layerPanels = new ArrayList<JScrollPane>();
 	//Needed for current session
 	public transient String[] curvesKeysArray;
 	public transient String curveSelection;
@@ -24,6 +24,8 @@ public class Composition implements Serializable {
 	public transient Layer nodeLayer;
 	//Audio format
 	public int samplesPerSecond = 44100;
+	//Retain cache when saving
+	public boolean retainCache = false;
 	
 	//Cached audio
 	public double[] cacheValues;
@@ -34,6 +36,7 @@ public class Composition implements Serializable {
 	
 	//Initialize all transient
 	public void initTransient(){
+		layerPanels = new ArrayList<JScrollPane>();
 		nodeLayer = new Layer();
 		nodeLayer.parentComposition = this;
 		for(Curve currentCurve:curves.values()){
@@ -44,6 +47,7 @@ public class Composition implements Serializable {
 		}
 		for(Layer currentLayer:layers.values()){
 			currentLayer.initTransient();
+			layerPanels.add(currentLayer.parentScroll);
 		}
 		curveSelection = "";
 		nodesSelection = "";
@@ -166,7 +170,7 @@ public class Composition implements Serializable {
 		toAdd.setName(name);
 		toAdd.parentComposition = this;
 		layers.put(name,toAdd);
-		layerPanels.add(toAdd.parentPanel);
+		layerPanels.add(toAdd.parentScroll);
 		updateLayers();
 		return toAdd.parentScroll;
 	}
@@ -175,7 +179,7 @@ public class Composition implements Serializable {
 	public void addLayer(Layer toAdd){
 		toAdd.parentComposition = this;
 		layers.put(toAdd.name,toAdd);
-		layerPanels.add(toAdd.parentPanel);
+		layerPanels.add(toAdd.parentScroll);
 		updateLayers();
 		Wavelets.addLayerScroll(toAdd.parentScroll);
 	}
@@ -267,7 +271,7 @@ public class Composition implements Serializable {
 		}
 	}
 	
-	public void importDataFromJson(String data,boolean replace){
+	public void importDataFromJson(String data,boolean replace,boolean copyProperties){
 		/*
 		 * Reads off of a string, which could come from a file
 		 * Should be in JSON format
@@ -278,6 +282,10 @@ public class Composition implements Serializable {
 		 */
 		try{
 			JSONObject json = new JSONObject(data);
+			if(copyProperties){
+				JSONObject jsonProperties = json.getJSONObject("properties");
+				samplesPerSecond = (int) Math.round(jsonProperties.getDouble("sample rate"));
+			}
 			JSONObject jsonData = json.getJSONObject("data");
 			JSONArray jsonCurves = jsonData.getJSONArray("curves");
 			JSONArray jsonNodes = jsonData.getJSONArray("nodes");

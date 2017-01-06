@@ -58,19 +58,15 @@ public class Node implements Serializable {
 	//Type short forms
 	public void shortType(){
 		switch(type){
-		case "constant":{
-			type="c";
-			break;
-		}case "const":{
+		case "constant":
+		case "const":{
 			type="c";
 			break;
 		}case "unit curve":{
 			type="curf";
 			break;
-		}case "unit sine":{
-			type="sinf";
-			break;
-		}case "unit sin":{
+		}case "unit sine":
+		case "unit sin":{
 			type="sinf";
 			break;
 		}case "unit triangle":{
@@ -79,10 +75,8 @@ public class Node implements Serializable {
 		}case "unit square":{
 			type="squf";
 			break;
-		}case "unit saw":{
-			type="sawf";
-			break;
-		}case "unit sawtooth":{
+		}case "unit saw":
+		case "unit sawtooth":{
 			type="sawf";
 			break;
 		}case "sine":{
@@ -104,27 +98,23 @@ public class Node implements Serializable {
 			type="atan";
 			break;
 		}case "hyperbolic sine":{
-			type="sin";
+			type="sinh";
 			break;
 		}case "hyperbolic cosine":{
-			type="cos";
+			type="cosh";
 			break;
 		}case "hyperbolic tangent":{
-			type="tan";
+			type="tanh";
 			break;
-		}case "add":{
-			type="+";
-			break;
-		}case "sum":{
+		}case "add":
+		case "sum":{
 			type="+";
 			break;
 		}case "subtract":{
 			type="-";
 			break;
-		}case "multiply":{
-			type="*";
-			break;
-		}case "product":{
+		}case "multiply":
+		case "product":{
 			type="*";
 			break;
 		}case "divide":{
@@ -145,10 +135,8 @@ public class Node implements Serializable {
 		}case "copy sign":{
 			type="copydir";
 			break;
-		}case "to frequency":{
-			type="tofreq";
-			break;
-		}case "pitch to frequency":{
+		}case "to frequency":
+		case "pitch to frequency":{
 			type="tofreq";
 			break;
 		}case "bezier":{
@@ -160,10 +148,8 @@ public class Node implements Serializable {
 		}case "log":{
 			type="ln";
 			break;
-		}case "logab":{
-			type="log";
-			break;
-		}case "logb":{
+		}case "logab":
+		case "logb":{
 			type="log";
 			break;
 		}
