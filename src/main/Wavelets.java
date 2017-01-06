@@ -2104,9 +2104,13 @@ public class Wavelets{
 		constraint.gridx=0;
 		constraint.gridy=0;
 		constraint.gridwidth=2;
+		constraint.weightx=1;
+		constraint.weighty=1;
+		constraint.fill=GridBagConstraints.BOTH;
 		popupPanel.add(fileChooser,constraint);
 		constraint.gridy=1;
 		constraint.gridwidth=1;
+		constraint.weighty=0.1d;
 		popupPanel.add(confirmButton,constraint);
 		constraint.gridx=1;
 		popupPanel.add(closeButton,constraint);
@@ -2166,9 +2170,13 @@ public class Wavelets{
 		constraint.gridx=0;
 		constraint.gridy=0;
 		constraint.gridwidth=2;
+		constraint.weightx=1;
+		constraint.weighty=1;
+		constraint.fill=GridBagConstraints.BOTH;
 		popupPanel.add(fileChooser,constraint);
 		constraint.gridy=1;
 		constraint.gridwidth=1;
+		constraint.weighty=0.1d;
 		popupPanel.add(confirmButton,constraint);
 		constraint.gridx=1;
 		popupPanel.add(closeButton,constraint);
@@ -2185,6 +2193,7 @@ public class Wavelets{
 						composition = returned;
 						fileName = file.getPath();
 						fileNamed = true;
+						mainFrame.setTitle("Wavelets ["+fileName+"]");
 					}
 				}
 			}
@@ -2211,7 +2220,9 @@ public class Wavelets{
 			}
 		}
 		//Set up the window
-		mainFrame = new JFrame("Wavelets (\""+Arrays.toString(args)+"\")");
+		mainFrame = new JFrame("Wavelets");
+		//Debug version
+		//mainFrame = new JFrame("Wavelets (\""+Arrays.toString(args)+"\")");
 		mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 		mainFrame.addWindowListener(new WindowListener() {
 
