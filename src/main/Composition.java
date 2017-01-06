@@ -15,11 +15,11 @@ public class Composition implements Serializable {
 	public HashMap<String,Layer> layers = new HashMap<String,Layer>();
 	public transient ArrayList<JScrollPane> layerPanels = new ArrayList<JScrollPane>();
 	//Needed for current session
-	public transient String[] curvesKeysArray;
+	public transient String[] curvesKeysArray = new String[0];
 	public transient String curveSelection;
-	public transient String[] nodesKeysArray;
+	public transient String[] nodesKeysArray = new String[0];
 	public transient String nodesSelection;
-	public transient String[] layersKeysArray;
+	public transient String[] layersKeysArray = new String[0];
 	public transient String layerSelection;
 	public transient Layer nodeLayer;
 	//Audio format
@@ -32,7 +32,7 @@ public class Composition implements Serializable {
 	public int cacheHash;
 	
 	//Current clip
-	public Clip currentClip;
+	public transient Clip currentClip;
 	
 	//Initialize all transient
 	public void initTransient(){
@@ -40,7 +40,7 @@ public class Composition implements Serializable {
 		nodeLayer = new Layer();
 		nodeLayer.parentComposition = this;
 		for(Curve currentCurve:curves.values()){
-			currentCurve.initPanels();
+			currentCurve.initTransient();
 		}
 		for(Nodes currentNode:nodes.values()){
 			currentNode.initPanels();

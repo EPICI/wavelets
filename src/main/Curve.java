@@ -16,7 +16,7 @@ public class Curve implements Serializable {
 	//Curve data
 	protected ArrayList<Double> locations = new ArrayList<Double>();
 	protected ArrayList<Double> values = new ArrayList<Double>();
-	protected int listSize = 0;
+	protected transient int listSize = 0;
 	protected int mode = 0;
 	//0 for simple bezier, 1 for square interpolation, 2 for sine interpolation, 3 for autocubic
 	
@@ -50,7 +50,7 @@ public class Curve implements Serializable {
 	
 	//Standard constructor
 	public Curve(){
-		initPanels();
+		initTransient();
 	}
 	
 	public static void updateModeNames(){
@@ -58,8 +58,13 @@ public class Curve implements Serializable {
 		previewModesKeys = previewModes.keySet().toArray(new String[0]);
 	}
 	
-	public void initPanels(){
+	public void initTransient(){
 		selected = -1;
+		listSize = locations.size();
+		if(values.size()!=listSize){
+			//Avoid raising an error and breaking the program
+			System.out.println("Locations and values do not match.");
+		}
 		//Add to scroll pane
 		viewPanel = new WCurveViewerPanel(this);
 		//viewPanel.setToolTipText("Shows the curve with markers at every point. The selected point will have a different marker.");

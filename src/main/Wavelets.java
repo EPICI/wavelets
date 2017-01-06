@@ -36,7 +36,7 @@ public class Wavelets{
 	public static ArrayList<JComponent> composerPanels = new ArrayList<JComponent>();
 	//Child objects
 	public static ArrayList<JPanel> composerTopPanelSubpanels;//Top panel subpanels
-	public static ArrayList<ArrayList<JComponent>> composerTopPanelComponents;//Top panel objects
+	public static ArrayList<ArrayList<JComponent>> composerTopPanelComponents = new ArrayList<>();//Top panel objects
 	public static JPanel composerLeftPanelSubpanel;//Toolbar subpanel
 	public static JButton composerLeftPanelAddButton;//Add new layer
 	//Curve editor panes
@@ -82,7 +82,7 @@ public class Wavelets{
 	public static String window;
 	
 	//Current composition
-	public static Composition composition;
+	public static Composition composition = new Composition();
 	
 	//Main thread
 	public static Thread mainThread = Thread.currentThread();
@@ -129,6 +129,9 @@ public class Wavelets{
 			boolean unclosed = false;
 			FileOutputStream fos = null;
 			try{
+				if(!composition.retainCache){
+					composition.clearCache();
+				}
 				fos = new FileOutputStream(saveTo,false);
 				unclosed = true;
 				ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -351,7 +354,6 @@ public class Wavelets{
 			}
 			}
 		}else{
-			composition = new Composition();
 			composition.initTransient();
 		}
 		working = false;
@@ -455,7 +457,6 @@ public class Wavelets{
 	public static void initComposerTopPanelSubpanel(){
 		//Create objects
 		composerTopPanelSubpanels = new ArrayList<JPanel>();
-		composerTopPanelComponents = new ArrayList<ArrayList<JComponent>>();
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
 		composerTopPanelComponents.get(0).add(new JButton("Stop player"));
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
@@ -2989,6 +2990,7 @@ public class Wavelets{
 				super.approveSelection();
 			}
 		};
+		fileChooser.setApproveButtonText(saverName);
 		JButton confirmButton = new JButton(saverName);
 		JButton closeButton = new JButton("Close");
 		confirmButton.addActionListener(new ActionListener() {
@@ -3111,14 +3113,14 @@ public class Wavelets{
 		confirmPanel = new JPanel(new GridBagLayout());
 		confirmFrame.add(confirmPanel);
 		confirmFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-		//Load
-		initComposition();
-		//Initialize data classes
-		Layer.init(composition);
 		//Continue setup
 		initMenus();
 		initPanels();
 		enableComposer();
+		//Load
+		initComposition();
+		//Initialize data classes
+		Layer.init(composition);
 		//Initialize utility static class
 		WaveUtils.init();
 		//Set default font

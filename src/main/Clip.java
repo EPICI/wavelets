@@ -30,12 +30,12 @@ public class Clip implements Serializable {
 	public transient Nodes nodeNetwork;
 	//Inputs
 	public HashMap<String,Double> inputs = new HashMap<String,Double>();
-	public boolean inputsRegistered = false;
+	public transient boolean inputsRegistered = true;
 	//Cache audio
-	public boolean cacheUpdated = false;
+	public transient boolean cacheUpdated = false;
 	public double[] cacheValues;
 	//Cache frequency
-	public boolean freqCacheUpdated = false;
+	public transient boolean freqCacheUpdated = false;
 	public double[] freqCacheValues;
 	
 	//Display
@@ -58,6 +58,8 @@ public class Clip implements Serializable {
 	}
 	
 	public void initTransient(){
+		cacheUpdated = cacheValues != null;
+		freqCacheUpdated = freqCacheValues != null;
 		//Create objects
 		parentPanel = new JPanel(new BorderLayout());
 		infoPanel = new JPanel(new BorderLayout());

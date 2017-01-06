@@ -17,8 +17,8 @@ public class Layer implements Serializable {
 	public transient Layer self;
 	//All clips in the layer
 	public ArrayList<Clip> clips = new ArrayList<Clip>();
-	public int clipCount = 0;
-	public int selectedClip = -1;
+	public transient int clipCount = 0;
+	public transient int selectedClip = -1;
 	//Layer name
 	public String name = "";
 	//All filters, in order they are applied
@@ -412,6 +412,7 @@ public class Layer implements Serializable {
 			}
 			
 		});
+		updateClipSelection();
 	}
 	
 	public void edit(){
@@ -455,13 +456,17 @@ public class Layer implements Serializable {
 			selectedClip = Math.floorMod(selectedClip, clipCount);
 			Clip selected = clips.get(selectedClip);
 			propertyPanel.add(selected.parentPanel);
-			((JLabel) Wavelets.composerTopPanelComponents.get(3).get(0)).setText(Integer.toString(selectedClip+1));
+			if(Wavelets.composerTopPanelComponents.size()>0){
+				((JLabel) Wavelets.composerTopPanelComponents.get(3).get(0)).setText(Integer.toString(selectedClip+1));
+			}
 			clipDelete.setEnabled(true);
 			clipDupli.setEnabled(true);
 		}else{
 			selectedClip = -1;
 			propertyPanel.add(layerPropertyPanel);
-			((JLabel) Wavelets.composerTopPanelComponents.get(3).get(0)).setText("Layer is empty");
+			if(Wavelets.composerTopPanelComponents.size()>0){
+				((JLabel) Wavelets.composerTopPanelComponents.get(3).get(0)).setText("Layer is empty");
+			}
 			clipDelete.setEnabled(false);
 			clipDupli.setEnabled(false);
 		}
