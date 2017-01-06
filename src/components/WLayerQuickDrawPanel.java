@@ -107,18 +107,18 @@ public class WLayerQuickDrawPanel extends JPanel {
 		addMouseListener(new MouseListener() {
 
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void mouseClicked(MouseEvent e) {
 				// TODO Auto-generated method stub
 			}
 
 			@Override
-			public void mouseEntered(MouseEvent arg0) {
+			public void mouseEntered(MouseEvent e) {
 				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
-			public void mouseExited(MouseEvent arg0) {
+			public void mouseExited(MouseEvent e) {
 				// TODO Auto-generated method stub
 				
 			}
@@ -139,7 +139,7 @@ public class WLayerQuickDrawPanel extends JPanel {
 			}
 
 			@Override
-			public void mouseReleased(MouseEvent arg0) {
+			public void mouseReleased(MouseEvent e) {
 				endDraw();
 				mouseDrawing = false;
 			}
@@ -211,13 +211,13 @@ public class WLayerQuickDrawPanel extends JPanel {
 			}
 
 			@Override
-			public void keyReleased(KeyEvent arg0) {
+			public void keyReleased(KeyEvent e) {
 				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
-			public void keyTyped(KeyEvent arg0) {
+			public void keyTyped(KeyEvent e) {
 				// TODO Auto-generated method stub
 				
 			}
@@ -386,71 +386,19 @@ public class WLayerQuickDrawPanel extends JPanel {
 		WLayerQuickDrawPanel drawPanel = new WLayerQuickDrawPanel(target, inputs[0], inputs[1], inputs[2], inputs[3], inputs[4], behaviour, copyFrom);
 		JButton confirmButton = new JButton("Apply");
 		JButton closeButton = new JButton("Close");
-		confirmButton.addMouseListener(new MouseListener(){
-
+		confirmButton.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				drawPanel.merge();
 				Wavelets.popupFrame.dispose();
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		closeButton.addMouseListener(new MouseListener(){
-
+		closeButton.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				drawPanel.cancel();
 				Wavelets.popupFrame.dispose();
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
 		GridBagConstraints constraint = new GridBagConstraints();
 		constraint.gridx=0;

@@ -122,6 +122,26 @@ public final class WaveUtils {
 		return shortArray;
 	}
 	
+	//double[] with target
+	public static double[] targetDouble(double[] inputArray,double target){
+		double avgAmplitude = absAvg(inputArray, 128, 65536);//Need more testing to determine if optimal
+		double multiplier = target/avgAmplitude;
+		double[] doubleArray = new double[inputArray.length];
+		for(int i=0;i<doubleArray.length;i++){
+			double value = inputArray[i]*multiplier;
+			if(!Double.isFinite(value)){
+				value=0;
+			}
+			if(value>1d){
+				value=1d;
+			}else if(value<-1d){
+				value=-1d;
+			}
+			doubleArray[i] = value;
+		}
+		return doubleArray;
+	}
+	
 	public static double[] testTone(double length,double sampleRate){
 		int total = (int) (length*sampleRate);
 		double[] result = new double[total];

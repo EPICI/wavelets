@@ -17,9 +17,9 @@ public class Nodes implements Serializable {
 	//Source text
 	public String source = "";
 	//All nodes in the network
-	protected HashMap<String,Node> nodes = new HashMap<String,Node>();
+	protected transient HashMap<String,Node> nodes = new HashMap<String,Node>();
 	//Inputs to request
-	public ArrayList<String> inputRequests = new ArrayList<String>();
+	public transient ArrayList<String> inputRequests = new ArrayList<String>();
 	//Parent composition
 	public Composition parentComposition;
 	//Current user
@@ -50,10 +50,17 @@ public class Nodes implements Serializable {
 	
 	//Standard constructor
 	public Nodes(){
-		initPanels();
+		initTransient();
 	}
 	
-	public void initPanels(){
+	//Feed source
+	public Nodes(String inputSource){
+		source = inputSource;
+		initTransient();
+	}
+	
+	public void initTransient(){
+		recompile();
 		//Create objects
 		scriptPanel = new JPanel(new BorderLayout());
 		scriptLabel = new JLabel("Source");
@@ -67,39 +74,13 @@ public class Nodes implements Serializable {
 		scriptPanel.add(scriptArea,BorderLayout.CENTER);
 		scriptPanel.add(scriptSave,BorderLayout.PAGE_END);
 		//Add listeners
-		scriptSave.addMouseListener(new MouseListener() {
-
+		scriptSave.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				source = scriptArea.getText();
 				recompile();
 				Wavelets.updateNodeSelection();
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
 	}
 	
@@ -184,11 +165,14 @@ public class Nodes implements Serializable {
 		try{
 			nodes = new HashMap<String,Node>();
 			inputRequests = new ArrayList<String>();
-			for(String nodedata:rawdata.split("\n")){
-				Node toAdd = new Node(nodedata);
-				toAdd.parentNodes = this;
-				toAdd.initTransient();
-				addNode(toAdd);
+			for(String nodedata:rawdata.split("\\r?\\n")){
+				//Respect blank lines
+				if(nodedata.length()>0){
+					Node toAdd = new Node(nodedata);
+					toAdd.parentNodes = this;
+					toAdd.initTransient();
+					addNode(toAdd);
+				}
 			}
 		}catch(Exception e){
 			System.out.println("Node compiler error");//TODO redirect this to second window

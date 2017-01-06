@@ -115,175 +115,30 @@ public class Curve implements Serializable {
 		editPanelConfirm.add(editPanelCreate,BorderLayout.LINE_END);
 		editPanel.add(editPanelConfirm,BorderLayout.PAGE_END);
 		//Listeners
-		editPanelPrev.addMouseListener(new MouseListener(){
-
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
+		editPanelPrev.addActionListener(new ActionListener(){@Override public void actionPerformed(ActionEvent e){
 				selected--;
 				updateSelection();
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-		});
-		editPanelNext.addMouseListener(new MouseListener(){
-
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			}});
+		editPanelNext.addActionListener(new ActionListener(){@Override public void actionPerformed(ActionEvent e){
 				selected++;
 				updateSelection();
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-		});
-		editPanelSave.addMouseListener(new MouseListener(){
-
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			}});
+		editPanelSave.addActionListener(new ActionListener(){@Override public void actionPerformed(ActionEvent e){
 				if(listSize>0&&selected>-1){
 					tryEditPoint(selected,WaveUtils.readDoubleFromField(editPanelLocationField, 0d),WaveUtils.readDoubleFromField(editPanelValueField, 0d));
 					updateSelection();
 				}
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-		});
-		editPanelDelete.addMouseListener(new MouseListener(){
-
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			}});
+		editPanelDelete.addActionListener(new ActionListener(){@Override public void actionPerformed(ActionEvent e){
 				if(listSize>0&&selected>-1){
 					removePoint(selected);
 					updateSelection();
 				}
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-		});
-		editPanelCreate.addMouseListener(new MouseListener(){
-
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			}});
+		editPanelCreate.addActionListener(new ActionListener(){@Override public void actionPerformed(ActionEvent e){
 				selected = tryAddPoint(WaveUtils.readDoubleFromField(editPanelLocationField, 0d),WaveUtils.readDoubleFromField(editPanelValueField, 0d));
 				updateSelection();
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
-		});
+			}});
 		//Finish
 		updateSelection();
 	}

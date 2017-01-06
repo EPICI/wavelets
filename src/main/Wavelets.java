@@ -6,6 +6,7 @@ import java.awt.event.*;
 import java.io.*;
 import java.util.*;
 import components.*;
+import audioio.*;
 
 //The main program
 public class Wavelets{
@@ -166,14 +167,167 @@ public class Wavelets{
 		
 	};
 	
-	public interface StringFinder{
+	public static Saver saveJson = new Saver(){
+
+		@Override
+		public void save(Composition toSave, File saveTo) {
+			working = true;
+			String toWrite = composition.exportJson().toString(2);
+			String[] parts = toWrite.split("\\r?\\n");
+			try {
+				FileWriter fw = new FileWriter(saveTo);
+				BufferedWriter bw = new BufferedWriter(fw);
+				for(String part:parts){
+					bw.write(part);
+					bw.newLine();
+				}
+				bw.flush();
+				fw.close();
+				bw.close();
+			} catch (FileNotFoundException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			} catch (IOException e1) {
+				// TODO Auto-generated catch block
+				e1.printStackTrace();
+			}
+			working = false;
+		}
+
+		@Override
+		public String getName() {
+			return "Export JSON";
+		}
+		
+	};
+	
+	public static Saver saveWav = new Saver(){
+
+		@Override
+		public void save(Composition toSave, File saveTo) {
+			working = true;
+			try {
+				double[] rawAudio = composition.getAudio();
+				int numFrames = rawAudio.length;
+				WavFile wavFile = WavFile.newWavFile(saveTo,1,numFrames,16,composition.samplesPerSecond);
+				double[] toWrite = WaveUtils.targetDouble(rawAudio, composition.targetAmplitude);
+				wavFile.writeFrames(toWrite, numFrames);
+				wavFile.close();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (WavFileException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			working = false;
+		}
+
+		@Override
+		public String getName() {
+			return "Export Wav";
+		}
+		
+	};
+	
+	public static Loader loadSerial = new Loader(){
+
+		@Override
+		public Composition load(Composition loadTo, File loadFrom) {
+			Composition newComp = null;
+			try{
+				FileInputStream fis = new FileInputStream(loadFrom);
+				ObjectInputStream ois = new ObjectInputStream(fis);
+				Object first = ois.readObject();
+				if(first instanceof Composition){
+					newComp = (Composition) first;
+					newComp.initTransient();
+				}
+				fis.close();
+			}catch(FileNotFoundException e){
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}catch(IOException e){
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}catch(ClassNotFoundException e){
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			if(newComp==null){
+				return loadTo;
+			}else{
+				return newComp;
+			}
+		}
+
+		@Override
+		public String getName() {
+			return "Open";
+		}
+		
+	};
+	
+	public static Loader loadJson = new Loader(){
+
+		@Override
+		public Composition load(Composition loadTo, File loadFrom) {
+			//From https://www.thepolyglotdeveloper.com/2015/03/parse-json-file-java/
+			boolean unclosed = false;
+			BufferedReader br = null;
+			try{
+				br = new BufferedReader(new FileReader(loadFrom));
+				unclosed = true;
+				StringBuilder sb = new StringBuilder();
+				String line = br.readLine();
+				while (line != null) {
+					sb.append(line);
+					line = br.readLine();
+				}
+				br.close();
+				unclosed = false;
+				loadTo.importDataFromJson(sb.toString(), true, true);
+			}catch(FileNotFoundException e){
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}catch(IOException e){
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}finally{
+				if(unclosed){
+					try{
+						br.close();
+					}catch(IOException e){
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
+			return null;
+		}
+
+		@Override
+		public String getName() {
+			return "Import JSON";
+		}
+		
+	};
+	
+	public static interface StringFinder{
 		//Check if a string matches in some way
 		public boolean match(String body,String search);
 	}
 	
-	public interface Saver{
+	public static interface Saver{
 		//Save the composition in some way
 		public void save(Composition toSave,File saveTo);
+		//Name used in popup
+		public String getName();
+	}
+	
+	public static interface Loader{
+		//Load the composition in some way, return a composition to indicate overwrite
+		public Composition load(Composition loadTo,File loadFrom);
 		//Name used in popup
 		public String getName();
 	}
@@ -182,13 +336,13 @@ public class Wavelets{
 	public static WindowListener wlHide = new WindowListener() {
 
 		@Override
-		public void windowActivated(WindowEvent arg0) {
+		public void windowActivated(WindowEvent e) {
 			// TODO Auto-generated method stub
 			
 		}
 
 		@Override
-		public void windowClosed(WindowEvent arg0) {
+		public void windowClosed(WindowEvent e) {
 			// TODO Auto-generated method stub
 			
 		}
@@ -199,25 +353,25 @@ public class Wavelets{
 		}
 
 		@Override
-		public void windowDeactivated(WindowEvent arg0) {
+		public void windowDeactivated(WindowEvent e) {
 			// TODO Auto-generated method stub
 			
 		}
 
 		@Override
-		public void windowDeiconified(WindowEvent arg0) {
+		public void windowDeiconified(WindowEvent e) {
 			// TODO Auto-generated method stub
 			
 		}
 
 		@Override
-		public void windowIconified(WindowEvent arg0) {
+		public void windowIconified(WindowEvent e) {
 			// TODO Auto-generated method stub
 			
 		}
 
 		@Override
-		public void windowOpened(WindowEvent arg0) {
+		public void windowOpened(WindowEvent e) {
 			// TODO Auto-generated method stub
 			
 		}
@@ -287,75 +441,31 @@ public class Wavelets{
 			String origFileName = fileName;
 			String[] dotParts = fileName.split(".");
 			String extension = dotParts[dotParts.length-1].toLowerCase();
+			Loader loader = null;
 			switch(extension){
 			case "txt":
 			case "json":{
 				//Interpret as JSON
 				fileNamed = false;//Avoid resaving to it
 				fileName = "";
-				composition = new Composition();
-				//From https://www.thepolyglotdeveloper.com/2015/03/parse-json-file-java/
-				boolean unclosed = false;
-				BufferedReader br = null;
-				try{
-					br = new BufferedReader(new FileReader(origFileName));
-					unclosed = true;
-					StringBuilder sb = new StringBuilder();
-					String line = br.readLine();
-					while (line != null) {
-						sb.append(line);
-						line = br.readLine();
-					}
-					br.close();
-					unclosed = false;
-					composition.importDataFromJson(sb.toString(), true, true);
-				}catch(FileNotFoundException e){
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}catch(IOException e){
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}finally{
-					if(unclosed){
-						try{
-							br.close();
-						}catch(IOException e){
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-				}
-				composition.initTransient();
+				loader = loadJson;
 				break;
 			}case "wlc1":{
 				//Interpret as serialized composition v1
 				//Add something like this when updating:
 				//fileName.replaceAll("wlc1", "wlc2");
-				try{
-					FileInputStream fis = new FileInputStream(origFileName);
-					ObjectInputStream ois = new ObjectInputStream(fis);
-					Object first = ois.readObject();
-					if(first instanceof Composition){
-						composition = (Composition) first;
-					}
-					fis.close();
-				}catch(FileNotFoundException e){
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}catch(IOException e){
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}catch(ClassNotFoundException e){
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				composition.initTransient();
+				loader = loadSerial;
 				break;
 			}
 			}
-		}else{
-			composition.initTransient();
+			if(loader!=null){
+				Composition returned = loader.load(composition, new File(origFileName));
+				if(returned!=null){
+					composition = returned;
+				}
+			}
 		}
+		composition.initTransient();
 		working = false;
 	}
 	
@@ -482,42 +592,15 @@ public class Wavelets{
 			}
 		}
 		//Listeners
-		composerTopPanelComponents.get(0).get(0).addMouseListener(new MouseListener() {
-
+		((JButton) composerTopPanelComponents.get(0).get(0)).addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				mainPlayer.stopSound();
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		composerTopPanelComponents.get(2).get(1).addMouseListener(new MouseListener() {
-
+		((JButton) composerTopPanelComponents.get(2).get(1)).addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				if(composition.layers.containsKey(composition.layerSelection)){
 					Layer current = composition.layers.get(composition.layerSelection);
 					if(current.clipCount>0){
@@ -527,137 +610,33 @@ public class Wavelets{
 					}
 				}
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		composerTopPanelComponents.get(1).get(2).addMouseListener(new MouseListener() {
-
+		((JButton) composerTopPanelComponents.get(1).get(2)).addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				composition.clearCache();
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		composerTopPanelComponents.get(1).get(1).addMouseListener(new MouseListener() {
-
+		((JButton) composerTopPanelComponents.get(1).get(1)).addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				double[] soundDouble = composition.getAudio();
 				short[] soundShort = WaveUtils.quickShort(soundDouble);
 				mainPlayer.playSound(soundShort);
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		composerTopPanelComponents.get(2).get(2).addMouseListener(new MouseListener() {
-
+		((JButton) composerTopPanelComponents.get(2).get(2)).addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				if(composition.layers.containsKey(composition.layerSelection)){
 					Layer current = composition.layers.get(composition.layerSelection);
 					current.clearCache();
 				}
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		composerTopPanelComponents.get(3).get(1).addMouseListener(new MouseListener() {
-
+		((JButton) composerTopPanelComponents.get(3).get(1)).addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				if(composition.layers.containsKey(composition.layerSelection)){
 					Layer current = composition.layers.get(composition.layerSelection);
 					if(current.clipCount>0){
@@ -668,36 +647,10 @@ public class Wavelets{
 					}
 				}
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		composerTopPanelComponents.get(3).get(2).addMouseListener(new MouseListener() {
-
+		((JButton) composerTopPanelComponents.get(3).get(2)).addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				if(composition.layers.containsKey(composition.layerSelection)){
 					Layer current = composition.layers.get(composition.layerSelection);
 					if(current.clipCount>0){
@@ -708,31 +661,6 @@ public class Wavelets{
 					}
 				}
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
 	}
 		
@@ -743,33 +671,10 @@ public class Wavelets{
 		composerLeftPanelAddButton = new JButton("Add new layer");
 		//composerLeftPanelAddButton.setToolTipText("Creates a new blank layer.");
 		composerLeftPanelSubpanel.add(composerLeftPanelAddButton,BorderLayout.CENTER);
-		composerLeftPanelAddButton.addMouseListener(new MouseListener() {
-			@Override
-			public void mouseClicked(MouseEvent arg0) {
+		composerLeftPanelAddButton.addActionListener(new ActionListener() {@Override public void actionPerformed(ActionEvent e) {
 				addNewLayer();
 				updateDisplay();
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				//throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				//throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				//throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				//throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-			}
-		});
+			}});
 		composerLeftInPanel.add(composerLeftPanelSubpanel);
 	}
 	
@@ -856,10 +761,9 @@ public class Wavelets{
 			}
 			
 		});
-		curveEditorRename.addMouseListener(new MouseListener() {
-
+		curveEditorRename.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				if(composition.curves.containsKey(composition.curveSelection)){
 					String newName = curveEditorName.getText();
 					if(!(newName.equals(composition.curveSelection)||composition.curves.containsKey(newName))){
@@ -867,137 +771,34 @@ public class Wavelets{
 					}
 				}
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		curveEditorDelete.addMouseListener(new MouseListener() {
-
+		curveEditorDelete.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void actionPerformed(ActionEvent e){
 				if(composition.curves.containsKey(composition.curveSelection)){
 					composition.removeCurve(composition.curveSelection);
 					composition.updateCurves();
 					updateCurveSelection();
 				}
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		curveEditorCreate.addMouseListener(new MouseListener() {
-
+		curveEditorCreate.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void actionPerformed(ActionEvent e){
 				String newName = curveEditorName.getText();
 				if(!composition.curves.containsKey(newName)){
 					composition.addCurve(newName);
 				}
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		curveEditorDupli.addMouseListener(new MouseListener() {
-
+		curveEditorDupli.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void actionPerformed(ActionEvent e){
 				String newName = curveEditorName.getText();
 				if(!composition.curves.containsKey(newName)){
 					composition.dupliCurve(newName,composition.curveSelection);
 				}
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
 		curveEditorInterpSelector.addItemListener(new ItemListener() {
 
@@ -1022,10 +823,9 @@ public class Wavelets{
 			}
 			
 		});
-		curveEditorPreviewPlay.addMouseListener(new MouseListener(){
-
+		curveEditorPreviewPlay.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				if(composition.curves.containsKey(composition.curveSelection)){
 					Curve selectedCurve = composition.curves.get(composition.curveSelection);
 					switch(Curve.selectedPreviewMode){
@@ -1113,31 +913,6 @@ public class Wavelets{
 					}
 				}
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
 	}
 	
@@ -1181,10 +956,9 @@ public class Wavelets{
 			}
 			
 		});
-		nodeEditorRename.addMouseListener(new MouseListener() {
-
+		nodeEditorRename.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				if(composition.nodes.containsKey(composition.nodesSelection)){
 					String newName = nodeEditorName.getText();
 					if(!(newName.equals(composition.nodesSelection)||composition.nodes.containsKey(newName))){
@@ -1192,137 +966,34 @@ public class Wavelets{
 					}
 				}
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		nodeEditorDelete.addMouseListener(new MouseListener() {
-
+		nodeEditorDelete.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void actionPerformed(ActionEvent e){
 				if(composition.nodes.containsKey(composition.nodesSelection)){
 					composition.removeNodes(composition.nodesSelection);
 					composition.updateNodes();
 					updateNodeSelection();
 				}
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		nodeEditorCreate.addMouseListener(new MouseListener() {
-
+		nodeEditorCreate.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void actionPerformed(ActionEvent e){
 				String newName = nodeEditorName.getText();
 				if(!composition.nodes.containsKey(newName)){
 					composition.addNodes(newName);
 				}
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		nodeEditorDupli.addMouseListener(new MouseListener() {
-
+		nodeEditorDupli.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void actionPerformed(ActionEvent e){
 				String newName = nodeEditorName.getText();
 				if(!composition.nodes.containsKey(newName)){
 					composition.dupliNodes(newName,composition.nodesSelection);
 				}
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
 	}
 	
@@ -1420,10 +1091,12 @@ public class Wavelets{
 		submenuItems.add(new ArrayList<JMenuItem>());//File > Import
 		submenuItems.get(0).add(new JMenuItem("Data as JSON from file"));
 		submenuItems.get(0).add(new JMenuItem("Data as JSON from text"));
+		submenuItems.get(0).add(new JMenuItem("Audio as sampled data"));
 		addMenu((JMenu) menuItems.get(0).get(3),submenuItems.get(0));
 		submenuItems.add(new ArrayList<JMenuItem>());//File > Export
 		submenuItems.get(1).add(new JMenuItem("Data as JSON to file"));
 		submenuItems.get(1).add(new JMenuItem("Data as JSON to text"));
+		submenuItems.get(1).add(new JMenuItem("Audio as wav"));
 		addMenu((JMenu) menuItems.get(0).get(4),submenuItems.get(1));
 		submenuItems.add(new ArrayList<JMenuItem>());//Tools > Layer
 		submenuItems.get(2).add(new JMenuItem("Quick draw"));
@@ -1444,7 +1117,7 @@ public class Wavelets{
 	public static void initMenuEvents(){
 		menuItems.get(0).get(0).addActionListener(new ActionListener() {//Save
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				if(fileNamed){
 					saveSerial.save(composition,new File(fileName));
 				}else{
@@ -1454,13 +1127,19 @@ public class Wavelets{
 		});
 		menuItems.get(0).get(1).addActionListener(new ActionListener() {//Save as
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				openSaveDialog(saveSerial);
+			}
+		});
+		menuItems.get(0).get(2).addActionListener(new ActionListener() {//Open
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				openLoadDialog(loadSerial);
 			}
 		});
 		menuItems.get(1).get(0).addActionListener(new ActionListener() {//Composer
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				switch(window){//Must contain all other layouts
 				case("Curve Editor"):{
 					disableCurveEditor();
@@ -1474,7 +1153,7 @@ public class Wavelets{
 		});
 		menuItems.get(1).get(1).addActionListener(new ActionListener() {//Curve editor
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				switch(window){//Must contain all other layouts
 				case("Composer"):{
 					disableComposer();
@@ -1488,7 +1167,7 @@ public class Wavelets{
 		});
 		menuItems.get(1).get(2).addActionListener(new ActionListener() {//Node editor
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				switch(window){//Must contain all other layouts
 				case("Composer"):{
 					disableComposer();
@@ -1502,7 +1181,7 @@ public class Wavelets{
 		});
 		submenuItems.get(0).get(1).addActionListener(new ActionListener() {//Import JSON from text
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				clearPopupWindowListeners();
 				popupFrame.setTitle("Wavelets [Import JSON from text]");
 				popupFrame.addWindowListener(wlHide);
@@ -1512,69 +1191,17 @@ public class Wavelets{
 				JButton importButton = new JButton("Import");
 				JCheckBox replaceCheck = new JCheckBox("Replace");
 				JCheckBox propertyCheck = new JCheckBox("Copy properties");
-				closeButton.addMouseListener(new MouseListener() {
-
+				closeButton.addActionListener(new ActionListener(){
 					@Override
-					public void mouseClicked(MouseEvent arg0) {
+					public void actionPerformed(ActionEvent e){
 						popupFrame.dispose();
 					}
-
-					@Override
-					public void mouseEntered(MouseEvent arg0) {
-						// TODO Auto-generated method stub
-						
-					}
-
-					@Override
-					public void mouseExited(MouseEvent arg0) {
-						// TODO Auto-generated method stub
-						
-					}
-
-					@Override
-					public void mousePressed(MouseEvent arg0) {
-						// TODO Auto-generated method stub
-						
-					}
-
-					@Override
-					public void mouseReleased(MouseEvent arg0) {
-						// TODO Auto-generated method stub
-						
-					}
-					
 				});
-				importButton.addMouseListener(new MouseListener(){
-
+				importButton.addActionListener(new ActionListener(){
 					@Override
-					public void mouseClicked(MouseEvent arg0) {
+					public void actionPerformed(ActionEvent e){
 						composition.importDataFromJson(inputArea.getText(), replaceCheck.isSelected(), propertyCheck.isSelected());
 					}
-
-					@Override
-					public void mouseEntered(MouseEvent e) {
-						// TODO Auto-generated method stub
-						
-					}
-
-					@Override
-					public void mouseExited(MouseEvent e) {
-						// TODO Auto-generated method stub
-						
-					}
-
-					@Override
-					public void mousePressed(MouseEvent e) {
-						// TODO Auto-generated method stub
-						
-					}
-
-					@Override
-					public void mouseReleased(MouseEvent e) {
-						// TODO Auto-generated method stub
-						
-					}
-					
 				});
 				popupPanel.removeAll();
 				GridBagConstraints constraint = new GridBagConstraints();
@@ -1596,9 +1223,15 @@ public class Wavelets{
 				popupFrame.setVisible(true);
 			}
 		});
+		submenuItems.get(1).get(0).addActionListener(new ActionListener() {//Export JSON to file
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				openSaveDialog(saveJson);
+			}
+		});
 		submenuItems.get(1).get(1).addActionListener(new ActionListener() {//Export JSON to text
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				clearPopupWindowListeners();
 				popupFrame.setTitle("Wavelets [Export JSON to text]");
 				popupFrame.addWindowListener(wlHide);
@@ -1607,38 +1240,9 @@ public class Wavelets{
 				JScrollPane outputScroll = new JScrollPane(outputArea);
 				outputArea.setText(exported);
 				JButton closeButton = new JButton("Close");
-				closeButton.addMouseListener(new MouseListener() {
-
-					@Override
-					public void mouseClicked(MouseEvent arg0) {
+				closeButton.addActionListener(new ActionListener(){@Override public void actionPerformed(ActionEvent e){
 						popupFrame.dispose();
-					}
-
-					@Override
-					public void mouseEntered(MouseEvent arg0) {
-						// TODO Auto-generated method stub
-						
-					}
-
-					@Override
-					public void mouseExited(MouseEvent arg0) {
-						// TODO Auto-generated method stub
-						
-					}
-
-					@Override
-					public void mousePressed(MouseEvent arg0) {
-						// TODO Auto-generated method stub
-						
-					}
-
-					@Override
-					public void mouseReleased(MouseEvent arg0) {
-						// TODO Auto-generated method stub
-						
-					}
-					
-				});
+					}});
 				popupPanel.removeAll();
 				GridBagConstraints constraint = new GridBagConstraints();
 				constraint.gridx=0;
@@ -1650,9 +1254,15 @@ public class Wavelets{
 				popupFrame.setVisible(true);
 			}
 		});
+		submenuItems.get(1).get(2).addActionListener(new ActionListener() {//Export audio as wav
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				openSaveDialog(saveWav);
+			}
+		});
 		submenuItems.get(2).get(0).addActionListener(new ActionListener() {//Quick draw
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				if(composition.layers.containsKey(composition.layerSelection)){
 					Layer currentLayer = composition.layers.get(composition.layerSelection);
 					clearPopupWindowListeners();
@@ -1679,10 +1289,9 @@ public class Wavelets{
 					JComboBox<String> drawModeSelector = new JComboBox<String>(layerQdBehavioursKeysArray);
 					JButton confirmButton = new JButton("Continue");
 					JButton closeButton = new JButton("Close");
-					confirmButton.addMouseListener(new MouseListener() {
-
+					confirmButton.addActionListener(new ActionListener(){
 						@Override
-						public void mouseClicked(MouseEvent arg0) {
+						public void actionPerformed(ActionEvent e){
 							if(copyClip.inputsRegistered){
 								final double right = WaveUtils.readDoubleFromField(timeField, 32d);
 								final double bottom = WaveUtils.readDoubleFromField(pitchRangeLowerField, -12d);
@@ -1703,72 +1312,20 @@ public class Wavelets{
 									JComboBox<String> inputSelector1 = new JComboBox<String>(nodeInputsArray);
 									JButton confirmButton = new JButton("Continue");
 									JButton closeButton = new JButton("Close");
-									confirmButton.addMouseListener(new MouseListener(){
-
+									confirmButton.addActionListener(new ActionListener(){
 										@Override
-										public void mouseClicked(MouseEvent arg0) {
+										public void actionPerformed(ActionEvent e){
 											final String input1 = (String) inputSelector1.getSelectedItem();
 											final WLayerQuickDrawPanel.ClipBehaviour behaviour = new WLayerQuickDrawPanel.CbFlatTone(input1);
 											WLayerQuickDrawPanel.initPopup(currentLayer, copyClip, behaviour, new double[]{right,bottom,top,mapLeft,mapRight});
 										}
-
-										@Override
-										public void mouseEntered(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-
-										@Override
-										public void mouseExited(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-
-										@Override
-										public void mousePressed(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-
-										@Override
-										public void mouseReleased(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-										
 									});
-									closeButton.addMouseListener(new MouseListener(){
-
+									closeButton.addActionListener(new ActionListener(){
 										@Override
-										public void mouseClicked(MouseEvent arg0) {
+										public void actionPerformed(ActionEvent e){
 											copyClip.destroy();
 											popupFrame.dispose();
 										}
-
-										@Override
-										public void mouseEntered(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-
-										@Override
-										public void mouseExited(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-
-										@Override
-										public void mousePressed(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-
-										@Override
-										public void mouseReleased(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-										
 									});
 									GridBagConstraints constraint = new GridBagConstraints();
 									constraint.weightx=1;
@@ -1798,73 +1355,21 @@ public class Wavelets{
 									JComboBox<String> inputSelector2 = new JComboBox<String>(nodeInputsArray);
 									JButton confirmButton = new JButton("Continue");
 									JButton closeButton = new JButton("Close");
-									confirmButton.addMouseListener(new MouseListener(){
-
+									confirmButton.addActionListener(new ActionListener(){
 										@Override
-										public void mouseClicked(MouseEvent arg0) {
+										public void actionPerformed(ActionEvent e){
 											final String input1 = (String) inputSelector1.getSelectedItem();
 											final String input2 = (String) inputSelector2.getSelectedItem();
 											final WLayerQuickDrawPanel.ClipBehaviour behaviour = new WLayerQuickDrawPanel.CbLinearTone(input1,input2);
 											WLayerQuickDrawPanel.initPopup(currentLayer, copyClip, behaviour, new double[]{right,bottom,top,mapLeft,mapRight});
 										}
-
-										@Override
-										public void mouseEntered(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-
-										@Override
-										public void mouseExited(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-
-										@Override
-										public void mousePressed(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-
-										@Override
-										public void mouseReleased(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-										
 									});
-									closeButton.addMouseListener(new MouseListener(){
-
+									closeButton.addActionListener(new ActionListener(){
 										@Override
-										public void mouseClicked(MouseEvent arg0) {
+										public void actionPerformed(ActionEvent e){
 											copyClip.destroy();
 											popupFrame.dispose();
 										}
-
-										@Override
-										public void mouseEntered(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-
-										@Override
-										public void mouseExited(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-
-										@Override
-										public void mousePressed(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-
-										@Override
-										public void mouseReleased(MouseEvent arg0) {
-											// TODO Auto-generated method stub
-											
-										}
-										
 									});
 									GridBagConstraints constraint = new GridBagConstraints();
 									constraint.weightx=1;
@@ -1895,64 +1400,13 @@ public class Wavelets{
 								updateDisplay(popupFrame);
 							}
 						}
-
-						@Override
-						public void mouseEntered(MouseEvent arg0) {
-							// TODO Auto-generated method stub
-							
-						}
-
-						@Override
-						public void mouseExited(MouseEvent arg0) {
-							// TODO Auto-generated method stub
-							
-						}
-
-						@Override
-						public void mousePressed(MouseEvent arg0) {
-							// TODO Auto-generated method stub
-							
-						}
-
-						@Override
-						public void mouseReleased(MouseEvent arg0) {
-							// TODO Auto-generated method stub
-							
-						}
-						
 					});
-					closeButton.addMouseListener(new MouseListener() {
-
+					closeButton.addActionListener(new ActionListener(){
 						@Override
-						public void mouseClicked(MouseEvent arg0) {
+						public void actionPerformed(ActionEvent e){
 							copyClip.destroy();
 							popupFrame.dispose();
 						}
-
-						@Override
-						public void mouseEntered(MouseEvent arg0) {
-							// TODO Auto-generated method stub
-							
-						}
-
-						@Override
-						public void mouseExited(MouseEvent arg0) {
-							// TODO Auto-generated method stub
-							
-						}
-
-						@Override
-						public void mousePressed(MouseEvent arg0) {
-							// TODO Auto-generated method stub
-							
-						}
-
-						@Override
-						public void mouseReleased(MouseEvent arg0) {
-							// TODO Auto-generated method stub
-							
-						}
-						
 					});
 					popupPanel.removeAll();
 					GridBagConstraints constraint = new GridBagConstraints();
@@ -2015,7 +1469,7 @@ public class Wavelets{
 		});
 		submenuItems.get(2).get(1).addActionListener(new ActionListener() {//Time mapping
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				if(composition.layers.containsKey(composition.layerSelection)){
 					Layer currentLayer = composition.layers.get(composition.layerSelection);
 					if(currentLayer.clipCount>0){
@@ -2038,10 +1492,9 @@ public class Wavelets{
 						JLabel layerLabel = new JLabel("in layer \""+currentLayer.name+"\"");
 						JButton confirmButton = new JButton("Apply");
 						JButton closeButton = new JButton("Close");
-						confirmButton.addMouseListener(new MouseListener() {
-
+						confirmButton.addActionListener(new ActionListener(){
 							@Override
-							public void mouseClicked(MouseEvent arg0) {
+							public void actionPerformed(ActionEvent e){
 								double a = WaveUtils.readDoubleFromField(oldStart, timeBounds[0]);
 								double b = WaveUtils.readDoubleFromField(oldEnd, timeBounds[1]);
 								double c = WaveUtils.readDoubleFromField(newStart, a);
@@ -2055,63 +1508,12 @@ public class Wavelets{
 								currentLayer.clearCache();
 								popupFrame.dispose();
 							}
-
-							@Override
-							public void mouseEntered(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseExited(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mousePressed(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseReleased(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-							
 						});
-						closeButton.addMouseListener(new MouseListener() {
-
+						closeButton.addActionListener(new ActionListener(){
 							@Override
-							public void mouseClicked(MouseEvent arg0) {
+							public void actionPerformed(ActionEvent e){
 								popupFrame.dispose();
 							}
-
-							@Override
-							public void mouseEntered(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseExited(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mousePressed(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseReleased(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-							
 						});
 						popupPanel.removeAll();
 						GridBagConstraints constraint = new GridBagConstraints();
@@ -2153,7 +1555,7 @@ public class Wavelets{
 		});
 		submenuItems.get(2).get(2).addActionListener(new ActionListener() {//Input mapping
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				if(composition.layers.containsKey(composition.layerSelection)){
 					Layer currentLayer = composition.layers.get(composition.layerSelection);
 					if(currentLayer.clipCount>0){
@@ -2178,10 +1580,9 @@ public class Wavelets{
 						JLabel layerLabel = new JLabel("in layer \""+currentLayer.name+"\"");
 						JButton confirmButton = new JButton("Apply");
 						JButton closeButton = new JButton("Close");
-						confirmButton.addMouseListener(new MouseListener() {
-
+						confirmButton.addActionListener(new ActionListener(){
 							@Override
-							public void mouseClicked(MouseEvent arg0) {
+							public void actionPerformed(ActionEvent e){
 								StringFinder finder = stringFinders.get(finderSelector.getSelectedItem());
 								String search = searchField.getText();
 								double a = WaveUtils.readDoubleFromField(oldStart, 0d);
@@ -2200,63 +1601,12 @@ public class Wavelets{
 								currentLayer.clearCache();
 								popupFrame.dispose();
 							}
-
-							@Override
-							public void mouseEntered(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseExited(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mousePressed(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseReleased(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-							
 						});
-						closeButton.addMouseListener(new MouseListener() {
-
+						closeButton.addActionListener(new ActionListener(){
 							@Override
-							public void mouseClicked(MouseEvent arg0) {
+							public void actionPerformed(ActionEvent e){
 								popupFrame.dispose();
 							}
-
-							@Override
-							public void mouseEntered(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseExited(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mousePressed(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseReleased(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-							
 						});
 						popupPanel.removeAll();
 						GridBagConstraints constraint = new GridBagConstraints();
@@ -2306,7 +1656,7 @@ public class Wavelets{
 		});
 		submenuItems.get(2).get(3).addActionListener(new ActionListener() {//Merge
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				String currentName = composition.layerSelection;
 				if(composition.layers.containsKey(currentName)){
 					Layer currentLayer = composition.layers.get(currentName);
@@ -2319,10 +1669,9 @@ public class Wavelets{
 						targetSelector.removeItem(currentLayer.name);
 						JButton confirmButton = new JButton("Apply");
 						JButton closeButton = new JButton("Close");
-						confirmButton.addMouseListener(new MouseListener() {
-
+						confirmButton.addActionListener(new ActionListener(){
 							@Override
-							public void mouseClicked(MouseEvent arg0) {
+							public void actionPerformed(ActionEvent e){
 								Layer targetLayer = composition.layers.get(targetSelector.getSelectedItem());
 								for(Clip original:currentLayer.clips){
 									targetLayer.addClip(original);
@@ -2331,63 +1680,12 @@ public class Wavelets{
 								targetLayer.clearCache();
 								popupFrame.dispose();
 							}
-
-							@Override
-							public void mouseEntered(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseExited(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mousePressed(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseReleased(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-							
 						});
-						closeButton.addMouseListener(new MouseListener() {
-
+						closeButton.addActionListener(new ActionListener(){
 							@Override
-							public void mouseClicked(MouseEvent arg0) {
+							public void actionPerformed(ActionEvent e){
 								popupFrame.dispose();
 							}
-
-							@Override
-							public void mouseEntered(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseExited(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mousePressed(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseReleased(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-							
 						});
 						popupPanel.removeAll();
 						GridBagConstraints constraint = new GridBagConstraints();
@@ -2410,7 +1708,7 @@ public class Wavelets{
 		});
 		submenuItems.get(2).get(4).addActionListener(new ActionListener() {//Sort
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				String currentName = composition.layerSelection;
 				if(composition.layers.containsKey(currentName)){
 					Layer currentLayer = composition.layers.get(currentName);
@@ -2423,10 +1721,9 @@ public class Wavelets{
 						JCheckBox invertCheck = new JCheckBox("Reverse order");
 						JButton confirmButton = new JButton("Apply");
 						JButton closeButton = new JButton("Close");
-						confirmButton.addMouseListener(new MouseListener() {
-
+						confirmButton.addActionListener(new ActionListener(){
 							@Override
-							public void mouseClicked(MouseEvent arg0) {
+							public void actionPerformed(ActionEvent e){
 								Comparator<Clip> clipComparator = clipComparators.get(compSelector.getSelectedItem());
 								if(invertCheck.isSelected()){
 									clipComparator = Collections.reverseOrder(clipComparator);
@@ -2435,63 +1732,12 @@ public class Wavelets{
 								currentLayer.updateClipSelection();
 								popupFrame.dispose();
 							}
-
-							@Override
-							public void mouseEntered(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseExited(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mousePressed(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseReleased(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-							
 						});
-						closeButton.addMouseListener(new MouseListener() {
-
+						closeButton.addActionListener(new ActionListener(){
 							@Override
-							public void mouseClicked(MouseEvent arg0) {
+							public void actionPerformed(ActionEvent e){
 								popupFrame.dispose();
 							}
-
-							@Override
-							public void mouseEntered(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseExited(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mousePressed(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseReleased(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-							
 						});
 						popupPanel.removeAll();
 						GridBagConstraints constraint = new GridBagConstraints();
@@ -2518,7 +1764,7 @@ public class Wavelets{
 		});
 		submenuItems.get(2).get(5).addActionListener(new ActionListener() {//Time shift
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				String currentName = composition.layerSelection;
 				if(composition.layers.containsKey(currentName)){
 					Layer currentLayer = composition.layers.get(currentName);
@@ -2531,73 +1777,21 @@ public class Wavelets{
 						JTextField inputField = new JTextField(30);
 						JButton confirmButton = new JButton("Apply");
 						JButton closeButton = new JButton("Close");
-						confirmButton.addMouseListener(new MouseListener() {
-
+						confirmButton.addActionListener(new ActionListener(){
 							@Override
-							public void mouseClicked(MouseEvent arg0) {
+							public void actionPerformed(ActionEvent e){
 								double setting = WaveUtils.readDoubleFromField(inputField, 0d);
 								Layer.TimeManipulator tm = Layer.timeManipulators.get(compSelector.getSelectedItem());
 								tm.applyTo(currentLayer, setting);
 								currentLayer.clearCache();
 								popupFrame.dispose();
 							}
-
-							@Override
-							public void mouseEntered(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseExited(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mousePressed(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseReleased(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-							
 						});
-						closeButton.addMouseListener(new MouseListener() {
-
+						closeButton.addActionListener(new ActionListener(){
 							@Override
-							public void mouseClicked(MouseEvent arg0) {
+							public void actionPerformed(ActionEvent e){
 								popupFrame.dispose();
 							}
-
-							@Override
-							public void mouseEntered(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseExited(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mousePressed(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseReleased(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-							
 						});
 						popupPanel.removeAll();
 						GridBagConstraints constraint = new GridBagConstraints();
@@ -2625,7 +1819,7 @@ public class Wavelets{
 		});
 		submenuItems.get(2).get(6).addActionListener(new ActionListener() {//Duplicate
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				String currentName = composition.layerSelection;
 				if(composition.layers.containsKey(currentName)){
 					Layer currentLayer = composition.layers.get(currentName);
@@ -2637,10 +1831,9 @@ public class Wavelets{
 						JTextField inputField = new JTextField(30);
 						JButton confirmButton = new JButton("Apply");
 						JButton closeButton = new JButton("Close");
-						confirmButton.addMouseListener(new MouseListener() {
-
+						confirmButton.addActionListener(new ActionListener(){
 							@Override
-							public void mouseClicked(MouseEvent arg0) {
+							public void actionPerformed(ActionEvent e){
 								String newName = inputField.getText();
 								if(!composition.layers.containsKey(newName)){
 									Layer toAdd = new Layer();
@@ -2654,63 +1847,12 @@ public class Wavelets{
 								}
 								popupFrame.dispose();
 							}
-
-							@Override
-							public void mouseEntered(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseExited(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mousePressed(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseReleased(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-							
 						});
-						closeButton.addMouseListener(new MouseListener() {
-
+						closeButton.addActionListener(new ActionListener(){
 							@Override
-							public void mouseClicked(MouseEvent arg0) {
+							public void actionPerformed(ActionEvent e){
 								popupFrame.dispose();
 							}
-
-							@Override
-							public void mouseEntered(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseExited(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mousePressed(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseReleased(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-							
 						});
 						popupPanel.removeAll();
 						GridBagConstraints constraint = new GridBagConstraints();
@@ -2733,7 +1875,7 @@ public class Wavelets{
 		});
 		submenuItems.get(2).get(7).addActionListener(new ActionListener() {//Round
 			@Override
-			public void actionPerformed(ActionEvent arg0) {
+			public void actionPerformed(ActionEvent e) {
 				String currentName = composition.layerSelection;
 				if(composition.layers.containsKey(currentName)){
 					Layer currentLayer = composition.layers.get(currentName);
@@ -2750,10 +1892,9 @@ public class Wavelets{
 						JCheckBox inputCheck = new JCheckBox("Round inputs");
 						JButton confirmButton = new JButton("Apply");
 						JButton closeButton = new JButton("Close");
-						confirmButton.addMouseListener(new MouseListener() {
-
+						confirmButton.addActionListener(new ActionListener(){
 							@Override
-							public void mouseClicked(MouseEvent arg0) {
+							public void actionPerformed(ActionEvent e){
 								double scale = WaveUtils.correctRound(WaveUtils.readDoubleFromField(inputField, 21600d));
 								double threshold = WaveUtils.readDoubleFromField(epField, WaveUtils.epsilon);
 								boolean roundInputs = inputCheck.isSelected();
@@ -2768,63 +1909,12 @@ public class Wavelets{
 								}
 								popupFrame.dispose();
 							}
-
-							@Override
-							public void mouseEntered(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseExited(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mousePressed(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseReleased(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-							
 						});
-						closeButton.addMouseListener(new MouseListener() {
-
+						closeButton.addActionListener(new ActionListener(){
 							@Override
-							public void mouseClicked(MouseEvent arg0) {
+							public void actionPerformed(ActionEvent e){
 								popupFrame.dispose();
 							}
-
-							@Override
-							public void mouseEntered(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseExited(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mousePressed(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-
-							@Override
-							public void mouseReleased(MouseEvent arg0) {
-								// TODO Auto-generated method stub
-								
-							}
-							
 						});
 						popupPanel.removeAll();
 						GridBagConstraints constraint = new GridBagConstraints();
@@ -3037,6 +2127,70 @@ public class Wavelets{
 		}
 	}
 	
+	//Open save as dialog
+	public static void openLoadDialog(Loader loader){
+		clearPopupWindowListeners();
+		String loaderName = loader.getName();
+		popupFrame.setTitle("Wavelets ["+loaderName+"]");
+		popupFrame.addWindowListener(wlHide);
+		JFileChooser fileChooser = new JFileChooser(){
+			private static final long serialVersionUID = 1L;
+
+			@Override
+			public void approveSelection() {
+				tryLoadFrom(loader,getSelectedFile());
+				super.approveSelection();
+			}
+		};
+		fileChooser.setApproveButtonText(loaderName);
+		JButton confirmButton = new JButton(loaderName);
+		JButton closeButton = new JButton("Close");
+		confirmButton.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				tryLoadFrom(loader,fileChooser.getSelectedFile());
+			}
+			
+		});
+		closeButton.addActionListener(new ActionListener() {
+
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				popupFrame.dispose();
+			}
+			
+		});
+		popupPanel.removeAll();
+		GridBagConstraints constraint = new GridBagConstraints();
+		constraint.gridx=0;
+		constraint.gridy=0;
+		constraint.gridwidth=2;
+		popupPanel.add(fileChooser,constraint);
+		constraint.gridy=1;
+		constraint.gridwidth=1;
+		popupPanel.add(confirmButton,constraint);
+		constraint.gridx=1;
+		popupPanel.add(closeButton,constraint);
+		popupFrame.pack();
+		popupFrame.setVisible(true);
+	}
+	
+	public static void tryLoadFrom(Loader loader,File file){
+		if(file!=null){
+			if(file.isFile()){
+				if(loader!=null){
+					Composition returned = loader.load(composition, file);
+					if(returned!=null){
+						composition = returned;
+						fileName = file.getPath();
+						fileNamed = true;
+					}
+				}
+			}
+		}
+	}
+	
 	public static void main(String[] args){
 		working = true;
 		mainThread.setName("Wavelets - Main");
@@ -3062,44 +2216,44 @@ public class Wavelets{
 		mainFrame.addWindowListener(new WindowListener() {
 
 			@Override
-			public void windowActivated(WindowEvent arg0) {
+			public void windowActivated(WindowEvent e) {
 				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
-			public void windowClosed(WindowEvent arg0) {
+			public void windowClosed(WindowEvent e) {
 				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
-			public void windowClosing(WindowEvent arg0) {
+			public void windowClosing(WindowEvent e) {
 				if(!working){
 					System.exit(0);
 				}
 			}
 
 			@Override
-			public void windowDeactivated(WindowEvent arg0) {
+			public void windowDeactivated(WindowEvent e) {
 				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
-			public void windowDeiconified(WindowEvent arg0) {
+			public void windowDeiconified(WindowEvent e) {
 				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
-			public void windowIconified(WindowEvent arg0) {
+			public void windowIconified(WindowEvent e) {
 				// TODO Auto-generated method stub
 				
 			}
 
 			@Override
-			public void windowOpened(WindowEvent arg0) {
+			public void windowOpened(WindowEvent e) {
 				// TODO Auto-generated method stub
 				
 			}

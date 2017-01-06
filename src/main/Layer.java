@@ -179,42 +179,15 @@ public class Layer implements Serializable {
 		filterAdd = new JButton("Add new");
 		filterTypeSelector = new JComboBox<String>(filterGeneratorsKeysArray);
 		refreshFilters();
-		buttonRename.addMouseListener(new MouseListener(){
-
+		buttonRename.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				edit();
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		buttonEdit.addMouseListener(new MouseListener(){
-
+		buttonEdit.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				parentComposition.layerSelection = name;
 				JPanel addTo = Wavelets.composerRightInPanel;
 				addTo.removeAll();
@@ -224,193 +197,38 @@ public class Layer implements Serializable {
 				addTo.add(filterScroll,BorderLayout.CENTER);
 				Wavelets.updateDisplay();
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		buttonDelete.addMouseListener(new MouseListener(){
-
+		buttonDelete.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void actionPerformed(ActionEvent e){
 				parentComposition.removeLayer(self);
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		clipDelete.addMouseListener(new MouseListener(){
-
+		clipDelete.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void actionPerformed(ActionEvent e){
 				removeClip(selectedClip);
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		clipAdd.addMouseListener(new MouseListener(){
-
+		clipAdd.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void actionPerformed(ActionEvent e){
 				addClip();
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		clipDupli.addMouseListener(new MouseListener(){
-
+		clipDupli.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void actionPerformed(ActionEvent e){
 				dupliClip(selectedClip);
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		filterAdd.addMouseListener(new MouseListener(){
-
+		filterAdd.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void actionPerformed(ActionEvent e){
 				Filter toAdd = filterGenerators.get(filterTypeSelector.getSelectedItem()).createNew();
 				filters.add(toAdd);
 				refreshFilters();
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
 		updateClipSelection();
 	}
@@ -530,106 +348,28 @@ public class Layer implements Serializable {
 			Filter current = filters.get(i);
 			JButton swapPrev = new JButton("\u25b2");//Up arrow
 			final int index=i;
-			swapPrev.addMouseListener(new MouseListener(){
-
+			swapPrev.addActionListener(new ActionListener(){
 				@Override
-				public void mouseClicked(MouseEvent arg0) {
+				public void actionPerformed(ActionEvent e){
 					Collections.swap(filters, index-1, index);
 					refreshFilters();
 				}
-
-				@Override
-				public void mouseEntered(MouseEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void mouseExited(MouseEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void mousePressed(MouseEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void mouseReleased(MouseEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-				
 			});
 			JButton swapNext = new JButton("\u25bc");//Down arrow
-			swapNext.addMouseListener(new MouseListener(){
-
+			swapNext.addActionListener(new ActionListener(){
 				@Override
-				public void mouseClicked(MouseEvent arg0) {
+				public void actionPerformed(ActionEvent e){
 					Collections.swap(filters, index, index+1);
 					refreshFilters();
 				}
-
-				@Override
-				public void mouseEntered(MouseEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void mouseExited(MouseEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void mousePressed(MouseEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void mouseReleased(MouseEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-				
 			});
 			JButton delete = new JButton("\u00d7");//Multiplication sign
-			delete.addMouseListener(new MouseListener(){
-
+			delete.addActionListener(new ActionListener(){
 				@Override
-				public void mouseClicked(MouseEvent arg0) {
+				public void actionPerformed(ActionEvent e){
 					filters.remove(index);
 					refreshFilters();
 				}
-
-				@Override
-				public void mouseEntered(MouseEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void mouseExited(MouseEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void mousePressed(MouseEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void mouseReleased(MouseEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-				
 			});
 			constraint.gridx=0;
 			constraint.gridy=3*i+1;

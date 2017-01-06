@@ -26,6 +26,8 @@ public class Composition implements Serializable {
 	public int samplesPerSecond = 44100;
 	//Retain cache when saving
 	public boolean retainCache = false;
+	//Target amplitude
+	public double targetAmplitude = 0.1d;
 	
 	//Cached audio
 	public double[] cacheValues;
@@ -36,6 +38,13 @@ public class Composition implements Serializable {
 	
 	//Initialize all transient
 	public void initTransient(){
+		//Safety
+		curveSelection = "";
+		nodesSelection = "";
+		layerSelection = "";
+		updateCurves();
+		updateNodes();
+		updateLayers();
 		layerPanels = new ArrayList<JScrollPane>();
 		nodeLayer = new Layer();
 		nodeLayer.parentComposition = this;
@@ -43,18 +52,13 @@ public class Composition implements Serializable {
 			currentCurve.initTransient();
 		}
 		for(Nodes currentNode:nodes.values()){
-			currentNode.initPanels();
+			currentNode.initTransient();
 		}
 		for(Layer currentLayer:layers.values()){
 			currentLayer.initTransient();
 			layerPanels.add(currentLayer.parentScroll);
+			Wavelets.addLayerScroll(currentLayer.parentScroll);
 		}
-		curveSelection = "";
-		nodesSelection = "";
-		layerSelection = "";
-		updateCurves();
-		updateNodes();
-		updateLayers();
 	}
 	
 	//Update nodes
@@ -400,10 +404,9 @@ public class Composition implements Serializable {
 		//Attempts to read data from a JSON object and create a new node network with it
 		try{
 			String source = data.getString("source");
-			Nodes toAdd = new Nodes();
+			Nodes toAdd = new Nodes(source);
 			toAdd.parentComposition = this;
 			try{
-				toAdd.source = source;
 				toAdd.recompile();
 				nodes.put(name, toAdd);
 			}catch(Exception e){

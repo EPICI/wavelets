@@ -60,6 +60,7 @@ public class Clip implements Serializable {
 	public void initTransient(){
 		cacheUpdated = cacheValues != null;
 		freqCacheUpdated = freqCacheValues != null;
+		inputsRegistered = true;
 		//Create objects
 		parentPanel = new JPanel(new BorderLayout());
 		infoPanel = new JPanel(new BorderLayout());
@@ -94,42 +95,15 @@ public class Clip implements Serializable {
 			}
 			
 		});
-		actionSave.addMouseListener(new MouseListener() {
-
+		actionSave.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent arg0) {
+			public void actionPerformed(ActionEvent e){
 				updateInputs();
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
-		actionPlay.addMouseListener(new MouseListener() {
-
+		actionPlay.addActionListener(new ActionListener(){
 			@Override
-			public void mouseClicked(MouseEvent e) {
+			public void actionPerformed(ActionEvent e){
 				if(inputsRegistered){
 					double[] soundDouble = getAudio();
 					if(graphTargetSet){
@@ -139,31 +113,6 @@ public class Clip implements Serializable {
 					Wavelets.mainPlayer.playSound(soundShort);
 				}
 			}
-
-			@Override
-			public void mouseEntered(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseExited(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mousePressed(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void mouseReleased(MouseEvent e) {
-				// TODO Auto-generated method stub
-				
-			}
-			
 		});
 		//Final
 		refreshNodeSelector();
@@ -238,10 +187,8 @@ public class Clip implements Serializable {
 			}
 			inputPanel.add(inField,constraint);
 		}
-		inputRequests.remove(1);
-		inputRequests.remove(0);
 		boolean invalidate = false;
-		for(String current:inputRequests){
+		for(String current:nodeNetwork.inputRequests){
 			if(!inputs.containsKey(current)){
 				invalidate = true;
 			}
