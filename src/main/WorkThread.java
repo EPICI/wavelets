@@ -22,8 +22,8 @@ public class WorkThread extends Thread {
 	
 	//A task for the work thread to do
 	public static interface Task{
-		//Do work
-		public void execute();
+		//Do work, return true if the work thread can retry
+		public boolean execute();
 		//Get status
 		public byte getStatus();
 		//Tell it to cancel
@@ -80,8 +80,11 @@ public class WorkThread extends Thread {
 			if(numTasks>0){
 				index = (index+1)%numTasks;
 				Task nextTask = tasks.get(index);
-				if(nextTask.getStatus()==WAITING){//Only run if it is idle
-					nextTask.execute();
+				boolean retry = true;
+				while(retry){
+					if(nextTask.getStatus()==WAITING){//Only run if it is idle
+						retry = nextTask.execute();
+					}
 				}
 				if(nextTask.getStatus()==FINISHED){//If finished, remove from list
 					//System.out.println("Finished a "+nextTask.getClass().getSimpleName());

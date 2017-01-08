@@ -58,7 +58,8 @@ public class Composition implements Serializable {
 		}
 
 		@Override
-		public synchronized void execute() {
+		public synchronized boolean execute() {
+			boolean result = true;
 			status = WorkThread.WORKING;
 			switch(phase){
 			case 0:{
@@ -110,6 +111,7 @@ public class Composition implements Serializable {
 				phase = 3;
 				break;
 			}case 3:{
+				result = false;
 				//Wait until all tasks are finished
 				boolean allDone = true;
 				for(WorkThread.Task task:layerTasks){
@@ -135,9 +137,11 @@ public class Composition implements Serializable {
 				targetComposition.cacheHash = newHash;
 				targetComposition.cacheValues = cacheValues;
 				phase = -1;//Signal done
+				result = false;
 				status = WorkThread.FINISHED;
 				break;
 			}default:{
+				result = false;
 				status = WorkThread.FINISHED;
 				break;
 			}
@@ -145,6 +149,7 @@ public class Composition implements Serializable {
 			if(phase!=-1){
 				status = WorkThread.WAITING;
 			}
+			return result;
 		}
 
 		@Override
@@ -180,7 +185,7 @@ public class Composition implements Serializable {
 		}
 
 		@Override
-		public synchronized void execute() {
+		public synchronized boolean execute() {
 			status = WorkThread.WORKING;
 			switch(phase){
 			case 0:{
@@ -207,6 +212,7 @@ public class Composition implements Serializable {
 			if(phase!=-1){
 				status = WorkThread.WAITING;
 			}
+			return false;
 		}
 
 		@Override

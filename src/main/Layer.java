@@ -77,7 +77,8 @@ public class Layer implements Serializable {
 		}
 
 		@Override
-		public synchronized void execute() {
+		public synchronized boolean execute() {
+			boolean result = true;
 			status = WorkThread.WORKING;
 			//IMPORTANT: THIS HAS TO MATCH THE REGULAR METHODS
 			switch(phase){
@@ -117,6 +118,7 @@ public class Layer implements Serializable {
 				phase = 3;
 				break;
 			}case 3:{
+				result = false;
 				//Wait for them to finish
 				boolean allDone = true;
 				for(WorkThread.Task task:clipTasks){
@@ -146,6 +148,7 @@ public class Layer implements Serializable {
 				phase = 5;
 				break;
 			}case 5:{
+				result = false;
 				for(Filter current:targetLayer.filters){
 					cacheValues = current.filter(cacheValues, timeBounds[0]);
 				}
@@ -155,6 +158,7 @@ public class Layer implements Serializable {
 				status = WorkThread.FINISHED;
 				break;
 			}default:{
+				result = false;
 				status = WorkThread.FINISHED;
 				break;
 			}
@@ -162,6 +166,7 @@ public class Layer implements Serializable {
 			if(phase!=-1){
 				status = WorkThread.WAITING;
 			}
+			return result;
 		}
 
 		@Override
@@ -197,7 +202,7 @@ public class Layer implements Serializable {
 		}
 
 		@Override
-		public synchronized void execute() {
+		public synchronized boolean execute() {
 			status = WorkThread.WORKING;
 			switch(phase){
 			case 0:{
@@ -224,6 +229,7 @@ public class Layer implements Serializable {
 			if(phase!=-1){
 				status = WorkThread.WAITING;
 			}
+			return false;
 		}
 
 		@Override

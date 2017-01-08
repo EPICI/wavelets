@@ -64,11 +64,12 @@ public class Clip implements Serializable {
 		}
 
 		@Override
-		public synchronized void execute() {
+		public synchronized boolean execute() {
 			status = WorkThread.WORKING;
 			//While it can be split up, it's better to do it in one go
 			targetClip.getAudio();
 			status = WorkThread.FINISHED;
+			return false;
 		}
 
 		@Override
@@ -104,7 +105,7 @@ public class Clip implements Serializable {
 		}
 
 		@Override
-		public synchronized void execute() {
+		public synchronized boolean execute() {
 			status = WorkThread.WORKING;
 			switch(phase){
 			case 0:{
@@ -131,6 +132,7 @@ public class Clip implements Serializable {
 			if(phase!=-1){
 				status = WorkThread.WAITING;
 			}
+			return false;
 		}
 
 		@Override
