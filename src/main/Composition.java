@@ -36,6 +36,195 @@ public class Composition implements Serializable {
 	//Current clip
 	public transient Clip currentClip;
 	
+	public static class CompositionUpdateAudioTask implements WorkThread.Task{
+		
+		public byte status;
+		public byte phase;
+		public int newHash;
+		private double[] cacheValues;
+		private ArrayList<Layer> layerValues;
+		private ArrayList<WorkThread.Task> layerTasks; 
+		private HashMap<Layer,double[]> layerTimeBounds;
+		private double min;
+		private double max;
+		private double difference;
+		private int total;
+		public Composition targetComposition;
+		
+		public CompositionUpdateAudioTask(Composition target){
+			status = WorkThread.WAITING;
+			phase = 0;
+			targetComposition = target;
+		}
+
+		@Override
+		public synchronized void execute() {
+			status = WorkThread.WORKING;
+			switch(phase){
+			case 0:{
+				//Check if it needs updating
+				newHash = targetComposition.hashCode();
+				if(newHash!=targetComposition.cacheHash){
+					phase = 1;
+				}else{
+					phase = -1;
+				}
+				break;
+			}case 1:{
+				//Basic setup
+				min = Double.MAX_VALUE;
+				max = Double.MIN_VALUE;
+				layerValues = new ArrayList<Layer>();
+				layerTimeBounds = new HashMap<Layer,double[]>();
+				for(Layer current:targetComposition.layers.values()){
+					double[] timeBounds = current.getTimeBounds();
+					if(timeBounds[1]-timeBounds[0]>0){
+						if(timeBounds[0]<min){
+							min=timeBounds[0];
+						}
+						if(timeBounds[1]>max){
+							max=timeBounds[1];
+						}
+						layerValues.add(current);
+						layerTimeBounds.put(current, timeBounds);
+					}
+				}
+				difference = max-min;
+				if(difference>0){
+					phase = 2;
+				}else{
+					targetComposition.cacheValues = new double[0];
+				}
+				break;
+			}case 2:{
+				//Continue setup, create and queue tasks
+				total = (int) (difference*targetComposition.samplesPerSecond);
+				cacheValues = new double[total];
+				layerTasks = new ArrayList<>();
+				for(Layer current:layerValues){
+					layerTasks.add(current.getUpdateAudioTask());
+				}
+				//System.out.println("Assigning "+Integer.toString(layerTasks.size())+" layer tasks");
+				Wavelets.assignTasks(layerTasks);
+				//System.out.println("Assigned layer tasks");
+				phase = 3;
+				break;
+			}case 3:{
+				//Wait until all tasks are finished
+				boolean allDone = true;
+				for(WorkThread.Task task:layerTasks){
+					allDone = task.getStatus()==WorkThread.FINISHED && allDone;
+				}
+				if(allDone){
+					//System.out.println("Layer tasks finished");
+					phase = 4;
+				}
+				break;
+			}case 4:{
+				for(Layer current:layerValues){
+					double[] timeBounds = layerTimeBounds.get(current);
+					double[] layerData = current.getAudio();
+					int offset = (int) ((timeBounds[0]-min)*targetComposition.samplesPerSecond);
+					int target = layerData.length+offset-1;
+					int cap = Math.min(total, target);
+					for(int i=offset;i<cap;i++){
+						//Double safety
+						cacheValues[i]+=layerData[i-offset];
+					}
+				}
+				targetComposition.cacheHash = newHash;
+				targetComposition.cacheValues = cacheValues;
+				phase = -1;//Signal done
+				status = WorkThread.FINISHED;
+				break;
+			}default:{
+				status = WorkThread.FINISHED;
+				break;
+			}
+			}
+			if(phase!=-1){
+				status = WorkThread.WAITING;
+			}
+		}
+
+		@Override
+		public synchronized byte getStatus() {
+			return status;
+		}
+
+		@Override
+		public void cancel() {
+			
+		}
+		
+	}
+	
+	public CompositionUpdateAudioTask getUpdateAudioTask(){
+		return new CompositionUpdateAudioTask(this);
+	}
+	
+	public static class CompositionQuickPlayTask implements WorkThread.Task{
+		
+		public byte status;
+		public byte phase;
+		public Composition targetComposition;
+		private WorkThread.Task updateTask;
+		
+		public CompositionQuickPlayTask(Composition target){
+			status = WorkThread.WAITING;
+			phase = 0;
+			targetComposition = target;
+			if(targetComposition.cacheHash==targetComposition.hashCode()){
+				phase = 2;
+			}
+		}
+
+		@Override
+		public synchronized void execute() {
+			status = WorkThread.WORKING;
+			switch(phase){
+			case 0:{
+				updateTask = targetComposition.getUpdateAudioTask();
+				Wavelets.assignTask(updateTask);
+				phase = 1;
+				break;
+			}case 1:{
+				if(updateTask.getStatus()==WorkThread.FINISHED){
+					phase = 2;
+				}
+				break;
+			}case 2:{
+				short[] audioData = WaveUtils.quickShort(targetComposition.getAudio());
+				Wavelets.mainPlayer.playSound(audioData);
+				phase = -1;
+				status = WorkThread.FINISHED;
+				break;
+			}default:{
+				status = WorkThread.FINISHED;
+				break;
+			}
+			}
+			if(phase!=-1){
+				status = WorkThread.WAITING;
+			}
+		}
+
+		@Override
+		public synchronized byte getStatus() {
+			return status;
+		}
+
+		@Override
+		public void cancel() {
+			
+		}
+		
+	}
+	
+	public void quickPlay(){
+		Wavelets.assignTask(new CompositionQuickPlayTask(this));
+	}
+	
 	//Initialize all transient
 	public void initTransient(){
 		//Safety
@@ -228,42 +417,49 @@ public class Composition implements Serializable {
 		updateLayers();
 	}
 	
-	public double[] getAudio(){
-		int newHash = hashCode();
-		if(newHash!=cacheHash){
-			double min = Double.MAX_VALUE;
-			double max = Double.MIN_VALUE;
-			Collection<Layer> layerValues = layers.values();
-			HashMap<Layer,double[]> layerTimeBounds = new HashMap<Layer,double[]>();
-			for(Layer current:layerValues){
-				double[] timeBounds = current.getTimeBounds();
+	public void updateAudio(int newHash){
+		double min = Double.MAX_VALUE;
+		double max = Double.MIN_VALUE;
+		ArrayList<Layer> layerValues = new ArrayList<Layer>();
+		HashMap<Layer,double[]> layerTimeBounds = new HashMap<Layer,double[]>();
+		for(Layer current:layers.values()){
+			double[] timeBounds = current.getTimeBounds();
+			if(timeBounds[1]-timeBounds[0]>0){
 				if(timeBounds[0]<min){
 					min=timeBounds[0];
 				}
 				if(timeBounds[1]>max){
 					max=timeBounds[1];
 				}
+				layerValues.add(current);
 				layerTimeBounds.put(current, timeBounds);
 			}
-			double difference = max-min;
-			if(difference>0){
-				int total = (int) (difference*samplesPerSecond);
-				cacheValues = new double[total];
-				for(Layer current:layerValues){
-					double[] timeBounds = layerTimeBounds.get(current);
-					double[] layerData = current.getAudio();
-					int offset = (int) ((timeBounds[0]-min)*samplesPerSecond);
-					int target = layerData.length+offset-1;
-					int cap = Math.min(total, target);
-					for(int i=offset;i<cap;i++){
-						//Double safety
-						cacheValues[i]+=layerData[i-offset];
-					}
+		}
+		double difference = max-min;
+		if(difference>0){
+			int total = (int) (difference*samplesPerSecond);
+			cacheValues = new double[total];
+			for(Layer current:layerValues){
+				double[] timeBounds = layerTimeBounds.get(current);
+				double[] layerData = current.getAudio();
+				int offset = (int) ((timeBounds[0]-min)*samplesPerSecond);
+				int target = layerData.length+offset-1;
+				int cap = Math.min(total, target);
+				for(int i=offset;i<cap;i++){
+					//Double safety
+					cacheValues[i]+=layerData[i-offset];
 				}
-			}else{
-				cacheValues = new double[0];//Return empty array to not break other code
 			}
-			cacheHash = newHash;
+		}else{
+			cacheValues = new double[0];//Return empty array to not break other code
+		}
+		cacheHash = newHash;
+	}
+	
+	public double[] getAudio(){
+		int newHash = hashCode();
+		if(newHash!=cacheHash){
+			updateAudio(newHash);
 		}
 		return cacheValues;
 	}
@@ -288,7 +484,9 @@ public class Composition implements Serializable {
 			JSONObject json = new JSONObject(data);
 			if(copyProperties){
 				JSONObject jsonProperties = json.getJSONObject("properties");
-				samplesPerSecond = (int) Math.round(jsonProperties.getDouble("sample rate"));
+				samplesPerSecond = (int) Math.round(jsonProperties.getDouble("samplerate"));
+				retainCache = jsonProperties.getBoolean("retaincache");
+				targetAmplitude = jsonProperties.getDouble("targetamp");
 			}
 			JSONObject jsonData = json.getJSONObject("data");
 			JSONArray jsonCurves = jsonData.getJSONArray("curves");
@@ -478,6 +676,11 @@ public class Composition implements Serializable {
 		data.put("nodes", jsonNodes);
 		data.put("layers", jsonLayers);
 		result.put("data", data);
+		JSONObject properties = new JSONObject();
+		properties.put("samplerate", samplesPerSecond);
+		properties.put("retaincache", retainCache);
+		properties.put("targetamp", targetAmplitude);
+		result.put("properties", properties);
 		return result;
 	}
 

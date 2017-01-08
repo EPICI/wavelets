@@ -89,10 +89,19 @@ public class Wavelets{
 	public static Thread mainThread = Thread.currentThread();
 	//Main player
 	public static Player mainPlayer = new Player();
+	//Work threads
+	public static final int numProcessors = Runtime.getRuntime().availableProcessors();
+	public static final int numWorkThreads = 2*numProcessors;
+	public static final int lastWorkThreadIndex = numWorkThreads-1;
+	public static final WorkThread[] workThreads = new WorkThread[numWorkThreads];
+	public static final ArrayList<WorkThread> workThreadsList = new ArrayList<WorkThread>();
+	public static final int resortThreshold = numProcessors + 4;//Untested
+	public static int resortCounter = 0;
 	
 	//Save file
 	public static String fileName = "";
 	public static boolean fileNamed = false;
+	public static int compositionHash = 0;
 	
 	//Window scale
 	public static double windowX = 1000;
@@ -403,6 +412,16 @@ public class Wavelets{
 		SwingUtilities.updateComponentTreeUI(target);
 		//TODO redraw all
 	}
+	
+	//Notify everything of updates, locations of changes encoded as bits in an int
+	public static void notifyUpdate(int changed){
+		if(changed!=0){
+			if(compositionHash!=composition.hashCode()){
+				mainFrame.setTitle("Wavelets [*"+fileName+"]");
+			}
+			//TODO use BitUtils to read the bits and update elsewhere
+		}
+	}
 		
 	//Re-add all components, useful for loading or refreshing
 	public static void reAddAll(){
@@ -431,7 +450,57 @@ public class Wavelets{
 	public static void initPlayer(){
 		mainPlayer.setName("Wavelets - Audio player");
 		mainPlayer.setDaemon(true);
+		mainPlayer.setPriority(8);
 		mainPlayer.start();
+	}
+	
+	//Initialize work threads
+	public static void initWorkThreads(){
+		for(int i=0;i<numWorkThreads;i++){
+			WorkThread toAdd = new WorkThread("Wavelets - Work Thread #"+Integer.toString(i));
+			workThreads[i] = toAdd;
+			workThreadsList.add(toAdd);
+			toAdd.setDaemon(true);
+			toAdd.setPriority(7);
+			toAdd.start();
+		}
+	}
+	
+	//Sort threads list, most busy first
+	public static synchronized void sortWorkThreads(){
+		resortCounter = 0;
+		Collections.sort(workThreadsList,WorkThread.taskListSize);
+	}
+	
+	//Increment counter and see if work threads need resorting
+	public static synchronized void checkResortWorkThreads(int increment){
+		resortCounter += increment;
+		if(resortCounter>resortThreshold){
+			sortWorkThreads();
+		}
+	}
+	
+	//Assign a single task
+	public static synchronized void assignTask(WorkThread.Task task){
+		checkResortWorkThreads(1);
+		getLeastBusyWorkThread().assignTask(task);
+	}
+	
+	//Assign tasks, avoid mutating
+	public static synchronized void assignTasks(ArrayList<WorkThread.Task> tasks){
+		int index = 0;
+		int numTasks = tasks.size();
+		while(index<numTasks){
+			int newIndex = Math.min(index+resortThreshold, numTasks);
+			sortWorkThreads();
+			getLeastBusyWorkThread().assignTasks(new ArrayList<>(tasks.subList(index,newIndex)));
+			index = newIndex;
+		}
+	}
+	
+	//Get least busy thread
+	public static synchronized WorkThread getLeastBusyWorkThread(){
+		return workThreadsList.get(lastWorkThreadIndex);
 	}
 	
 	//Initialize composition
@@ -598,19 +667,6 @@ public class Wavelets{
 				mainPlayer.stopSound();
 			}
 		});
-		((JButton) composerTopPanelComponents.get(2).get(1)).addActionListener(new ActionListener(){
-			@Override
-			public void actionPerformed(ActionEvent e){
-				if(composition.layers.containsKey(composition.layerSelection)){
-					Layer current = composition.layers.get(composition.layerSelection);
-					if(current.clipCount>0){
-						double[] soundDouble = current.getAudio();
-						short[] soundShort = WaveUtils.quickShort(soundDouble);
-						mainPlayer.playSound(soundShort);
-					}
-				}
-			}
-		});
 		((JButton) composerTopPanelComponents.get(1).get(2)).addActionListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e){
@@ -620,9 +676,18 @@ public class Wavelets{
 		((JButton) composerTopPanelComponents.get(1).get(1)).addActionListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e){
-				double[] soundDouble = composition.getAudio();
-				short[] soundShort = WaveUtils.quickShort(soundDouble);
-				mainPlayer.playSound(soundShort);
+				composition.quickPlay();
+			}
+		});
+		((JButton) composerTopPanelComponents.get(2).get(1)).addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent e){
+				if(composition.layers.containsKey(composition.layerSelection)){
+					Layer current = composition.layers.get(composition.layerSelection);
+					if(current.clipCount>0){
+						current.quickPlay();
+					}
+				}
 			}
 		});
 		((JButton) composerTopPanelComponents.get(2).get(2)).addActionListener(new ActionListener(){
@@ -1177,6 +1242,12 @@ public class Wavelets{
 				}
 				enableNodeEditor();
 				updateDisplay();
+			}
+		});
+		submenuItems.get(0).get(0).addActionListener(new ActionListener() {//Import JSON from file
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				openLoadDialog(loadJson);
 			}
 		});
 		submenuItems.get(0).get(1).addActionListener(new ActionListener() {//Import JSON from text
@@ -2124,9 +2195,11 @@ public class Wavelets{
 				int dialogResult = JOptionPane.showConfirmDialog(null,"File already exists. Continuing will overwrite it.","Confirm overwrite",JOptionPane.YES_NO_OPTION);
 				if(dialogResult==JOptionPane.YES_OPTION){
 					saver.save(composition, file);
+					compositionHash = composition.hashCode();
 				}
 			}else if(!file.exists()){//If file doesn't exist
 				saver.save(composition, file);
+				compositionHash = composition.hashCode();
 			}
 		}
 	}
@@ -2194,6 +2267,7 @@ public class Wavelets{
 						fileName = file.getPath();
 						fileNamed = true;
 						mainFrame.setTitle("Wavelets ["+fileName+"]");
+						compositionHash = composition.hashCode();
 					}
 				}
 			}
@@ -2204,6 +2278,7 @@ public class Wavelets{
 		working = true;
 		mainThread.setName("Wavelets - Main");
 		initPlayer();
+		initWorkThreads();
 		//Run through arguments
 		if(args.length>0){
 			//Expected file is first argument
@@ -2241,7 +2316,20 @@ public class Wavelets{
 			@Override
 			public void windowClosing(WindowEvent e) {
 				if(!working){
-					System.exit(0);
+					if(compositionHash==composition.hashCode()){
+						System.exit(0);
+					}else{
+						int dialogResult = JOptionPane.showConfirmDialog(null,"Something is different. Save first?","Unsaved changes",JOptionPane.YES_NO_OPTION);
+						if(dialogResult==JOptionPane.YES_OPTION){
+							if(fileNamed){
+								saveSerial.save(composition, new File(fileName));
+							}else{
+								openSaveDialog(saveSerial);
+							}
+						}else if(dialogResult==JOptionPane.NO_OPTION){
+							System.exit(0);
+						}
+					}
 				}
 			}
 

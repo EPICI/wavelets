@@ -13,6 +13,9 @@ import org.json.*;
 public class Curve implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
+	//Threshold for recursive division, after this point regular iteration is used
+	public static final int splitThreshold = 4;
+	
 	//Curve data
 	protected ArrayList<Double> locations = new ArrayList<Double>();
 	protected ArrayList<Double> values = new ArrayList<Double>();
@@ -301,6 +304,31 @@ public class Curve implements Serializable {
 		return interp(lerpmode,b,d,(t-a)/(c-a));
 	}
 	
+	public int positionIndex(double pos){
+		int rangeMin = 0;
+		int rangeMax = listSize-1;
+		int rangeSize = rangeMax-rangeMin;
+		while(rangeSize>splitThreshold){
+			int rangeMid = rangeMin+rangeSize/2;
+			double posMid = locations.get(rangeMid);
+			if(pos<posMid){
+				rangeMax = rangeMid;
+			}else{
+				rangeMin = rangeMid;
+			}
+			rangeSize = rangeMax-rangeMin;
+		}
+		int index;
+		boolean cont = true;
+		for(index=rangeMin;index<rangeMax&&cont;index++){
+			if(pos<locations.get(index)){
+				cont=false;
+				index--;
+			}
+		}
+		return index;
+	}
+	
 	public double valueAtPos(double pos){
 		if(pos<=locations.get(0)){
 			return values.get(0);
@@ -308,14 +336,7 @@ public class Curve implements Serializable {
 			return values.get(listSize-1);
 		}else{
 			if(mode<3){
-				int index;
-				boolean cont = true;
-				for(index=0;index<listSize&&cont;index++){
-					if(pos<locations.get(index)){
-						cont=false;
-						index--;
-					}
-				}
+				int index = positionIndex(pos);
 				return interp(mode, locations.get(index-1),values.get(index-1),locations.get(index),values.get(index),pos);
 			}else{//Auto cubic
 				if(listSize==2){
@@ -332,14 +353,7 @@ public class Curve implements Serializable {
 						return lerp4(values.get(0),values.get(0),values.get(1)-difference,values.get(1),(pos-locations.get(0))/(distance));
 					}
 				}else{
-					int index;
-					boolean cont = true;
-					for(index=0;index<listSize&&cont;index++){
-						if(pos<locations.get(index)){
-							cont=false;
-							index--;
-						}
-					}
+					int index = positionIndex(pos);
 					double dif1;
 					double dif2;
 					double distance = locations.get(index)-locations.get(index-1);
@@ -353,9 +367,10 @@ public class Curve implements Serializable {
 						dif1 = (values.get(index)-values.get(index-2))/(locations.get(index)-locations.get(index-2));
 						dif2 = values.get(index+1)-values.get(index-1)/(locations.get(index+1)-locations.get(index-1));
 					}
-					//0.5 is the calibrated tested correct value
-					dif1*=distance/2d;
-					dif2*=distance/2d;
+					//0.25 is the calibrated tested correct value
+					double multiplier = 0.25d*distance;
+					dif1*=multiplier;
+					dif2*=multiplier;
 					return lerp4(values.get(index-1),values.get(index-1)+dif1,values.get(index)-dif2,values.get(index),(pos-locations.get(index-1))/distance);
 				}
 			}

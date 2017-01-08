@@ -104,7 +104,7 @@ public class Player extends Thread {
 				queued = false;
 			}else{
 				try{
-					Thread.sleep(100);
+					Thread.sleep(10);
 				}catch(InterruptedException e){
 					e.printStackTrace();
 				}

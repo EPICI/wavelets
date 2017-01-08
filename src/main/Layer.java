@@ -59,6 +59,189 @@ public class Layer implements Serializable {
 	public static HashMap<String,TimeManipulator> timeManipulators;
 	public static String[] timeManipulatorsKeysArray = new String[0];
 	
+	public static class LayerUpdateAudioTask implements WorkThread.Task{
+		
+		public byte status;
+		public byte phase;
+		public Layer targetLayer;
+		private double[] timeBounds;
+		private double[] cacheValues;
+		private ArrayList<Clip> usedClips;
+		private ArrayList<WorkThread.Task> clipTasks; 
+		private int newHash;
+		
+		public LayerUpdateAudioTask(Layer target){
+			status = WorkThread.WAITING;
+			phase = 0;
+			targetLayer = target;
+		}
+
+		@Override
+		public synchronized void execute() {
+			status = WorkThread.WORKING;
+			//IMPORTANT: THIS HAS TO MATCH THE REGULAR METHODS
+			switch(phase){
+			case 0:{
+				//Check if it needs updating
+				newHash = targetLayer.hashCode();
+				if(newHash!=targetLayer.cacheHash){
+					phase = 1;//Signal needs updating
+				}else{
+					phase = -1;//Signal finished
+				}
+				break;
+			}case 1:{
+				//Basic setup
+				timeBounds = targetLayer.getTimeBounds();
+				int total = (int) ((timeBounds[1]-timeBounds[0])*targetLayer.parentComposition.samplesPerSecond);
+				cacheValues = new double[total];
+				for(int i=0;i<total;i++){
+					cacheValues[i]=0d;
+				}
+				phase = 2;
+				break;
+			}case 2:{
+				//Queue up all tasks
+				usedClips = new ArrayList<>();
+				clipTasks = new ArrayList<>();
+				for(Clip current:targetLayer.clips){
+					//System.out.println("Next clip");
+					if(current.inputsRegistered){
+						usedClips.add(current);
+						clipTasks.add(current.getUpdateAudioTask());
+					}
+				}
+				//System.out.println("Assigning "+Integer.toString(clipTasks.size())+" clip tasks");
+				Wavelets.assignTasks(clipTasks);
+				//System.out.println("Assigned clip tasks");
+				phase = 3;
+				break;
+			}case 3:{
+				//Wait for them to finish
+				boolean allDone = true;
+				for(WorkThread.Task task:clipTasks){
+					allDone = task.getStatus()==WorkThread.FINISHED && allDone;
+				}
+				if(allDone){
+					//System.out.println("Clip tasks finished");
+					phase = 4;
+				}
+				break;
+			}case 4:{
+				//Add them all
+				for(Clip current:usedClips){
+					//System.out.println("Next clip");
+					if(current.inputsRegistered){
+						double[] clipData = current.getAudio();
+						int offset = (int) ((current.startTime-timeBounds[0])*targetLayer.parentComposition.samplesPerSecond);
+						int target = clipData.length+offset-1;
+						int cap = Math.min(cacheValues.length, target);
+						for(int i=offset;i<cap;i++){
+							//Double safety
+							cacheValues[i]+=clipData[i-offset];
+						}
+						//System.out.println("Added "+(cap-offset)+" values");
+					}
+				}
+				phase = 5;
+				break;
+			}case 5:{
+				for(Filter current:targetLayer.filters){
+					cacheValues = current.filter(cacheValues, timeBounds[0]);
+				}
+				targetLayer.cacheHash = newHash;
+				targetLayer.cacheValues = cacheValues;
+				phase = -1;//Signal done
+				status = WorkThread.FINISHED;
+				break;
+			}default:{
+				status = WorkThread.FINISHED;
+				break;
+			}
+			}
+			if(phase!=-1){
+				status = WorkThread.WAITING;
+			}
+		}
+
+		@Override
+		public synchronized byte getStatus() {
+			return status;
+		}
+
+		@Override
+		public void cancel() {
+			
+		}
+		
+	}
+	
+	public LayerUpdateAudioTask getUpdateAudioTask(){
+		return new LayerUpdateAudioTask(self);
+	}
+	
+	public static class LayerQuickPlayTask implements WorkThread.Task{
+		
+		public byte status;
+		public byte phase;
+		public Layer targetLayer;
+		private WorkThread.Task updateTask;
+		
+		public LayerQuickPlayTask(Layer target){
+			status = WorkThread.WAITING;
+			phase = 0;
+			targetLayer = target;
+			if(targetLayer.cacheHash==targetLayer.hashCode()){
+				phase = 2;
+			}
+		}
+
+		@Override
+		public synchronized void execute() {
+			status = WorkThread.WORKING;
+			switch(phase){
+			case 0:{
+				updateTask = targetLayer.getUpdateAudioTask();
+				Wavelets.assignTask(updateTask);
+				phase = 1;
+				break;
+			}case 1:{
+				if(updateTask.getStatus()==WorkThread.FINISHED){
+					phase = 2;
+				}
+				break;
+			}case 2:{
+				short[] audioData = WaveUtils.quickShort(targetLayer.getAudio());
+				Wavelets.mainPlayer.playSound(audioData);
+				phase = -1;
+				status = WorkThread.FINISHED;
+				break;
+			}default:{
+				status = WorkThread.FINISHED;
+				break;
+			}
+			}
+			if(phase!=-1){
+				status = WorkThread.WAITING;
+			}
+		}
+
+		@Override
+		public synchronized byte getStatus() {
+			return status;
+		}
+
+		@Override
+		public void cancel() {
+			
+		}
+		
+	}
+	
+	public void quickPlay(){
+		Wavelets.assignTask(new LayerQuickPlayTask(this));
+	}
+	
 	public static void init(Composition parent){
 		filterGenerators = new HashMap<String,FilterGenerator>();
 		filterGenerators.put("Curve envelope", new FilterGenerator(){
@@ -416,6 +599,7 @@ public class Layer implements Serializable {
 	}
 	
 	public double[] getTimeBounds(){
+		//TODO add support for "markers" which would override these values
 		double minValue = Double.MAX_VALUE;
 		double maxValue = Double.MIN_VALUE;
 		for(Clip current:clips){
@@ -430,34 +614,38 @@ public class Layer implements Serializable {
 		return new double[]{minValue,maxValue};
 	}
 	
+	public void updateAudio(int newHash){
+		double[] timeBounds = getTimeBounds();
+		int total = (int) ((timeBounds[1]-timeBounds[0])*parentComposition.samplesPerSecond);
+		//System.out.println("Generated array of length "+total);
+		cacheValues = new double[total];
+		for(int i=0;i<total;i++){
+			cacheValues[i]=0d;
+		}
+		for(Clip current:clips){
+			//System.out.println("Next clip");
+			if(current.inputsRegistered){
+				double[] clipData = current.getAudio();
+				int offset = (int) ((current.startTime-timeBounds[0])*parentComposition.samplesPerSecond);
+				int target = clipData.length+offset-1;
+				int cap = Math.min(total, target);
+				for(int i=offset;i<cap;i++){
+					//Double safety
+					cacheValues[i]+=clipData[i-offset];
+				}
+				//System.out.println("Added "+(cap-offset)+" values");
+			}
+		}
+		for(Filter current:filters){
+			cacheValues = current.filter(cacheValues, timeBounds[0]);
+		}
+		cacheHash=newHash;
+	}
+	
 	public double[] getAudio(){
 		int newHash = hashCode();
 		if(newHash!=cacheHash){
-			double[] timeBounds = getTimeBounds();
-			int total = (int) ((timeBounds[1]-timeBounds[0])*parentComposition.samplesPerSecond);
-			//System.out.println("Generated array of length "+total);
-			cacheValues = new double[total];
-			for(int i=0;i<total;i++){
-				cacheValues[i]=0d;
-			}
-			for(Clip current:clips){
-				//System.out.println("Next clip");
-				if(current.inputsRegistered){
-					double[] clipData = current.getAudio();
-					int offset = (int) ((current.startTime-timeBounds[0])*parentComposition.samplesPerSecond);
-					int target = clipData.length+offset-1;
-					int cap = Math.min(total, target);
-					for(int i=offset;i<cap;i++){
-						//Double safety
-						cacheValues[i]+=clipData[i-offset];
-					}
-					//System.out.println("Added "+(cap-offset)+" values");
-				}
-			}
-			for(Filter current:filters){
-				cacheValues = current.filter(cacheValues, timeBounds[0]);
-			}
-			cacheHash=newHash;
+			updateAudio(newHash);
 		}
 		return cacheValues;
 	}

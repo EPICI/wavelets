@@ -53,6 +53,102 @@ public class Clip implements Serializable {
 	//Safety bit
 	public transient boolean nodeSelectorChanging = false;
 	
+	public static class ClipUpdateAudioTask implements WorkThread.Task{
+		
+		public byte status;
+		public Clip targetClip;
+		
+		public ClipUpdateAudioTask(Clip target){
+			status = WorkThread.WAITING;
+			targetClip = target;
+		}
+
+		@Override
+		public synchronized void execute() {
+			status = WorkThread.WORKING;
+			//While it can be split up, it's better to do it in one go
+			targetClip.getAudio();
+			status = WorkThread.FINISHED;
+		}
+
+		@Override
+		public synchronized byte getStatus() {
+			return status;
+		}
+
+		@Override
+		public void cancel() {
+			
+		}
+		
+	}
+	
+	public ClipUpdateAudioTask getUpdateAudioTask(){
+		return new ClipUpdateAudioTask(this);
+	}
+	
+	public static class ClipQuickPlayTask implements WorkThread.Task{
+		
+		public byte status;
+		public byte phase;
+		public Clip targetClip;
+		private WorkThread.Task updateTask;
+		
+		public ClipQuickPlayTask(Clip target){
+			status = WorkThread.WAITING;
+			phase = 0;
+			targetClip = target;
+			if(targetClip.cacheUpdated){
+				phase = 2;
+			}
+		}
+
+		@Override
+		public synchronized void execute() {
+			status = WorkThread.WORKING;
+			switch(phase){
+			case 0:{
+				updateTask = targetClip.getUpdateAudioTask();
+				Wavelets.assignTask(updateTask);
+				phase = 1;
+				break;
+			}case 1:{
+				if(updateTask.getStatus()==WorkThread.FINISHED){
+					phase = 2;
+				}
+				break;
+			}case 2:{
+				short[] audioData = WaveUtils.quickShort(targetClip.getAudio());
+				Wavelets.mainPlayer.playSound(audioData);
+				phase = -1;
+				status = WorkThread.FINISHED;
+				break;
+			}default:{
+				status = WorkThread.FINISHED;
+				break;
+			}
+			}
+			if(phase!=-1){
+				status = WorkThread.WAITING;
+			}
+		}
+
+		@Override
+		public synchronized byte getStatus() {
+			return status;
+		}
+
+		@Override
+		public void cancel() {
+			
+		}
+		
+	}
+	
+	public void quickPlay(){
+		Wavelets.assignTask(new ClipQuickPlayTask(this));
+	}
+	
 	public Composition parentComposition(){
 		return parentLayer.parentComposition;
 	}
@@ -105,12 +201,7 @@ public class Clip implements Serializable {
 			@Override
 			public void actionPerformed(ActionEvent e){
 				if(inputsRegistered){
-					double[] soundDouble = getAudio();
-					if(graphTargetSet){
-						graphTarget.graphData = soundDouble;
-					}
-					short[] soundShort = WaveUtils.quickShort(soundDouble);
-					Wavelets.mainPlayer.playSound(soundShort);
+					quickPlay();
 				}
 			}
 		});
@@ -230,25 +321,30 @@ public class Clip implements Serializable {
 		actionPlay.setEnabled(true);
 	}
 	
+	//Ensure audio data is updated
+	public void updateAudio(){
+		double sampleRate = parentComposition().samplesPerSecond;
+		nodeNetwork.user = this;
+		cacheValues = new double[length];
+		nodeNetwork.phase = 0.0;
+		for(int i=0;i<length;i++){
+			for(Node j : nodeNetwork.nodes.values()){
+				j.updateFrameCache();
+			}
+			nodeNetwork.position = i/sampleRate;
+			double currentTime = startTime+nodeNetwork.position;
+			nodeNetwork.time = currentTime;
+			nodeNetwork.rate = ((double) i)/length;
+			nodeNetwork.phase += freqCacheValues[i]/parentComposition().samplesPerSecond;
+			cacheValues[i] = nodeNetwork.getValueOf("output");//Designated name
+		}
+	}
+	
 	//Get audio data
 	public double[] getAudio(){
 		updateFreq();
 		if(!cacheUpdated){
-			double sampleRate = parentComposition().samplesPerSecond;
-			nodeNetwork.user = this;
-			cacheValues = new double[length];
-			nodeNetwork.phase = 0.0;
-			for(int i=0;i<length;i++){
-				for(Node j : nodeNetwork.nodes.values()){
-					j.updateFrameCache();
-				}
-				nodeNetwork.position = i/sampleRate;
-				double currentTime = startTime+nodeNetwork.position;
-				nodeNetwork.time = currentTime;
-				nodeNetwork.rate = ((double) i)/length;
-				nodeNetwork.phase += freqCacheValues[i]/parentComposition().samplesPerSecond;
-				cacheValues[i] = nodeNetwork.getValueOf("output");//Designated name
-			}
+			updateAudio();
 		}
 		return cacheValues;
 	}
