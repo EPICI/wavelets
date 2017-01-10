@@ -344,9 +344,7 @@ public class WLayerQuickDrawPanel extends JPanel {
 			long currentTime = System.currentTimeMillis();
 			if(currentTime-lastPlayed>msDelay){
 				lastPlayed = currentTime;
-				double[] doubleArray = activeLayer.getAudio();
-				short[] shortArray = WaveUtils.quickShort(doubleArray);
-				Wavelets.mainPlayer.playSound(shortArray);
+				activeLayer.quickPlay(Wavelets.multithreadEnabled());
 			}
 		}
 	}
@@ -358,7 +356,7 @@ public class WLayerQuickDrawPanel extends JPanel {
 		g.setColor(color);
 		double gridPos;
 		//Horizontal
-		gridPos = top;
+		gridPos = top+0.5d;
 		while(gridPos>bottom){
 			if(WaveUtils.isNear(gridPos%vertInc, 0)){
 				int mapping = (int) Math.floor((top-gridPos)/(top-bottom)*ycap+2);

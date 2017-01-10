@@ -330,7 +330,9 @@ public class Curve implements Serializable {
 	}
 	
 	public double valueAtPos(double pos){
-		if(pos<=locations.get(0)){
+		if(listSize==0){
+			return 0d;
+		}else if(pos<=locations.get(0)){
 			return values.get(0);
 		}else if(pos>=locations.get(listSize-1)){
 			return values.get(listSize-1);
@@ -374,6 +376,68 @@ public class Curve implements Serializable {
 					return lerp4(values.get(index-1),values.get(index-1)+dif1,values.get(index)-dif2,values.get(index),(pos-locations.get(index-1))/distance);
 				}
 			}
+		}
+	}
+	
+	/*
+	 * Try to trim to a target number of points
+	 * resolution controls the accuracy of the convergence, higher is better but slower
+	 * If difference is less than stopThreshold, stop early
+	 * If difference is greater than continueThreshold, force continue
+	 * Will do at least one iteration, placing one point
+	 */
+	public void trimTo(int targetPoints,double resolution,double stopThreshold,double continueThreshold){
+		//If already small enough, no need to trim
+		if(targetPoints<listSize){
+			double leastDifference = Double.MAX_VALUE;
+			for(int i=0;i<listSize-1;i++){
+				double difference = locations.get(i+1)-locations.get(i);
+				if(difference<leastDifference){
+					leastDifference=difference;
+				}
+			}
+			double increment = leastDifference/resolution;
+			double start = locations.get(0);
+			double end = locations.get(listSize-1);
+			double total = end-start;
+			int divisions = (int) (total/increment);
+			double[] targetArray = new double[divisions];
+			for(int i=0;i<divisions;i++){
+				double pos = ((double) i)/divisions*total+start;
+				targetArray[i] = valueAtPos(pos);
+			}
+			double[] differenceArray = new double[divisions];
+			//Create a new curve and converge
+			Curve trimmed = new Curve();
+			boolean cont = true;
+			int iters = -1;
+			while(cont){
+				iters++;
+				cont &= iters<targetPoints;
+				if(cont){
+					double peakLocation = 0;
+					double peakValue = 0;
+					for(int i=0;i<divisions;i++){
+						double pos = ((double) i)/divisions*total+start;
+						double value = trimmed.valueAtPos(pos);
+						double absdif = Math.abs(targetArray[i]-value);
+						differenceArray[i] = absdif;
+						if(absdif>peakValue){
+							peakLocation = pos;
+							peakValue = absdif;
+						}
+					}
+					cont |= peakValue>continueThreshold;
+					cont &= peakValue>stopThreshold;
+					if(cont){
+						trimmed.tryAddPoint(peakLocation, peakValue);
+					}
+				}
+			}
+			locations = trimmed.getLocations();
+			values = trimmed.getValues();
+			trimmed.destroy();
+			listSize = locations.size();
 		}
 	}
 	

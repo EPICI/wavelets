@@ -15,6 +15,7 @@ public class Clip implements Serializable {
 	//Constants
 	public static final String START_TIME = "Start time";
 	public static final String END_TIME = "End time";
+	public static final int SLEEP_NANOS = 100;
 	
 	//Is it part of a layer
 	public boolean isLayerClip = true;
@@ -32,11 +33,11 @@ public class Clip implements Serializable {
 	public HashMap<String,Double> inputs = new HashMap<String,Double>();
 	public transient boolean inputsRegistered = true;
 	//Cache audio
-	public transient boolean cacheUpdated = false;
-	public double[] cacheValues;
+	public volatile transient boolean cacheUpdated = false;
+	public volatile double[] cacheValues;
 	//Cache frequency
-	public transient boolean freqCacheUpdated = false;
-	public double[] freqCacheValues;
+	public volatile transient boolean freqCacheUpdated = false;
+	public volatile double[] freqCacheValues;
 	
 	//Display
 	public transient JPanel parentPanel;
@@ -55,26 +56,34 @@ public class Clip implements Serializable {
 	
 	public static class ClipUpdateAudioTask implements WorkThread.Task{
 		
-		public byte status;
+		public volatile byte status;
 		public Clip targetClip;
 		
 		public ClipUpdateAudioTask(Clip target){
-			status = WorkThread.WAITING;
+			setStatus(WorkThread.WAITING);
 			targetClip = target;
 		}
 
 		@Override
-		public synchronized boolean execute() {
-			status = WorkThread.WORKING;
+		public boolean execute() {
+			setStatus(WorkThread.WORKING);
 			//While it can be split up, it's better to do it in one go
 			targetClip.getAudio();
-			status = WorkThread.FINISHED;
+			setStatus(WorkThread.FINISHED);
 			return false;
 		}
 
 		@Override
-		public synchronized byte getStatus() {
-			return status;
+		public byte getStatus() {
+			synchronized(this){
+				return status;
+			}
+		}
+		
+		public void setStatus(byte b){
+			synchronized(this){
+				status = b;
+			}
 		}
 
 		@Override
@@ -90,13 +99,13 @@ public class Clip implements Serializable {
 	
 	public static class ClipQuickPlayTask implements WorkThread.Task{
 		
-		public byte status;
+		public volatile byte status;
 		public byte phase;
 		public Clip targetClip;
 		private WorkThread.Task updateTask;
 		
 		public ClipQuickPlayTask(Clip target){
-			status = WorkThread.WAITING;
+			setStatus(WorkThread.WAITING);
 			phase = 0;
 			targetClip = target;
 			if(targetClip.cacheUpdated){
@@ -105,8 +114,8 @@ public class Clip implements Serializable {
 		}
 
 		@Override
-		public synchronized boolean execute() {
-			status = WorkThread.WORKING;
+		public boolean execute() {
+			setStatus(WorkThread.WORKING);
 			switch(phase){
 			case 0:{
 				updateTask = targetClip.getUpdateAudioTask();
@@ -122,22 +131,30 @@ public class Clip implements Serializable {
 				short[] audioData = WaveUtils.quickShort(targetClip.getAudio());
 				Wavelets.mainPlayer.playSound(audioData);
 				phase = -1;
-				status = WorkThread.FINISHED;
+				setStatus(WorkThread.FINISHED);
 				break;
 			}default:{
-				status = WorkThread.FINISHED;
+				setStatus(WorkThread.FINISHED);
 				break;
 			}
 			}
 			if(phase!=-1){
-				status = WorkThread.WAITING;
+				setStatus(WorkThread.WAITING);
 			}
 			return false;
 		}
 
 		@Override
-		public synchronized byte getStatus() {
-			return status;
+		public byte getStatus() {
+			synchronized(this){
+				return status;
+			}
+		}
+		
+		public void setStatus(byte b){
+			synchronized(this){
+				status = b;
+			}
 		}
 
 		@Override
@@ -147,8 +164,14 @@ public class Clip implements Serializable {
 		
 	}
 	
-	public void quickPlay(){
-		Wavelets.assignTask(new ClipQuickPlayTask(this));
+	public void quickPlay(boolean multithread){
+		if(multithread){
+			Wavelets.assignTask(new ClipQuickPlayTask(this));
+		}else{
+			double[] doubleData = getAudio();
+			short[] shortData = WaveUtils.quickShort(doubleData);
+			Wavelets.mainPlayer.playSound(shortData);
+		}
 	}
 	
 	public Composition parentComposition(){
@@ -203,7 +226,7 @@ public class Clip implements Serializable {
 			@Override
 			public void actionPerformed(ActionEvent e){
 				if(inputsRegistered){
-					quickPlay();
+					quickPlay(Wavelets.multithreadEnabled());
 				}
 			}
 		});
@@ -324,8 +347,15 @@ public class Clip implements Serializable {
 	}
 	
 	//Ensure audio data is updated
-	public void updateAudio(){
+	public synchronized void updateAudio(){
 		double sampleRate = parentComposition().samplesPerSecond;
+		//Double threading safety
+		while(nodeNetwork.user!=this){
+			while(nodeNetwork.user!=null){
+				WaveUtils.trySleepNanos(SLEEP_NANOS);
+			}
+			nodeNetwork.user = this;
+		}
 		nodeNetwork.user = this;
 		cacheValues = new double[length];
 		nodeNetwork.phase = 0.0;
@@ -340,6 +370,7 @@ public class Clip implements Serializable {
 			nodeNetwork.phase += freqCacheValues[i]/parentComposition().samplesPerSecond;
 			cacheValues[i] = nodeNetwork.getValueOf("output");//Designated name
 		}
+		nodeNetwork.user = null;
 	}
 	
 	//Get audio data
@@ -352,11 +383,18 @@ public class Clip implements Serializable {
 	}
 	
 	//Ensure frequency data is updated
-	public void updateFreq(){
+	public synchronized void updateFreq(){
+		refreshNodes();
 		nodeNetwork.forceUpdateAll();
 		if(!freqCacheUpdated){
 			double sampleRate = parentComposition().samplesPerSecond;
-			nodeNetwork.user = this;
+			//Double threading safety
+			while(nodeNetwork.user!=this){
+				while(nodeNetwork.user!=null){
+					WaveUtils.trySleepNanos(SLEEP_NANOS);
+				}
+				nodeNetwork.user = this;
+			}
 			freqCacheValues = new double[length];
 			for(int i=0;i<length;i++){
 				for(Node j : nodeNetwork.nodes.values()){
@@ -368,6 +406,7 @@ public class Clip implements Serializable {
 				nodeNetwork.rate = ((double) i)/length;
 				freqCacheValues[i] = nodeNetwork.getValueOf("frequency");//Designated name
 			}
+			nodeNetwork.user = null;
 			freqCacheUpdated = true;
 		}
 	}
@@ -386,7 +425,11 @@ public class Clip implements Serializable {
 	}
 	
 	public double getInput(String inputID){
-		return inputs.get(inputID);
+		if(inputs.containsKey(inputID)){
+			return inputs.get(inputID);
+		}else{
+			return 0d;//Don't break
+		}
 	}
 		
 	public ArrayList<String> getInputs(){

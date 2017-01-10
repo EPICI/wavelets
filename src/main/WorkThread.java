@@ -91,11 +91,7 @@ public class WorkThread extends Thread {
 					tasks.remove(index);
 				}
 			}else{
-				try{
-					Thread.sleep(10);
-				}catch(InterruptedException e){
-					e.printStackTrace();
-				}
+				WaveUtils.trySleep(100);
 			}
 		}
 	}

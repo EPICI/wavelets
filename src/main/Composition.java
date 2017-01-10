@@ -30,15 +30,15 @@ public class Composition implements Serializable {
 	public double targetAmplitude = 0.1d;
 	
 	//Cached audio
-	public double[] cacheValues;
-	public int cacheHash;
+	public volatile double[] cacheValues;
+	public volatile int cacheHash;
 	
 	//Current clip
 	public transient Clip currentClip;
 	
 	public static class CompositionUpdateAudioTask implements WorkThread.Task{
 		
-		public byte status;
+		public volatile byte status;
 		public byte phase;
 		public int newHash;
 		private double[] cacheValues;
@@ -52,15 +52,15 @@ public class Composition implements Serializable {
 		public Composition targetComposition;
 		
 		public CompositionUpdateAudioTask(Composition target){
-			status = WorkThread.WAITING;
+			setStatus(WorkThread.WAITING);
 			phase = 0;
 			targetComposition = target;
 		}
 
 		@Override
-		public synchronized boolean execute() {
+		public boolean execute() {
 			boolean result = true;
-			status = WorkThread.WORKING;
+			setStatus(WorkThread.WORKING);
 			switch(phase){
 			case 0:{
 				//Check if it needs updating
@@ -111,12 +111,12 @@ public class Composition implements Serializable {
 				phase = 3;
 				break;
 			}case 3:{
-				result = false;
 				//Wait until all tasks are finished
 				boolean allDone = true;
 				for(WorkThread.Task task:layerTasks){
 					allDone = task.getStatus()==WorkThread.FINISHED && allDone;
 				}
+				result = allDone;
 				if(allDone){
 					//System.out.println("Layer tasks finished");
 					phase = 4;
@@ -138,23 +138,31 @@ public class Composition implements Serializable {
 				targetComposition.cacheValues = cacheValues;
 				phase = -1;//Signal done
 				result = false;
-				status = WorkThread.FINISHED;
+				setStatus(WorkThread.FINISHED);
 				break;
 			}default:{
 				result = false;
-				status = WorkThread.FINISHED;
+				setStatus(WorkThread.FINISHED);
 				break;
 			}
 			}
 			if(phase!=-1){
-				status = WorkThread.WAITING;
+				setStatus(WorkThread.WAITING);
 			}
 			return result;
 		}
 
 		@Override
-		public synchronized byte getStatus() {
-			return status;
+		public byte getStatus() {
+			synchronized(this){
+				return status;
+			}
+		}
+		
+		public void setStatus(byte b){
+			synchronized(this){
+				status = b;
+			}
 		}
 
 		@Override
@@ -170,13 +178,13 @@ public class Composition implements Serializable {
 	
 	public static class CompositionQuickPlayTask implements WorkThread.Task{
 		
-		public byte status;
+		public volatile byte status;
 		public byte phase;
 		public Composition targetComposition;
 		private WorkThread.Task updateTask;
 		
 		public CompositionQuickPlayTask(Composition target){
-			status = WorkThread.WAITING;
+			setStatus(WorkThread.WAITING);
 			phase = 0;
 			targetComposition = target;
 			if(targetComposition.cacheHash==targetComposition.hashCode()){
@@ -185,8 +193,8 @@ public class Composition implements Serializable {
 		}
 
 		@Override
-		public synchronized boolean execute() {
-			status = WorkThread.WORKING;
+		public boolean execute() {
+			setStatus(WorkThread.WORKING);
 			switch(phase){
 			case 0:{
 				updateTask = targetComposition.getUpdateAudioTask();
@@ -202,22 +210,30 @@ public class Composition implements Serializable {
 				short[] audioData = WaveUtils.quickShort(targetComposition.getAudio());
 				Wavelets.mainPlayer.playSound(audioData);
 				phase = -1;
-				status = WorkThread.FINISHED;
+				setStatus(WorkThread.FINISHED);
 				break;
 			}default:{
-				status = WorkThread.FINISHED;
+				setStatus(WorkThread.FINISHED);
 				break;
 			}
 			}
 			if(phase!=-1){
-				status = WorkThread.WAITING;
+				setStatus(WorkThread.WAITING);
 			}
 			return false;
 		}
 
 		@Override
-		public synchronized byte getStatus() {
-			return status;
+		public byte getStatus() {
+			synchronized(this){
+				return status;
+			}
+		}
+		
+		public void setStatus(byte b){
+			synchronized(this){
+				status = b;
+			}
 		}
 
 		@Override
@@ -227,8 +243,14 @@ public class Composition implements Serializable {
 		
 	}
 	
-	public void quickPlay(){
-		Wavelets.assignTask(new CompositionQuickPlayTask(this));
+	public void quickPlay(boolean multithread){
+		if(multithread){
+			Wavelets.assignTask(new CompositionQuickPlayTask(this));
+		}else{
+			double[] doubleData = getAudio();
+			short[] shortData = WaveUtils.quickShort(doubleData);
+			Wavelets.mainPlayer.playSound(shortData);
+		}
 	}
 	
 	//Initialize all transient

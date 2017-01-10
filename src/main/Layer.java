@@ -24,8 +24,8 @@ public class Layer implements Serializable {
 	//All filters, in order they are applied
 	public ArrayList<Filter> filters = new ArrayList<Filter>();
 	//Cache
-	public double[] cacheValues;
-	public int cacheHash = 0;
+	public volatile double[] cacheValues;
+	public volatile int cacheHash = 0;
 	
 	//Display - left area
 	public transient JPanel parentPanel;
@@ -61,7 +61,7 @@ public class Layer implements Serializable {
 	
 	public static class LayerUpdateAudioTask implements WorkThread.Task{
 		
-		public byte status;
+		public volatile byte status;
 		public byte phase;
 		public Layer targetLayer;
 		private double[] timeBounds;
@@ -71,15 +71,15 @@ public class Layer implements Serializable {
 		private int newHash;
 		
 		public LayerUpdateAudioTask(Layer target){
-			status = WorkThread.WAITING;
+			setStatus(WorkThread.WAITING);
 			phase = 0;
 			targetLayer = target;
 		}
 
 		@Override
-		public synchronized boolean execute() {
+		public boolean execute() {
 			boolean result = true;
-			status = WorkThread.WORKING;
+			setStatus(WorkThread.WORKING);
 			//IMPORTANT: THIS HAS TO MATCH THE REGULAR METHODS
 			switch(phase){
 			case 0:{
@@ -118,12 +118,12 @@ public class Layer implements Serializable {
 				phase = 3;
 				break;
 			}case 3:{
-				result = false;
 				//Wait for them to finish
 				boolean allDone = true;
 				for(WorkThread.Task task:clipTasks){
 					allDone = task.getStatus()==WorkThread.FINISHED && allDone;
 				}
+				result = allDone;
 				if(allDone){
 					//System.out.println("Clip tasks finished");
 					phase = 4;
@@ -155,23 +155,31 @@ public class Layer implements Serializable {
 				targetLayer.cacheHash = newHash;
 				targetLayer.cacheValues = cacheValues;
 				phase = -1;//Signal done
-				status = WorkThread.FINISHED;
+				setStatus(WorkThread.FINISHED);
 				break;
 			}default:{
 				result = false;
-				status = WorkThread.FINISHED;
+				setStatus(WorkThread.FINISHED);
 				break;
 			}
 			}
 			if(phase!=-1){
-				status = WorkThread.WAITING;
+				setStatus(WorkThread.WAITING);
 			}
 			return result;
 		}
 
 		@Override
-		public synchronized byte getStatus() {
-			return status;
+		public byte getStatus() {
+			synchronized(this){
+				return status;
+			}
+		}
+		
+		public void setStatus(byte b){
+			synchronized(this){
+				status = b;
+			}
 		}
 
 		@Override
@@ -187,13 +195,13 @@ public class Layer implements Serializable {
 	
 	public static class LayerQuickPlayTask implements WorkThread.Task{
 		
-		public byte status;
+		public volatile byte status;
 		public byte phase;
 		public Layer targetLayer;
 		private WorkThread.Task updateTask;
 		
 		public LayerQuickPlayTask(Layer target){
-			status = WorkThread.WAITING;
+			setStatus(WorkThread.WAITING);
 			phase = 0;
 			targetLayer = target;
 			if(targetLayer.cacheHash==targetLayer.hashCode()){
@@ -202,8 +210,8 @@ public class Layer implements Serializable {
 		}
 
 		@Override
-		public synchronized boolean execute() {
-			status = WorkThread.WORKING;
+		public boolean execute() {
+			setStatus(WorkThread.WORKING);
 			switch(phase){
 			case 0:{
 				updateTask = targetLayer.getUpdateAudioTask();
@@ -219,22 +227,30 @@ public class Layer implements Serializable {
 				short[] audioData = WaveUtils.quickShort(targetLayer.getAudio());
 				Wavelets.mainPlayer.playSound(audioData);
 				phase = -1;
-				status = WorkThread.FINISHED;
+				setStatus(WorkThread.FINISHED);
 				break;
 			}default:{
-				status = WorkThread.FINISHED;
+				setStatus(WorkThread.FINISHED);
 				break;
 			}
 			}
 			if(phase!=-1){
-				status = WorkThread.WAITING;
+				setStatus(WorkThread.WAITING);
 			}
 			return false;
 		}
 
 		@Override
-		public synchronized byte getStatus() {
-			return status;
+		public byte getStatus() {
+			synchronized(this){
+				return status;
+			}
+		}
+		
+		public void setStatus(byte b){
+			synchronized(this){
+				status = b;
+			}
 		}
 
 		@Override
@@ -244,8 +260,14 @@ public class Layer implements Serializable {
 		
 	}
 	
-	public void quickPlay(){
-		Wavelets.assignTask(new LayerQuickPlayTask(this));
+	public void quickPlay(boolean multithread){
+		if(multithread){
+			Wavelets.assignTask(new LayerQuickPlayTask(this));
+		}else{
+			double[] doubleData = getAudio();
+			short[] shortData = WaveUtils.quickShort(doubleData);
+			Wavelets.mainPlayer.playSound(shortData);
+		}
 	}
 	
 	public static void init(Composition parent){

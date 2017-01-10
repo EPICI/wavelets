@@ -341,6 +341,11 @@ public class Wavelets{
 		public String getName();
 	}
 	
+	//Is multithreading enabled
+	public static boolean multithreadEnabled(){
+		return ((JCheckBox) composerTopPanelComponents.get(0).get(1)).isSelected();
+	}
+	
 	//Common window listeners
 	public static WindowListener wlHide = new WindowListener() {
 
@@ -638,6 +643,7 @@ public class Wavelets{
 		composerTopPanelSubpanels = new ArrayList<JPanel>();
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
 		composerTopPanelComponents.get(0).add(new JButton("Stop player"));
+		composerTopPanelComponents.get(0).add(new JCheckBox("Multithread"));
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
 		composerTopPanelComponents.get(1).add(new JLabel("Composition"));
 		composerTopPanelComponents.get(1).add(new JButton("Play"));
@@ -676,7 +682,7 @@ public class Wavelets{
 		((JButton) composerTopPanelComponents.get(1).get(1)).addActionListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e){
-				composition.quickPlay();
+				composition.quickPlay(multithreadEnabled());
 			}
 		});
 		((JButton) composerTopPanelComponents.get(2).get(1)).addActionListener(new ActionListener(){
@@ -685,7 +691,7 @@ public class Wavelets{
 				if(composition.layers.containsKey(composition.layerSelection)){
 					Layer current = composition.layers.get(composition.layerSelection);
 					if(current.clipCount>0){
-						current.quickPlay();
+						current.quickPlay(multithreadEnabled());
 					}
 				}
 			}

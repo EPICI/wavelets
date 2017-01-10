@@ -223,5 +223,21 @@ public final class WaveUtils {
 		}
 		return result;
 	}
+	
+	public static void trySleep(long duration){
+		try{
+			Thread.sleep(duration);
+		}catch(InterruptedException e){
+			e.printStackTrace();
+		}
+	}
+	
+	public static void trySleepNanos(int nanos){
+		try{
+			Thread.sleep(0L,nanos);
+		}catch(InterruptedException e){
+			e.printStackTrace();
+		}
+	}
 
 }
