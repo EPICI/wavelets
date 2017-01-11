@@ -12,6 +12,8 @@ import org.json.*;
 public class Curve implements Serializable {
 	private static final long serialVersionUID = 1L;
 	
+	//reciprocal of e squared, precalculated to save time
+	public static final double R_E_SQ = 1d/Math.E/Math.E;
 	//Threshold for recursive division, after this point regular iteration is used
 	public static final int splitThreshold = 4;
 	
@@ -384,7 +386,7 @@ public class Curve implements Serializable {
 						dif2 = values.get(index+1)-values.get(index-1)/(locations.get(index+1)-locations.get(index-1));
 					}
 					//I think I got it right this time
-					double multiplier = Math.pow(distance, 1d-2d/Math.log(distance));
+					double multiplier = distance*R_E_SQ;
 					dif1*=multiplier;
 					dif2*=multiplier;
 					return lerp4(values.get(index-1),values.get(index-1)+dif1,values.get(index)-dif2,values.get(index),(pos-locations.get(index-1))/distance);
