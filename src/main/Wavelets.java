@@ -346,6 +346,11 @@ public class Wavelets{
 		return ((JCheckBox) composerTopPanelComponents.get(0).get(1)).isSelected();
 	}
 	
+	//Is extreme multithreading enabled
+	public static boolean exmultithreadEnabled(){
+		return ((JCheckBox) composerTopPanelComponents.get(0).get(2)).isSelected();
+	}
+	
 	//Common window listeners
 	public static WindowListener wlHide = new WindowListener() {
 
@@ -589,7 +594,7 @@ public class Wavelets{
 	//Create curve editor layout and enable buttons
 	public static void enableCurveEditor(){
 		mainFrame.add(curveEditorScrollPane);
-		updateCurveSelection();
+		updateCurveSelectionFull();
 		menuItems.get(1).get(1).setEnabled(false);
 		window = "Curve Editor";
 	}
@@ -644,6 +649,7 @@ public class Wavelets{
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
 		composerTopPanelComponents.get(0).add(new JButton("Stop player"));
 		composerTopPanelComponents.get(0).add(new JCheckBox("Multithread"));
+		composerTopPanelComponents.get(0).add(new JCheckBox("Extreme multithreading"));
 		composerTopPanelComponents.add(new ArrayList<JComponent>());
 		composerTopPanelComponents.get(1).add(new JLabel("Composition"));
 		composerTopPanelComponents.get(1).add(new JButton("Play"));
@@ -682,7 +688,7 @@ public class Wavelets{
 		((JButton) composerTopPanelComponents.get(1).get(1)).addActionListener(new ActionListener(){
 			@Override
 			public void actionPerformed(ActionEvent e){
-				composition.quickPlay(multithreadEnabled());
+				composition.quickPlay();
 			}
 		});
 		((JButton) composerTopPanelComponents.get(2).get(1)).addActionListener(new ActionListener(){
@@ -691,7 +697,7 @@ public class Wavelets{
 				if(composition.layers.containsKey(composition.layerSelection)){
 					Layer current = composition.layers.get(composition.layerSelection);
 					if(current.clipCount>0){
-						current.quickPlay(multithreadEnabled());
+						current.quickPlay();
 					}
 				}
 			}
@@ -1179,6 +1185,14 @@ public class Wavelets{
 		submenuItems.get(2).add(new JMenuItem("Duplicate"));
 		submenuItems.get(2).add(new JMenuItem("Round"));
 		addMenu((JMenu) menuItems.get(2).get(0),submenuItems.get(2));
+		submenuItems.add(new ArrayList<JMenuItem>());//Tools > Curve
+		submenuItems.get(3).add(new JMenuItem("Quick draw"));
+		submenuItems.get(3).add(new JMenuItem("Trim"));
+		addMenu((JMenu) menuItems.get(2).get(1),submenuItems.get(3));
+		submenuItems.add(new ArrayList<JMenuItem>());//Tools > Nodes
+		submenuItems.get(4).add(new JMenuItem("Node builder"));
+		submenuItems.get(4).add(new JMenuItem("Optimize"));
+		addMenu((JMenu) menuItems.get(2).get(2),submenuItems.get(4));
 		mainFrame.setJMenuBar(menuBar);
 		//Set up events
 		initMenuEvents();
@@ -1741,9 +1755,9 @@ public class Wavelets{
 						clearPopupWindowListeners();
 						popupFrame.setTitle("Wavelets [Layer merge]");
 						popupFrame.addWindowListener(wlHide);
-						JLabel infoLabel = new JLabel("Move clips from layer \""+currentLayer.name+"\" to");
+						JLabel infoLabel = new JLabel("Move clips from layer \""+currentName+"\" to");
 						JComboBox<String> targetSelector = new JComboBox<String>(composition.layersKeysArray);
-						targetSelector.removeItem(currentLayer.name);
+						targetSelector.removeItem(currentName);
 						JButton confirmButton = new JButton("Apply");
 						JButton closeButton = new JButton("Close");
 						confirmButton.addActionListener(new ActionListener(){
@@ -1793,7 +1807,7 @@ public class Wavelets{
 						clearPopupWindowListeners();
 						popupFrame.setTitle("Wavelets [Layer sort]");
 						popupFrame.addWindowListener(wlHide);
-						JLabel infoLabel = new JLabel("Sort clips in layer \""+currentLayer.name+"\" by");
+						JLabel infoLabel = new JLabel("Sort clips in layer \""+currentName+"\" by");
 						JComboBox<String> compSelector = new JComboBox<String>(clipComparatorsKeysArray);
 						JCheckBox invertCheck = new JCheckBox("Reverse order");
 						JButton confirmButton = new JButton("Apply");
@@ -1849,7 +1863,7 @@ public class Wavelets{
 						clearPopupWindowListeners();
 						popupFrame.setTitle("Wavelets [Layer time shift]");
 						popupFrame.addWindowListener(wlHide);
-						JLabel infoLabel = new JLabel("Shift time of clips in layer \""+currentLayer.name+"\" using method:");
+						JLabel infoLabel = new JLabel("Shift time of clips in layer \""+currentName+"\" using method:");
 						JComboBox<String> compSelector = new JComboBox<String>(Layer.timeManipulatorsKeysArray);
 						JTextField inputField = new JTextField(30);
 						JButton confirmButton = new JButton("Apply");
@@ -1904,7 +1918,7 @@ public class Wavelets{
 						clearPopupWindowListeners();
 						popupFrame.setTitle("Wavelets [Layer duplicate]");
 						popupFrame.addWindowListener(wlHide);
-						JLabel infoLabel = new JLabel("Create duplicate of layer \""+currentLayer.name+"\" with name");
+						JLabel infoLabel = new JLabel("Create duplicate of layer \""+currentName+"\" with name");
 						JTextField inputField = new JTextField(30);
 						JButton confirmButton = new JButton("Apply");
 						JButton closeButton = new JButton("Close");
@@ -1960,7 +1974,7 @@ public class Wavelets{
 						clearPopupWindowListeners();
 						popupFrame.setTitle("Wavelets [Layer round]");
 						popupFrame.addWindowListener(wlHide);
-						JLabel infoLabel = new JLabel("Round values of clips in layer \""+currentLayer.name+"\" with scale");
+						JLabel infoLabel = new JLabel("Round values of clips in layer \""+currentName+"\" with scale");
 						JTextField inputField = new JTextField(30);
 						inputField.setText("60");
 						JLabel epLabel = new JLabel("Threshold (epsilon)");
@@ -2013,6 +2027,84 @@ public class Wavelets{
 						constraint.gridx=1;
 						popupPanel.add(confirmButton,constraint);
 						constraint.gridx=2;
+						popupPanel.add(closeButton,constraint);
+						popupFrame.pack();
+						popupFrame.setVisible(true);
+					}
+				}
+			}
+		});
+		submenuItems.get(3).get(1).addActionListener(new ActionListener() {//Trim
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				String currentName = composition.curveSelection;
+				if(composition.curves.containsKey(currentName)){
+					Curve currentCurve = composition.curves.get(currentName);
+					if(currentCurve.listSize>1){
+						clearPopupWindowListeners();
+						popupFrame.setTitle("Wavelets [Layer round]");
+						popupFrame.addWindowListener(wlHide);
+						JLabel infoLabel = new JLabel("Trim curve \""+currentName+"\" to");
+						JTextField numField = new JTextField(30);
+						final int defaultPoints = currentCurve.listSize/2;
+						numField.setText(Integer.toString(defaultPoints));
+						JLabel resLabel = new JLabel("points with resolution");
+						JTextField resField = new JTextField(30);
+						double defaultResolution = currentCurve.listSize*2;
+						resField.setText(Double.toString(defaultResolution));
+						JLabel stopLabel = new JLabel("Stop early if error is below");
+						JTextField stopField = new JTextField(30);
+						double defaultStop = 0d;
+						stopField.setText("0.0");
+						JLabel contLabel = new JLabel("Force continue if error is above");
+						JTextField contField = new JTextField(30);
+						double defaultCont = 0.5d;
+						contField.setText("0.5");
+						JButton confirmButton = new JButton("Apply");
+						JButton closeButton = new JButton("Close");
+						confirmButton.addActionListener(new ActionListener(){
+							@Override
+							public void actionPerformed(ActionEvent e){
+								int targetPoints = WaveUtils.readIntFromField(numField, defaultPoints);
+								double resolution = WaveUtils.readDoubleFromField(resField, defaultResolution);
+								double stopThreshold = WaveUtils.readDoubleFromField(stopField, defaultStop);
+								double continueThreshold = WaveUtils.readDoubleFromField(contField, defaultCont);
+								currentCurve.trimTo(targetPoints, resolution, stopThreshold, continueThreshold);
+								popupFrame.dispose();
+							}
+						});
+						closeButton.addActionListener(new ActionListener(){
+							@Override
+							public void actionPerformed(ActionEvent e){
+								popupFrame.dispose();
+							}
+						});
+						popupPanel.removeAll();
+						GridBagConstraints constraint = new GridBagConstraints();
+						constraint.weightx=1;
+						constraint.weighty=1;
+						constraint.gridx=0;
+						constraint.gridy=0;
+						constraint.gridwidth=2;
+						popupPanel.add(infoLabel,constraint);
+						constraint.gridy=1;
+						popupPanel.add(numField,constraint);
+						constraint.gridy=2;
+						popupPanel.add(resLabel,constraint);
+						constraint.gridy=3;
+						popupPanel.add(resField,constraint);
+						constraint.gridwidth=1;
+						constraint.gridy=4;
+						popupPanel.add(stopLabel,constraint);
+						constraint.gridx=1;
+						popupPanel.add(stopField,constraint);
+						constraint.gridy=5;
+						popupPanel.add(contField,constraint);
+						constraint.gridx=0;
+						popupPanel.add(contLabel,constraint);
+						constraint.gridy=6;
+						popupPanel.add(confirmButton,constraint);
+						constraint.gridx=1;
 						popupPanel.add(closeButton,constraint);
 						popupFrame.pack();
 						popupFrame.setVisible(true);
@@ -2116,6 +2208,17 @@ public class Wavelets{
 		}
 		//Update the display
 		updateDisplay();
+	}
+	
+	//Inefficient but it does everything
+	public static void updateCurveSelectionFull(){
+		if(composition.curves.size()==1){
+			composition.curveSelection = composition.curves.keySet().iterator().next();
+		}
+		if(composition.curves.containsKey(composition.curveSelection)){
+			Curve currentCurve = composition.curves.get(composition.curveSelection);
+			currentCurve.updateSelection();
+		}
 	}
 	
 	//Clear window listeners on popup window

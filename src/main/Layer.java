@@ -62,6 +62,7 @@ public class Layer implements Serializable {
 	public static class LayerUpdateAudioTask implements WorkThread.Task{
 		
 		public volatile byte status;
+		public boolean extrememt;
 		public byte phase;
 		public Layer targetLayer;
 		private double[] timeBounds;
@@ -70,103 +71,111 @@ public class Layer implements Serializable {
 		private ArrayList<WorkThread.Task> clipTasks; 
 		private int newHash;
 		
-		public LayerUpdateAudioTask(Layer target){
+		public LayerUpdateAudioTask(Layer target,boolean extremeMt){
 			setStatus(WorkThread.WAITING);
+			extrememt = extremeMt;
 			phase = 0;
 			targetLayer = target;
 		}
 
 		@Override
 		public boolean execute() {
-			boolean result = true;
-			setStatus(WorkThread.WORKING);
-			//IMPORTANT: THIS HAS TO MATCH THE REGULAR METHODS
-			switch(phase){
-			case 0:{
-				//Check if it needs updating
-				newHash = targetLayer.hashCode();
-				if(newHash!=targetLayer.cacheHash){
-					phase = 1;//Signal needs updating
-				}else{
-					phase = -1;//Signal finished
-				}
-				break;
-			}case 1:{
-				//Basic setup
-				timeBounds = targetLayer.getTimeBounds();
-				int total = (int) ((timeBounds[1]-timeBounds[0])*targetLayer.parentComposition.samplesPerSecond);
-				cacheValues = new double[total];
-				for(int i=0;i<total;i++){
-					cacheValues[i]=0d;
-				}
-				phase = 2;
-				break;
-			}case 2:{
-				//Queue up all tasks
-				usedClips = new ArrayList<>();
-				clipTasks = new ArrayList<>();
-				for(Clip current:targetLayer.clips){
-					//System.out.println("Next clip");
-					if(current.inputsRegistered){
-						usedClips.add(current);
-						clipTasks.add(current.getUpdateAudioTask());
+			if(extrememt){
+				boolean result = true;
+				setStatus(WorkThread.WORKING);
+				//IMPORTANT: THIS HAS TO MATCH THE REGULAR METHODS
+				switch(phase){
+				case 0:{
+					//Check if it needs updating
+					newHash = targetLayer.hashCode();
+					if(newHash!=targetLayer.cacheHash){
+						phase = 1;//Signal needs updating
+					}else{
+						phase = -1;//Signal finished
 					}
-				}
-				//System.out.println("Assigning "+Integer.toString(clipTasks.size())+" clip tasks");
-				Wavelets.assignTasks(clipTasks);
-				//System.out.println("Assigned clip tasks");
-				phase = 3;
-				break;
-			}case 3:{
-				//Wait for them to finish
-				boolean allDone = true;
-				for(WorkThread.Task task:clipTasks){
-					allDone = task.getStatus()==WorkThread.FINISHED && allDone;
-				}
-				result = allDone;
-				if(allDone){
-					//System.out.println("Clip tasks finished");
-					phase = 4;
-				}
-				break;
-			}case 4:{
-				//Add them all
-				for(Clip current:usedClips){
-					//System.out.println("Next clip");
-					if(current.inputsRegistered){
-						double[] clipData = current.getAudio();
-						int offset = (int) ((current.startTime-timeBounds[0])*targetLayer.parentComposition.samplesPerSecond);
-						int target = clipData.length+offset-1;
-						int cap = Math.min(cacheValues.length, target);
-						for(int i=offset;i<cap;i++){
-							//Double safety
-							cacheValues[i]+=clipData[i-offset];
+					break;
+				}case 1:{
+					//Basic setup
+					timeBounds = targetLayer.getTimeBounds();
+					int total = (int) ((timeBounds[1]-timeBounds[0])*targetLayer.parentComposition.samplesPerSecond);
+					cacheValues = new double[total];
+					for(int i=0;i<total;i++){
+						cacheValues[i]=0d;
+					}
+					phase = 2;
+					break;
+				}case 2:{
+					//Queue up all tasks
+					usedClips = new ArrayList<>();
+					clipTasks = new ArrayList<>();
+					for(Clip current:targetLayer.clips){
+						//System.out.println("Next clip");
+						if(current.inputsRegistered){
+							usedClips.add(current);
+							clipTasks.add(current.getUpdateAudioTask());
 						}
-						//System.out.println("Added "+(cap-offset)+" values");
 					}
+					//System.out.println("Assigning "+Integer.toString(clipTasks.size())+" clip tasks");
+					Wavelets.assignTasks(clipTasks);
+					//System.out.println("Assigned clip tasks");
+					phase = 3;
+					break;
+				}case 3:{
+					//Wait for them to finish
+					boolean allDone = true;
+					for(WorkThread.Task task:clipTasks){
+						allDone = task.getStatus()==WorkThread.FINISHED && allDone;
+					}
+					result = allDone;
+					if(allDone){
+						//System.out.println("Clip tasks finished");
+						phase = 4;
+					}
+					break;
+				}case 4:{
+					//Add them all
+					for(Clip current:usedClips){
+						//System.out.println("Next clip");
+						if(current.inputsRegistered){
+							double[] clipData = current.getAudio();
+							int offset = (int) ((current.startTime-timeBounds[0])*targetLayer.parentComposition.samplesPerSecond);
+							int target = clipData.length+offset-1;
+							int cap = Math.min(cacheValues.length, target);
+							for(int i=offset;i<cap;i++){
+								//Double safety
+								cacheValues[i]+=clipData[i-offset];
+							}
+							//System.out.println("Added "+(cap-offset)+" values");
+						}
+					}
+					phase = 5;
+					break;
+				}case 5:{
+					result = false;
+					for(Filter current:targetLayer.filters){
+						cacheValues = current.filter(cacheValues, timeBounds[0]);
+					}
+					targetLayer.cacheHash = newHash;
+					targetLayer.cacheValues = cacheValues;
+					phase = -1;//Signal done
+					setStatus(WorkThread.FINISHED);
+					break;
+				}default:{
+					result = false;
+					setStatus(WorkThread.FINISHED);
+					break;
 				}
-				phase = 5;
-				break;
-			}case 5:{
-				result = false;
-				for(Filter current:targetLayer.filters){
-					cacheValues = current.filter(cacheValues, timeBounds[0]);
 				}
-				targetLayer.cacheHash = newHash;
-				targetLayer.cacheValues = cacheValues;
-				phase = -1;//Signal done
+				if(phase!=-1){
+					setStatus(WorkThread.WAITING);
+				}
+				return result;
+			}else{
+				setStatus(WorkThread.WORKING);
+				targetLayer.getAudio();
 				setStatus(WorkThread.FINISHED);
-				break;
-			}default:{
-				result = false;
-				setStatus(WorkThread.FINISHED);
-				break;
+				return false;
 			}
-			}
-			if(phase!=-1){
-				setStatus(WorkThread.WAITING);
-			}
-			return result;
 		}
 
 		@Override
@@ -189,19 +198,21 @@ public class Layer implements Serializable {
 		
 	}
 	
-	public LayerUpdateAudioTask getUpdateAudioTask(){
-		return new LayerUpdateAudioTask(self);
+	public LayerUpdateAudioTask getUpdateAudioTask(boolean extremeMt){
+		return new LayerUpdateAudioTask(self,extremeMt);
 	}
 	
 	public static class LayerQuickPlayTask implements WorkThread.Task{
 		
 		public volatile byte status;
+		public boolean extrememt;
 		public byte phase;
 		public Layer targetLayer;
 		private WorkThread.Task updateTask;
 		
-		public LayerQuickPlayTask(Layer target){
+		public LayerQuickPlayTask(Layer target,boolean extremeMt){
 			setStatus(WorkThread.WAITING);
+			extrememt = extremeMt;
 			phase = 0;
 			targetLayer = target;
 			if(targetLayer.cacheHash==targetLayer.hashCode()){
@@ -214,7 +225,7 @@ public class Layer implements Serializable {
 			setStatus(WorkThread.WORKING);
 			switch(phase){
 			case 0:{
-				updateTask = targetLayer.getUpdateAudioTask();
+				updateTask = targetLayer.getUpdateAudioTask(extrememt);
 				Wavelets.assignTask(updateTask);
 				phase = 1;
 				break;
@@ -260,14 +271,18 @@ public class Layer implements Serializable {
 		
 	}
 	
-	public void quickPlay(boolean multithread){
+	public void quickPlay(boolean multithread,boolean extremeMt){
 		if(multithread){
-			Wavelets.assignTask(new LayerQuickPlayTask(this));
+			Wavelets.assignTask(new LayerQuickPlayTask(this,extremeMt));
 		}else{
 			double[] doubleData = getAudio();
 			short[] shortData = WaveUtils.quickShort(doubleData);
 			Wavelets.mainPlayer.playSound(shortData);
 		}
+	}
+	
+	public void quickPlay(){
+		quickPlay(Wavelets.multithreadEnabled(),Wavelets.exmultithreadEnabled());
 	}
 	
 	public static void init(Composition parent){

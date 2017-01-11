@@ -179,6 +179,15 @@ public final class WaveUtils {
 		}
 	}
 	
+	//Read int from text in field
+	public static int readIntFromField(JTextField inField,int defaultValue){
+		try{
+			return Integer.valueOf(inField.getText());
+		}catch(Exception e){
+			return defaultValue;
+		}
+	}
+	
 	public static boolean isNear(double a, double b, double threshold){
 		return Math.abs(a-b)<threshold;
 	}

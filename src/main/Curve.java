@@ -3,8 +3,7 @@ package main;
 import java.awt.BorderLayout;
 import java.awt.event.*;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.*;
 import javax.swing.*;
 import components.*;
 import org.json.*;
@@ -118,30 +117,45 @@ public class Curve implements Serializable {
 		editPanelConfirm.add(editPanelCreate,BorderLayout.LINE_END);
 		editPanel.add(editPanelConfirm,BorderLayout.PAGE_END);
 		//Listeners
-		editPanelPrev.addActionListener(new ActionListener(){@Override public void actionPerformed(ActionEvent e){
+		editPanelPrev.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent e){
 				selected--;
 				updateSelection();
-			}});
-		editPanelNext.addActionListener(new ActionListener(){@Override public void actionPerformed(ActionEvent e){
+			}
+		});
+		editPanelNext.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent e){
 				selected++;
 				updateSelection();
-			}});
-		editPanelSave.addActionListener(new ActionListener(){@Override public void actionPerformed(ActionEvent e){
+			}
+		});
+		editPanelSave.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent e){
 				if(listSize>0&&selected>-1){
 					tryEditPoint(selected,WaveUtils.readDoubleFromField(editPanelLocationField, 0d),WaveUtils.readDoubleFromField(editPanelValueField, 0d));
 					updateSelection();
 				}
-			}});
-		editPanelDelete.addActionListener(new ActionListener(){@Override public void actionPerformed(ActionEvent e){
+			}
+		});
+		editPanelDelete.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent e){
 				if(listSize>0&&selected>-1){
 					removePoint(selected);
 					updateSelection();
 				}
-			}});
-		editPanelCreate.addActionListener(new ActionListener(){@Override public void actionPerformed(ActionEvent e){
+			}
+		});
+		editPanelCreate.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent e){
 				selected = tryAddPoint(WaveUtils.readDoubleFromField(editPanelLocationField, 0d),WaveUtils.readDoubleFromField(editPanelValueField, 0d));
 				updateSelection();
-			}});
+			}
+		});
 		//Finish
 		updateSelection();
 	}
@@ -369,8 +383,8 @@ public class Curve implements Serializable {
 						dif1 = (values.get(index)-values.get(index-2))/(locations.get(index)-locations.get(index-2));
 						dif2 = values.get(index+1)-values.get(index-1)/(locations.get(index+1)-locations.get(index-1));
 					}
-					//0.25 is the calibrated tested correct value
-					double multiplier = 0.25d*distance;
+					//I think I got it right this time
+					double multiplier = Math.pow(distance, 1d-2d/Math.log(distance));
 					dif1*=multiplier;
 					dif2*=multiplier;
 					return lerp4(values.get(index-1),values.get(index-1)+dif1,values.get(index)-dif2,values.get(index),(pos-locations.get(index-1))/distance);
@@ -409,6 +423,7 @@ public class Curve implements Serializable {
 			double[] differenceArray = new double[divisions];
 			//Create a new curve and converge
 			Curve trimmed = new Curve();
+			trimmed.setMode(3);
 			boolean cont = true;
 			int iters = -1;
 			while(cont){
@@ -416,6 +431,7 @@ public class Curve implements Serializable {
 				cont &= iters<targetPoints;
 				if(cont){
 					double peakLocation = 0;
+					int peakIndex = 0;
 					double peakValue = 0;
 					for(int i=0;i<divisions;i++){
 						double pos = ((double) i)/divisions*total+start;
@@ -424,13 +440,14 @@ public class Curve implements Serializable {
 						differenceArray[i] = absdif;
 						if(absdif>peakValue){
 							peakLocation = pos;
+							peakIndex = i;
 							peakValue = absdif;
 						}
 					}
 					cont |= peakValue>continueThreshold;
 					cont &= peakValue>stopThreshold;
 					if(cont){
-						trimmed.tryAddPoint(peakLocation, peakValue);
+						trimmed.tryAddPoint(peakLocation, targetArray[peakIndex]);
 					}
 				}
 			}
@@ -438,6 +455,7 @@ public class Curve implements Serializable {
 			values = trimmed.getValues();
 			trimmed.destroy();
 			listSize = locations.size();
+			setMode(3);
 		}
 	}
 	
