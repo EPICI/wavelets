@@ -103,6 +103,11 @@ public class Wavelets{
 	public static boolean fileNamed = false;
 	public static int compositionHash = 0;
 	
+	//To see if an update is needed
+	public static int lastLayersHash = 0;
+	public static int lastCurvesHash = 0;
+	public static int lastNodesHash = 0;
+	
 	//Window scale
 	public static double windowX = 1000;
 	public static double windowY = 600;
@@ -423,7 +428,14 @@ public class Wavelets{
 		//TODO redraw all
 	}
 	
-	//Notify everything of updates, locations of changes encoded as bits in an int
+	/*
+	 * Notify everything of updates, locations of changes encoded as bits in an int
+	 * Index 0 is composition itself, referring to properties, etc.
+	 * Index 1 is layers
+	 * Index 2 is curves
+	 * Index 3 is nodes
+	 * Index 4 is samples
+	 */
 	public static void notifyUpdate(int changed){
 		if(changed!=0){
 			if(compositionHash!=composition.hashCode()){
@@ -445,7 +457,6 @@ public class Wavelets{
 			break;
 		}
 		}
-		
 	}
 	
 	//Add a new layer
@@ -578,6 +589,8 @@ public class Wavelets{
 		//Disable composer button
 		menuItems.get(1).get(0).setEnabled(false);
 		window = "Composer";
+		//Update system
+		lastLayersHash = composition.layers.hashCode();
 	}
 	
 	//Remove composer layout and disable buttons
@@ -589,6 +602,12 @@ public class Wavelets{
 		mainFrame.remove(composerCenterPanel);
 		//Enable composer button
 		menuItems.get(1).get(0).setEnabled(true);
+		//Update system
+		int newHash = composition.layers.hashCode();
+		if(newHash!=lastLayersHash){
+			notifyUpdate(BitUtils.oneAtInt(1));
+			lastLayersHash = newHash;
+		}
 	}
 	
 	//Create curve editor layout and enable buttons
@@ -597,12 +616,20 @@ public class Wavelets{
 		updateCurveSelectionFull();
 		menuItems.get(1).get(1).setEnabled(false);
 		window = "Curve Editor";
+		//Update system
+		lastCurvesHash = composition.curves.hashCode();
 	}
 	
 	//Remove curve editor layout and disable buttons
 	public static void disableCurveEditor(){
 		mainFrame.remove(curveEditorScrollPane);
 		menuItems.get(1).get(1).setEnabled(true);
+		//Update system
+		int newHash = composition.curves.hashCode();
+		if(newHash!=lastCurvesHash){
+			notifyUpdate(BitUtils.oneAtInt(2));
+			lastCurvesHash = newHash;
+		}
 	}
 	
 	//Create node editor layout and enable buttons
@@ -611,12 +638,20 @@ public class Wavelets{
 		updateNodeSelection();
 		menuItems.get(1).get(2).setEnabled(false);
 		window = "Node Editor";
+		//Update system
+		lastNodesHash = composition.nodes.hashCode();
 	}
 	
 	//Remove node editor layout and disable buttons
 	public static void disableNodeEditor(){
 		mainFrame.remove(nodeEditorScrollPane);
 		menuItems.get(1).get(2).setEnabled(true);
+		//Update system
+		int newHash = composition.nodes.hashCode();
+		if(newHash!=lastNodesHash){
+			notifyUpdate(BitUtils.oneAtInt(3));
+			lastNodesHash = newHash;
+		}
 	}
 	
 	public static void initComposer(){
@@ -748,10 +783,13 @@ public class Wavelets{
 		composerLeftPanelAddButton = new JButton("Add new layer");
 		//composerLeftPanelAddButton.setToolTipText("Creates a new blank layer.");
 		composerLeftPanelSubpanel.add(composerLeftPanelAddButton,BorderLayout.CENTER);
-		composerLeftPanelAddButton.addActionListener(new ActionListener() {@Override public void actionPerformed(ActionEvent e) {
+		composerLeftPanelAddButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
 				addNewLayer();
 				updateDisplay();
-			}});
+			}
+		});
 		composerLeftInPanel.add(composerLeftPanelSubpanel);
 	}
 	
@@ -1153,7 +1191,7 @@ public class Wavelets{
 		menuBar.add(menus.get(0));
 		menus.add(new JMenu("Window"));
 		menuItems.add(new ArrayList<JMenuItem>());
-		menuItems.get(1).add(new JMenuItem("Composer"));
+		menuItems.get(1).add(new JMenuItem("Sequence Editor"));
 		menuItems.get(1).add(new JMenuItem("Curve Editor"));
 		menuItems.get(1).add(new JMenuItem("Node Editor"));
 		addMenu(menus.get(1),menuItems.get(1));

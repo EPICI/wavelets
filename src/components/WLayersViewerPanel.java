@@ -90,7 +90,7 @@ public class WLayersViewerPanel extends JPanel {
 		gridInc = 1d;
 		gridPos = Math.ceil(top-gridInc);
 		while(gridPos>bottom){
-			int mapping = (int) Math.floor((top-gridPos)/(top-bottom)*ycap+2);
+			int mapping = (int) Math.floor((top-gridPos+0.5d)/(top-bottom)*ycap+2);
 			if(mapping>2 && mapping<clipBounds.height-2){
 				g.fillRect(2, mapping, xcap, 1);
 			}

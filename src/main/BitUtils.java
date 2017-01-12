@@ -7,7 +7,7 @@ public final class BitUtils {
 	
 	private BitUtils(){}
 	
-	public int write(int encoded,int index,boolean bit){
+	public static int write(int encoded,int index,boolean bit){
 		int bits = INT_LEFT_ONE >>> index;
 		if(bit){
 			return encoded | bits;
@@ -16,11 +16,11 @@ public final class BitUtils {
 		}
 	}
 	
-	public boolean read(int encoded,int index){
+	public static boolean read(int encoded,int index){
 		return (encoded << index) < 0;
 	}
 	
-	public long write(long encoded,int index,boolean bit){
+	public static long write(long encoded,int index,boolean bit){
 		int bits = LONG_LEFT_ONE >>> index;
 		if(bit){
 			return encoded | bits;
@@ -29,7 +29,15 @@ public final class BitUtils {
 		}
 	}
 	
-	public boolean read(long encoded,int index){
+	public static boolean read(long encoded,int index){
 		return (encoded << index) < 0;
+	}
+	
+	public static int oneAtInt(int index){
+		return INT_LEFT_ONE >>> index;
+	}
+	
+	public static long oneAtLong(int index){
+		return LONG_LEFT_ONE >>> index;
 	}
 }
