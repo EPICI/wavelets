@@ -25,14 +25,14 @@ public class Samples implements Curve {
 	public double valueAtPosition(double position){
 		if(Double.isFinite(position)){
 			if(position<0){
-				return sampleData[0];
+				return 0d;
 			}else{
 				double index = position*sampleRate;
 				int cap = sampleData.length-1;
 				if(index>cap){
-					return sampleData[cap];
+					return 0d;
 				}else{
-					int left = (int) Math.floor(position);
+					int left = (int) position;
 					if(MathUtils.isNear(left, position)){
 						return sampleData[left];
 					}else{
@@ -42,6 +42,47 @@ public class Samples implements Curve {
 			}
 		}else{
 			throw new IllegalArgumentException(Double.toString(position)+" is not finite.");
+		}
+	}
+	
+	/*
+	 * Layer another sample onto this one lazily
+	 * Offsets are in values
+	 * First offset is offset in this
+	 * Second offset is offset in samples to layer
+	 */
+	public synchronized void layerOnThisLazy(Samples toLayer){
+		layerOnThisLazy(toLayer,0,0);
+	}
+	public synchronized void layerOnThisLazy(Samples toLayer,int offset1,int offset2){
+		double[] layerData = toLayer.sampleData;
+		int combined = offset2-offset1;
+		int cap = Math.min(layerData.length-combined, sampleData.length);
+		for(int i=offset1;i<cap;i++){
+			sampleData[i]+=layerData[i+combined];
+		}
+	}
+	/*
+	 * Layer another sample onto this one
+	 * Offset is time in seconds
+	 */
+	public synchronized void layerOnThis(Samples toLayer){
+		layerOnThis(toLayer,0d,0d);
+	}
+	public synchronized void layerOnThis(Samples toLayer,double offset1,double offset2){
+		if(toLayer.sampleRate==sampleRate){
+			layerOnThisLazy(toLayer,(int)(offset1*sampleRate),(int)(offset2*sampleRate));
+		}else{
+			double thisRateCopy = sampleRate;
+			double layerRateCopy = toLayer.sampleRate;
+			double invRate = 1d/layerRateCopy;
+			int position = (int)(offset1*thisRateCopy);
+			//Possible room for micro-optimization here?
+			int cap = position+(int)(thisRateCopy*Math.min(sampleData.length/thisRateCopy-offset1, toLayer.sampleData.length/layerRateCopy-offset2));
+			for(int i=position;i<cap;i++){
+				double doublePosition = (i-position)*invRate+offset2;
+				sampleData[i]+=toLayer.valueAtPosition(doublePosition);
+			}
 		}
 	}
 	
@@ -126,11 +167,15 @@ public class Samples implements Curve {
 		sampleHash = sampleHash();
 	}
 	
-	public double[] blankArray(int count){
+	//Utility methods
+	public static double[] blankArray(int count){
 		double[] result = new double[count];
 		for(int i=0;i<count;i++){
 			result[i]=0d;
 		}
 		return result;
+	}
+	public static Samples blankSamples(int samplerate,int count){
+		return new Samples(samplerate,blankArray(count));
 	}
 }
