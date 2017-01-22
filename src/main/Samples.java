@@ -6,9 +6,6 @@ import java.util.Arrays;
 public class Samples implements Curve {
 	private static final long serialVersionUID = 1L;
 	
-	//Constants
-	public static final double I_LOG_2 = 1d/Math.log(2);
-	
 	public int sampleRate;
 	public double[] sampleData;
 	public transient double[] spectrumReal;
