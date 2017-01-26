@@ -129,7 +129,7 @@ public class FFT {
 	
 		for (i=0; i < m; i++) {
 			n1 = n2;
-			n2 = n2 + n2;
+			n2 <<= 1;
 			a = 0;
 		
 			for (j=0; j < n1; j++) {
@@ -148,7 +148,7 @@ public class FFT {
 			}
 		}
 		
-		double mult = Math.pow(n2, -0.5d);
+		double mult = Math.pow(n, -0.5d);
 		for(i=0;i<n;i++){
 			x[i]*=mult;
 			y[i]*=mult;

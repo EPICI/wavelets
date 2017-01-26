@@ -13,8 +13,8 @@ public class PyVoiceFactory {
 	public PyVoiceFactory(String a,String b,boolean asScript){
 		PythonInterpreter interpreter = new PythonInterpreter();
 		//Import the necessary classes, scripters are expected to know about and import anything else they need
-		interpreter.exec("from main import Voice");
 		interpreter.exec("from main import Samples");
+		interpreter.exec("from main import Voice");
 		if(asScript){
 			interpreter.exec(a);
 		}else{
