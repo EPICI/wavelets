@@ -14,8 +14,8 @@ public class PySynthesizerFactory {
 		PythonInterpreter interpreter = new PythonInterpreter();
 		//Import the necessary classes, scripters are expected to know about and import anything else they need
 		interpreter.exec("from main import Samples");
-		interpreter.exec("from main import Synthesizer");
 		interpreter.exec("from main import Voice");
+		interpreter.exec("from main import Synthesizer");
 		if(asScript){
 			interpreter.exec(a);
 		}else{

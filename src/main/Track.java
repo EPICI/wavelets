@@ -9,5 +9,5 @@ public interface Track extends Serializable {
 	 * Can overlay audio data, apply effects, etc.
 	 * Buffer size is sample length
 	 */
-	public void applyTo(Samples current);
+	public void applyTo(MetaSamples current);
 }

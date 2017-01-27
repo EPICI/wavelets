@@ -1,5 +1,7 @@
 package main;
 
+import org.python.core.*;
+
 //Generic synthesizer, can use samples or whatever, used in tandem with Patterns, designed for scripting
 public interface Synthesizer extends Destructable {
 	/*
@@ -8,7 +10,7 @@ public interface Synthesizer extends Destructable {
 	 * The synthesizer should have the rest of the necessary data already
 	 * Should add voices to the target
 	 */
-	public void spawnVoices(double[][] clips,TrackLayerSimple target);
+	public void spawnVoices(double[][] clips,TrackLayerSimple target,int sampleRate);
 	
 	/*
 	 * TODO request UI method
@@ -16,4 +18,9 @@ public interface Synthesizer extends Destructable {
 	 * rather than show the UI
 	 * That way the program can handle the display
 	 */
+	
+	/*
+	 * Get a list, tuple, or dict with information needed to make a PyVoiceFactory
+	 */
+	public PyObject getPvfInfo();
 }
