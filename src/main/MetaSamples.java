@@ -14,6 +14,8 @@ public class MetaSamples extends Samples {
 	}
 	public MetaSamples(Samples original){
 		super(original.sampleRate,original.sampleData);
+		spectrumReal = original.spectrumReal;
+		spectrumImag = original.spectrumImag;
 	}
 
 	public static MetaSamples blankSamplesFrom(MetaSamples original){

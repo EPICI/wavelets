@@ -13,6 +13,12 @@ public interface Synthesizer extends Destructable {
 	public void spawnVoices(double[][] clips,TrackLayerSimple target,int sampleRate);
 	
 	/*
+	 * Create a single live voice with the specified pitch
+	 * Used for real time previews and stuff
+	 */
+	public Voice spawnLiveVoice(int pitch);
+	
+	/*
 	 * TODO request UI method
 	 * This should request a data class with information on the UI,
 	 * rather than show the UI

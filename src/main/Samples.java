@@ -178,4 +178,32 @@ public class Samples implements Curve {
 	public static Samples blankSamples(int samplerate,int count){
 		return new Samples(samplerate,blankArray(count));
 	}
+	
+	//Apply curve as envelope
+	public static void applyCurveTo(Curve curve,int sampleRate,double[] target){
+		int total = target.length;
+		double rateMult = 1d/sampleRate;
+		for(int i=0;i<total;i++){
+			double position = rateMult*i;
+			target[i]*=curve.valueAtPosition(position);
+		}
+	}
+	public static void applyCurveToInParallel(Curve curve,int sampleRate,double[]... targets){
+		int arrays = targets.length;
+		int total = targets[0].length;
+		double rateMult = 1d/sampleRate;
+		for(int i=0;i<total;i++){
+			double position = rateMult*i;
+			double value = curve.valueAtPosition(position);
+			for(int j=0;j<arrays;j++){
+				targets[j][i]*=value;
+			}
+		}
+	}
+	public synchronized void applyCurveToData(Curve curve){
+		applyCurveTo(curve,sampleRate,sampleData);
+	}
+	public synchronized void applyCurveToSpectrum(Curve curve){
+		applyCurveToInParallel(curve,sampleRate,spectrumReal,spectrumImag);
+	}
 }
