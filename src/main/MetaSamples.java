@@ -4,10 +4,10 @@ package main;
 public class MetaSamples extends Samples {
 	private static final long serialVersionUID = 1L;
 	
-	public double speedMult;
-	public double startPos;
-	public double endPos;
-	public double length;
+	public double speedMult = 1d;
+	public double startPos = 0d;
+	public double endPos = 1d;
+	public double length = 1d;
 	
 	public MetaSamples(int samplerate, double[] sampledata) {
 		super(samplerate, sampledata);
@@ -17,7 +17,15 @@ public class MetaSamples extends Samples {
 		spectrumReal = original.spectrumReal;
 		spectrumImag = original.spectrumImag;
 	}
+	
+	public void pushToNext(){
+		startPos=endPos;
+		endPos+=length;
+	}
 
+	public static MetaSamples blankSamples(int samplerate,int count){
+		return new MetaSamples(samplerate,blankArray(count));
+	}
 	public static MetaSamples blankSamplesFrom(MetaSamples original){
 		MetaSamples result = new MetaSamples(original);
 		result.speedMult=original.speedMult;
