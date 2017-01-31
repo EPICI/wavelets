@@ -3,9 +3,15 @@ package main;
 import java.util.*;
 
 //Contains tracks, which will combine to be layered on top of original samples
-public class TrackLayerCompound implements Track {
+public class TrackLayerCompound implements Track, TransientContainer<TrackLayerCompound> {
 	private static final long serialVersionUID = 1L;
 
+	/*
+	 * Don't modify this, ever
+	 * Empty time bounds
+	 */
+	private static final double[] emptyBounds = new double[]{Double.MAX_VALUE,Double.MIN_VALUE};
+	
 	public ArrayList<Track> tracks;
 	
 	@Override
@@ -13,10 +19,36 @@ public class TrackLayerCompound implements Track {
 		if(tracks.size()>0){
 			MetaSamples toAdd = MetaSamples.blankSamplesFrom(current);
 			for(Track track:tracks){
-				track.applyTo(toAdd);
+				double[] trackTimeBounds = track.getTimeBounds();
+				if(trackTimeBounds!=emptyBounds&&trackTimeBounds[0]<current.endPos&&trackTimeBounds[1]>current.startPos){
+					track.applyTo(toAdd);
+				}
 			}
 			current.layerOnThisLazy(toAdd);
 		}
+	}
+	
+	public double[] getTimeBounds(){
+		double min = Double.MAX_VALUE;
+		double max = Double.MIN_VALUE;
+		for(Track track:tracks){
+			double[] trackTimeBounds = track.getTimeBounds();
+			double start = trackTimeBounds[0];
+			double end = trackTimeBounds[1];
+			if(start<min){
+				min=start;
+			}
+			if(end>max){
+				max=end;
+			}
+		}
+		return new double[]{min,max};
+	}
+
+	@Override
+	public void initTransient(TrackLayerCompound parent) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

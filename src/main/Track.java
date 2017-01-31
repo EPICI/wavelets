@@ -10,4 +10,11 @@ public interface Track extends Serializable {
 	 * Buffer size is sample length
 	 */
 	public void applyTo(MetaSamples current);
+	/*
+	 * Get the track bounds as double array
+	 * First element is minimum/left/start
+	 * Second element is maximum/right/end
+	 * All in seconds
+	 */
+	public double[] getTimeBounds();
 }
