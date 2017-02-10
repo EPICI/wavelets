@@ -2,6 +2,8 @@ package main;
 
 import java.util.*;
 
+import javax.swing.JComponent;
+
 //Contains tracks, which will combine to be layered on top of original samples
 public class TrackLayerCompound implements Track, TransientContainer<TLCParent>, TLCParent {
 	private static final long serialVersionUID = 1L;
@@ -49,6 +51,12 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 	public void initTransient(TLCParent parent) {
 		// TODO Auto-generated method stub
 		
+	}
+
+	@Override
+	public MetaComponent<? extends JComponent> getUI() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

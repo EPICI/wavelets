@@ -2,6 +2,7 @@ package main;
 
 import org.python.core.PyObject;
 import java.util.HashMap;
+import javax.swing.JComponent;
 
 //Generic synthesizer, can use samples or whatever, used in tandem with Patterns, designed for scripting
 public interface Synthesizer extends Destructable {
@@ -20,10 +21,9 @@ public interface Synthesizer extends Destructable {
 	public Voice spawnLiveVoice(int pitch);
 	
 	/*
-	 * TODO request UI
-	 * Should have a metadata holder class which contains a string identifier
-	 * used to distinguish between standard UI types
+	 * Request UI with metadata
 	 */
+	public MetaComponent<? extends JComponent> getUI();
 	
 	/*
 	 * Sets the variables variable so it can be manipulated or read

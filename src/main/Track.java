@@ -1,6 +1,7 @@
 package main;
 
 import java.io.Serializable;
+import javax.swing.JComponent;
 
 //Any track that can be in the sequence
 public interface Track extends Serializable {
@@ -20,8 +21,7 @@ public interface Track extends Serializable {
 	public double[] getTimeBounds();
 	
 	/*
-	 * TODO request UI
-	 * Should have a metadata holder class which contains a string identifier
-	 * used to distinguish between standard UI types
+	 * Request UI with metadata
 	 */
+	public MetaComponent<? extends JComponent> getUI();
 }

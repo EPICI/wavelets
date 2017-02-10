@@ -1,6 +1,9 @@
 package main;
 
 import java.util.*;
+
+import javax.swing.JComponent;
+
 import org.python.core.*;
 
 //Contains patterns, will layer directly on top of original samples
@@ -99,6 +102,12 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 			}
 		}
 		return new double[]{min,max};
+	}
+
+	@Override
+	public MetaComponent<? extends JComponent> getUI() {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
