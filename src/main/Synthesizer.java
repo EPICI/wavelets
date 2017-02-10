@@ -1,6 +1,7 @@
 package main;
 
-import org.python.core.*;
+import org.python.core.PyObject;
+import java.util.HashMap;
 
 //Generic synthesizer, can use samples or whatever, used in tandem with Patterns, designed for scripting
 public interface Synthesizer extends Destructable {
@@ -19,11 +20,15 @@ public interface Synthesizer extends Destructable {
 	public Voice spawnLiveVoice(int pitch);
 	
 	/*
-	 * TODO request UI method
-	 * This should request a data class with information on the UI,
-	 * rather than show the UI
-	 * That way the program can handle the display
+	 * TODO request UI
+	 * Should have a metadata holder class which contains a string identifier
+	 * used to distinguish between standard UI types
 	 */
+	
+	/*
+	 * Sets the variables variable so it can be manipulated or read
+	 */
+	public void setGlobals(HashMap<String,Object> vars);
 	
 	/*
 	 * Get a list, tuple, or dict with information needed to make a PyVoiceFactory

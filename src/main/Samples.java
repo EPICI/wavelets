@@ -11,6 +11,7 @@ public class Samples implements Curve {
 	public transient double[] spectrumReal;
 	public transient double[] spectrumImag;
 	public transient int sampleHash = 0;
+	public transient int spectrumHash = 0;
 	
 	public Samples(int samplerate, double[] sampledata){
 		sampleRate = samplerate;
@@ -90,6 +91,10 @@ public class Samples implements Curve {
 		return Arrays.hashCode(sampleData);
 	}
 	
+	public int spectrumHash(){
+		return Arrays.hashCode(spectrumReal)*268435459+Arrays.hashCode(spectrumImag)*8388617;
+	}
+	
 	public synchronized double[][] getSpectrum(){
 		int newHash = sampleHash();
 		if(sampleHash!=newHash){
@@ -98,14 +103,51 @@ public class Samples implements Curve {
 		return new double[][]{spectrumReal,spectrumImag};
 	}
 	
-	public void fft(){
-		fft(sampleHash());
+	/*
+	 * Check for discrepancy, automatically choose FFT or IFFT
+	 * Use via API is discouraged, know whether you want FFT or IFFT and call that instead
+	 */
+	public void autoUpdate(){
+		int newSampleHash = sampleHash();
+		int newSpectrumHash = spectrumHash();
+		if(newSampleHash!=sampleHash){
+			if(newSpectrumHash==spectrumHash){
+				fft(newSampleHash);
+			}
+		}else if(newSpectrumHash!=spectrumHash){
+			ifft(newSpectrumHash);
+		}
 	}
+	
+	/*
+	 * Check if samples changed, do FFT if so
+	 */
+	public void checkFft(){
+		int newHash = sampleHash();
+		if(newHash!=sampleHash){
+			fft(newHash);
+		}
+	}
+	
+	/*
+	 * Check if spectrum changed, do IFFT if so
+	 */
+	public void checkIfft(){
+		int newHash = spectrumHash();
+		if(newHash!=spectrumHash){
+			ifft(newHash);
+		}
+	}
+	
+	/*
+	 * Single argument passed is precalculated sample hash
+	 * Spectrum hash will be updated after to match
+	 */
 	public synchronized void fft(int newHash){
 		int total = sampleData.length;
 		int nearestExp = BitUtils.binLog(total);
 		int nearestPower = 1<<nearestExp;
-		FFT fft = new FFT(nearestPower);
+		FFT fft = FFT.getFft(nearestPower);
 		if(nearestPower==total){
 			spectrumReal = Arrays.copyOf(sampleData, total);
 			spectrumImag = blankArray(total);
@@ -124,9 +166,12 @@ public class Samples implements Curve {
 				spectrumReal[i]=origFirst[i];
 				spectrumImag[i]=imagFirst[i];
 			}
+			double mult = 1d/(nearestPower-secondStart);
 			for(int i=secondStart;i<nearestPower;i++){
-				spectrumReal[i]=0.5d*(origFirst[i]+origSecond[i-secondStart]);
-				spectrumImag[i]=0.5d*(imagFirst[i]+imagSecond[i-secondStart]);
+				int j = i-secondStart;
+				double t = j*mult;
+				spectrumReal[i]=MathUtils.bezier2(origFirst[i],origSecond[j],t);
+				spectrumImag[i]=MathUtils.bezier2(imagFirst[i],imagSecond[j],t);
 			}
 			for(int i=nearestPower;i<total;i++){
 				spectrumReal[i]=origSecond[i-secondStart];
@@ -134,13 +179,18 @@ public class Samples implements Curve {
 			}
 		}
 		sampleHash = newHash;
+		spectrumHash = spectrumHash();
 	}
 	
-	public synchronized void ifft(){
+	/*
+	 * Single argument passed is precalculated spectrum hash
+	 * Sample hash will be updated after to match
+	 */
+	public synchronized void ifft(int newHash){
 		int total = spectrumReal.length;
 		int nearestExp = BitUtils.binLog(total);
 		int nearestPower = 1<<nearestExp;
-		FFT fft = new FFT(nearestPower);
+		FFT fft = FFT.getFft(nearestPower);
 		if(nearestPower==total){
 			sampleData = Arrays.copyOf(spectrumReal, total);
 			double[] sampleImag = Arrays.copyOf(spectrumImag, total);
@@ -157,13 +207,17 @@ public class Samples implements Curve {
 			for(int i=0;i<secondStart;i++){
 				sampleData[i]=origFirst[i];
 			}
+			double mult = 1d/(nearestPower-secondStart);
 			for(int i=secondStart;i<nearestPower;i++){
-				sampleData[i]=0.5d*(origFirst[i]+origSecond[i-secondStart]);
+				int j = i-secondStart;
+				double t = j*mult;
+				sampleData[i]=MathUtils.bezier2(origFirst[i],origSecond[j],t);
 			}
 			for(int i=nearestPower;i<total;i++){
 				sampleData[i]=origSecond[i-secondStart];
 			}
 		}
+		spectrumHash = newHash;
 		sampleHash = sampleHash();
 	}
 	

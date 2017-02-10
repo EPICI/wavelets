@@ -10,6 +10,7 @@ public interface Track extends Serializable {
 	 * Buffer size is sample length
 	 */
 	public void applyTo(MetaSamples current);
+	
 	/*
 	 * Get the track bounds as double array
 	 * First element is minimum/left/start
@@ -17,4 +18,10 @@ public interface Track extends Serializable {
 	 * All in seconds
 	 */
 	public double[] getTimeBounds();
+	
+	/*
+	 * TODO request UI
+	 * Should have a metadata holder class which contains a string identifier
+	 * used to distinguish between standard UI types
+	 */
 }

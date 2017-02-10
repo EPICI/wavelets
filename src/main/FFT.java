@@ -22,15 +22,56 @@
 
 package main;
 
-public class FFT {
+import java.util.*;//Only used for testing
 
-	int n, m;
+public class FFT {
+	
+	private static FFT[] sharedFFTs = new FFT[29];
+	
+	/*
+	 * Get shared FFT object for known power of 2
+	 * n=1<<m
+	 */
+	public static FFT getFft(int m){
+		if(m<1){
+			throw new IllegalArgumentException("FFT length exponent "+Integer.toString(m)+" is too small. Minimum value is 1.");
+		}else if(m>30){
+			throw new IllegalArgumentException("FFT length exponent "+Integer.toString(m)+" is too large. Minimum value is 30.");
+		}else{
+			int index = m-1;
+			if(sharedFFTs[index]==null){
+				sharedFFTs[index]=getNewFft(m);
+			}
+			return sharedFFTs[index];
+		}
+	}
+	
+	/*
+	 * Dereference a shared FFT object
+	 * Only really used to free up memory
+	 */
+	public static void removeFft(int m){
+		//Fail-safe
+		if(m>=1&&m<=30){
+			sharedFFTs[m-1]=null;
+		}
+	}
+	
+	/*
+	 * Gets a new FFT object for a known power of 2
+	 * Assumed valid (checks should be done elsewhere)
+	 */
+	public static FFT getNewFft(int m){
+		return new FFT(1<<m);
+	}
+
+	private int n, m;
 	
 	// Lookup tables.	Only need to recompute when size of FFT changes.
-	double[] cos;
-	double[] sin;
+	private double[] cos;
+	private double[] sin;
 
-	double[] window;
+	private double[] window;
 	
 	public FFT(int n) {
 		this.n = n;
@@ -38,7 +79,7 @@ public class FFT {
 
 		// Make sure n is a power of 2
 		if(n != (1<<m))
-			throw new RuntimeException("FFT length must be power of 2");
+			throw new IllegalArgumentException("FFT length must be power of 2");
 
 		// precompute tables
 		cos = new double[n/2];
@@ -170,6 +211,7 @@ public class FFT {
 	// Test the FFT to make sure it's working
 	public static void main(String[] args) {
 		int N = 128;
+		Random random = new Random();
 
 		FFT fft = new FFT(N);
 
@@ -206,6 +248,13 @@ public class FFT {
 		System.out.println("Saw");
 		for(int i=0; i<N; i++) {
 			re[i] = i%8-3.5d;
+			im[i] = 0;
+		}
+		beforeAfter(fft, re, im);
+
+		System.out.println("Noise");
+		for(int i=0; i<N; i++) {
+			re[i] = random.nextDouble();
 			im[i] = 0;
 		}
 		beforeAfter(fft, re, im);

@@ -3,7 +3,7 @@ package main;
 import java.util.*;
 
 //Contains tracks, which will combine to be layered on top of original samples
-public class TrackLayerCompound implements Track, TransientContainer<TrackLayerCompound> {
+public class TrackLayerCompound implements Track, TransientContainer<TLCParent>, TLCParent {
 	private static final long serialVersionUID = 1L;
 
 	/*
@@ -24,7 +24,7 @@ public class TrackLayerCompound implements Track, TransientContainer<TrackLayerC
 					track.applyTo(toAdd);
 				}
 			}
-			current.layerOnThisLazy(toAdd);
+			current.layerOnThisMeta(toAdd);
 		}
 	}
 	
@@ -46,7 +46,7 @@ public class TrackLayerCompound implements Track, TransientContainer<TrackLayerC
 	}
 
 	@Override
-	public void initTransient(TrackLayerCompound parent) {
+	public void initTransient(TLCParent parent) {
 		// TODO Auto-generated method stub
 		
 	}

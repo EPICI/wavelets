@@ -13,7 +13,7 @@ public class PlayerDoubleBuffer implements Player {
 	private static final double[] emptyBounds = new double[]{Double.MAX_VALUE,Double.MIN_VALUE};
 	
 	//Continue looping
-	public volatile boolean cont = true;
+	private volatile boolean cont = true;
 	public volatile double volume = 32768d;
 	public int bufferSize;
 	
@@ -213,8 +213,7 @@ public class PlayerDoubleBuffer implements Player {
 
 	@Override
 	public void stopPlay() {
-		// TODO Auto-generated method stub
-
+		cont=false;
 	}
 
 }
