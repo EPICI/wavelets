@@ -245,9 +245,16 @@ public class FFT {
 		}
 		beforeAfter(fft, re, im);
 
-		System.out.println("Saw");
+		System.out.println("Saw (8)");
 		for(int i=0; i<N; i++) {
 			re[i] = i%8-3.5d;
+			im[i] = 0;
+		}
+		beforeAfter(fft, re, im);
+
+		System.out.println("Saw (4)");
+		for(int i=0; i<N; i++) {
+			re[i] = i%4-1.5d;
 			im[i] = 0;
 		}
 		beforeAfter(fft, re, im);

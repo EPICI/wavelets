@@ -234,7 +234,7 @@ public class Samples implements Curve {
 	}
 	
 	//Apply curve as envelope
-	public static void applyCurveTo(Curve curve,int sampleRate,double[] target){
+	public static void applyCurveTo(Curve curve,double sampleRate,double[] target){
 		int total = target.length;
 		double rateMult = 1d/sampleRate;
 		for(int i=0;i<total;i++){
@@ -242,7 +242,7 @@ public class Samples implements Curve {
 			target[i]*=curve.valueAtPosition(position);
 		}
 	}
-	public static void applyCurveToInParallel(Curve curve,int sampleRate,double[]... targets){
+	public static void applyCurveToInParallel(Curve curve,double sampleRate,double[]... targets){
 		int arrays = targets.length;
 		int total = targets[0].length;
 		double rateMult = 1d/sampleRate;
@@ -254,10 +254,17 @@ public class Samples implements Curve {
 			}
 		}
 	}
+	
+	/*
+	 * Apply curve as envelope to sample data
+	 */
 	public synchronized void applyCurveToData(Curve curve){
 		applyCurveTo(curve,sampleRate,sampleData);
 	}
+	/*
+	 * Apply curve as envelope to spectrum correctly
+	 */
 	public synchronized void applyCurveToSpectrum(Curve curve){
-		applyCurveToInParallel(curve,sampleRate,spectrumReal,spectrumImag);
+		applyCurveToInParallel(curve,((double)sampleData.length)/sampleRate,spectrumReal,spectrumImag);
 	}
 }
