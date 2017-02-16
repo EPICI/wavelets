@@ -15,6 +15,9 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 	private static final double[] emptyBounds = new double[]{Double.MAX_VALUE,Double.MIN_VALUE};
 	
 	public ArrayList<Track> tracks;
+	public transient Composition parentComposition;
+	public transient TrackLayerCompound parentTLC;
+	public transient boolean parentIsComposition;
 	
 	@Override
 	public void applyTo(MetaSamples current) {
@@ -50,13 +53,40 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 	@Override
 	public void initTransient(TLCParent parent) {
 		// TODO Auto-generated method stub
-		
+		if(parent instanceof Composition){
+			parentComposition = (Composition) parent;
+			parentIsComposition = true;
+		}else{
+			parentTLC = (TrackLayerCompound) parent;
+			parentIsComposition = false;
+		}
+	}
+	
+	public Composition parentComposition(){
+		if(parentIsComposition){
+			return parentComposition;
+		}
+		return parentTLC.parentComposition();
 	}
 
 	@Override
 	public MetaComponent<? extends JComponent> getUI() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public MetaComponent<? extends JComponent> getViewComponent() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	public int hashCode(){
+		int result = 4441;
+		for(Track track:tracks){
+			result = 262147*result+track.hashCode();
+		}
+		return result;
 	}
 
 }

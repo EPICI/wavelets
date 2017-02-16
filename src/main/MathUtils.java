@@ -16,6 +16,8 @@ public final class MathUtils {
 	 * Standard bezier functions
 	 */
 	public static double bezier2(double a,double b,double t){
+		//Total of 4 floating point operations
+		//       1  2 3 4
 		return (1-t)*a+t*b;
 	}
 	public static double bezier(double t,double... ds){
@@ -29,6 +31,16 @@ public final class MathUtils {
 		case 2:return bezier2(ds[0],ds[1],t);
 		default:return bezier2(bezier(Arrays.copyOfRange(ds, 0, count-1),t),bezier(Arrays.copyOfRange(ds, 1, count),t),t);
 		}
+	}
+	/*
+	 * Fast bezier4 for (a,a,b,b)
+	 * Polynomial expanded and refactored
+	 * Does far less work
+	 */
+	public static double bezier2to4(double a,double b,double t){
+		//Total of 7 floating point operations
+		//      1 2   3 4   5  6  7
+		return t*t*(2d*t-3d)*(a-b)+a;
 	}
 
 	/*

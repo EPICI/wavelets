@@ -3,7 +3,7 @@ package main;
 import org.python.core.*;
 import org.python.util.*;
 
-public class PyVoiceFactory {
+public class PyVoiceFactory implements VoiceFactory{
 	public static final Class<Voice> voiceClass = Voice.class;
 	
 	//Class to instantiate

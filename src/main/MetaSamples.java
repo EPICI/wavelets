@@ -1,6 +1,7 @@
 package main;
 
 import java.util.*;
+import org.python.core.*;
 
 //Contains some extra useful data
 public class MetaSamples extends Samples {
@@ -13,14 +14,22 @@ public class MetaSamples extends Samples {
 	
 	//Generic holder scripts can interact with
 	public HashMap<String,Object> vars;
+	//Dictionary form
+	public PyDictionary varDict;
 	
 	public MetaSamples(int samplerate, double[] sampledata) {
 		super(samplerate, sampledata);
+		vars=new HashMap<>();
+		varDict=new PyDictionary();
+		updatePyDict();
 	}
 	public MetaSamples(Samples original){
 		super(original.sampleRate,original.sampleData);
 		spectrumReal = original.spectrumReal;
 		spectrumImag = original.spectrumImag;
+		vars=new HashMap<>();
+		varDict=new PyDictionary();
+		updatePyDict();
 	}
 	
 	public void pushToNext(){
@@ -28,11 +37,24 @@ public class MetaSamples extends Samples {
 		endPos+=length;
 	}
 	
-	//Also copies variables
+	/*
+	 * Augmented layer method
+	 * Also copies variables
+	 */
 	public void layerOnThisMeta(MetaSamples toLayer){
 		super.layerOnThis(toLayer);
 		for(String key:toLayer.vars.keySet()){
 			vars.put(key, toLayer.vars.get(key));
+		}
+		updatePyDict();
+	}
+	
+	/*
+	 * One way copy to give Python users easy access
+	 */
+	public void updatePyDict(){
+		for(String key:vars.keySet()){
+			varDict.__setitem__(key, Py.java2py(vars.get(key)));
 		}
 	}
 
@@ -46,6 +68,8 @@ public class MetaSamples extends Samples {
 		result.endPos=original.endPos;
 		result.length=original.length;
 		result.vars=new HashMap<>(original.vars);
+		result.varDict=new PyDictionary();
+		result.updatePyDict();
 		return result;
 	}
 }

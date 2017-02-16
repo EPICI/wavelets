@@ -18,4 +18,25 @@ public final class BitUtils {
 		if( bits >= 4   ) { bits >>>= 2; log += 2; }
 		return log + ( bits >>> 1 );
 	}
+	
+	/*
+	 * Fast power of 2 test
+	 */
+	public static boolean isPo2(int bits){
+		return (bits&(bits-1))==0;
+	}
+	
+	public static void main(String[] args){
+		//Log base 2 sanity tests
+		System.out.println("log2(1024)="+binLog(1024)+" (expected 10)");
+		System.out.println("log2(3000)="+binLog(3000)+" (expected 11)");
+		System.out.println("log2(14)="+binLog(14)+" (expected 3)");
+		System.out.println("log2(73902)="+binLog(73902)+" (expected 16)");
+		//Power of 2 sanity tests
+		System.out.println("ispo2(65535)="+isPo2(65535)+" (expected false)");
+		System.out.println("ispo2(65536)="+isPo2(65536)+" (expected true)");
+		System.out.println("ispo2(65537)="+isPo2(65537)+" (expected false)");
+		System.out.println("ispo2(3)="+isPo2(3)+" (expected false)");
+		System.out.println("ispo2(4)="+isPo2(4)+" (expected true)");
+	}
 }

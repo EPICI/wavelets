@@ -31,6 +31,17 @@ public interface Synthesizer extends Destructable {
 	public void setGlobals(HashMap<String,Object> vars);
 	
 	/*
+	 * Return true if Python, false if Java
+	 */
+	public boolean isPython();
+	
+	/*
+	 * Get voice factory object directly
+	 * Should only be used for Java synths
+	 */
+	public VoiceFactory getVoiceFactory();
+	
+	/*
 	 * Get a list, tuple, or dict with information needed to make a PyVoiceFactory
 	 */
 	public PyObject getPvfInfo();

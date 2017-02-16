@@ -21,7 +21,19 @@ public interface Track extends Serializable {
 	public double[] getTimeBounds();
 	
 	/*
+	 * Convenience method
+	 * Get parent composition, do whatever it takes to find it
+	 */
+	public Composition parentComposition();
+	
+	/*
 	 * Request UI with metadata
 	 */
 	public MetaComponent<? extends JComponent> getUI();
+	
+	/*
+	 * Get component to display inline in the track viewer
+	 * which would be part of a TrackLayerCompound's UI
+	 */
+	public MetaComponent<? extends JComponent> getViewComponent();
 }

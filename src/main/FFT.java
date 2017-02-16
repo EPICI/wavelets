@@ -75,11 +75,15 @@ public class FFT {
 	
 	public FFT(int n) {
 		this.n = n;
-		this.m = BitUtils.binLog(n);//Modified to be faster
 
-		// Make sure n is a power of 2
-		if(n != (1<<m))
+		/*
+		 * Make sure n is a power of 2
+		 * Also make sure it's 2 or larger
+		 */
+		if(n<2 || !BitUtils.isPo2(n))
 			throw new IllegalArgumentException("FFT length must be power of 2");
+		
+		this.m = BitUtils.binLog(n);//Modified to be faster
 
 		// precompute tables
 		cos = new double[n/2];
@@ -189,6 +193,7 @@ public class FFT {
 			}
 		}
 		
+		//Symmetric modification
 		double mult = Math.pow(n, -0.5d);
 		for(i=0;i<n;i++){
 			x[i]*=mult;
@@ -210,10 +215,10 @@ public class FFT {
 
 	// Test the FFT to make sure it's working
 	public static void main(String[] args) {
-		int N = 128;
+		int N = 1<<7;
 		Random random = new Random();
 
-		FFT fft = new FFT(N);
+		FFT fft = getFft(7);
 
 		double[] re = new double[N];
 		double[] im = new double[N];
@@ -259,19 +264,32 @@ public class FFT {
 		}
 		beforeAfter(fft, re, im);
 
-		System.out.println("Noise");
+		System.out.println("Pulse (4)");
 		for(int i=0; i<N; i++) {
-			re[i] = random.nextDouble();
+			re[i] = i%4==0?1d:0d;
 			im[i] = 0;
 		}
 		beforeAfter(fft, re, im);
 
-		long time = System.currentTimeMillis();
-		double iter = 100000;
-		for(int i=0; i<iter; i++)
-			fft.fft(re,im);
-		time = System.currentTimeMillis() - time;
-		System.out.println("Averaged " + (time/iter) + "ms per iteration");
+		System.out.println("Noise");
+		for(int i=0; i<N; i++) {
+			re[i] = random.nextDouble()-0.5d;
+			im[i] = 0;
+		}
+		beforeAfter(fft, re, im);
+		
+		removeFft(7);
+
+		doBenchmark(4,10000000);
+		doBenchmark(5,5000000);
+		doBenchmark(6,2000000);
+		doBenchmark(7,1000000);
+		doBenchmark(8,500000);
+		doBenchmark(9,200000);
+		doBenchmark(12,5000);
+		doBenchmark(16,200);
+		doBenchmark(20,2);
+		doBenchmark(22,1);
 	}
 
 	protected static void beforeAfter(FFT fft, double[] re, double[] im) {
@@ -295,5 +313,27 @@ public class FFT {
 			System.out.print(((int)(im[i]*1000)/1000.0) + " ");
 
 		System.out.println("]");
+	}
+	
+	protected static void doBenchmark(int M, double iter){
+		int N = 1<<M;
+		FFT fft = getFft(M);
+		double[] re = new double[N];
+		double[] im = new double[N];
+		double modulus = M*1.77913d+0.414793d;
+		double offset = (modulus-1d)*-0.5d;
+		for(int i=0; i<N; i++) {
+			re[i] = i%modulus-offset;
+			im[i] = 0;
+		}
+
+		long time = System.currentTimeMillis();
+		for(int i=0; i<iter; i++)
+			fft.fft(re,im);
+		time = System.currentTimeMillis() - time;
+		double times = N/44100d;
+		double iterms = time/iter;
+		System.out.println("Averaged " + iterms + "ms per iteration (N = 2^"+M+" = "+N+", "+times+"s at 44100Hz, ratio="+(1000d*times/iterms)+")");
+		removeFft(M);
 	}
 }

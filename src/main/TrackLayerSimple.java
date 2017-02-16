@@ -13,6 +13,7 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	public ArrayList<Pattern> patterns;
 	public ArrayList<Integer> delays;
 	public transient ArrayList<Voice> voices;
+	public transient TrackLayerCompound parentTLC;
 	
 	public TrackLayerSimple(TrackLayerCompound parent){
 		patterns = new ArrayList<Pattern>();
@@ -74,11 +75,16 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	@Override
 	public void initTransient(TrackLayerCompound parent) {
 		voices = new ArrayList<Voice>();
+		parentTLC = parent;
+	}
+	
+	public Composition parentComposition(){
+		return parentTLC.parentComposition();
 	}
 	
 	public void addVoice(Pattern pattern,PyObject[] args,String[] keywords){
-		PyVoiceFactory pvf = pattern.getPvf();
-		Voice toAdd = pvf.create(args, keywords);
+		VoiceFactory voiceFactory = pattern.getVoiceFactory();
+		Voice toAdd = voiceFactory.create(args, keywords);
 		voices.add(toAdd);
 	}
 	
@@ -108,6 +114,16 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	public MetaComponent<? extends JComponent> getUI() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public MetaComponent<? extends JComponent> getViewComponent() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
+	public int hashCode(){
+		return 133121*patterns.hashCode()+delays.hashCode();
 	}
 
 }

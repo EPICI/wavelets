@@ -37,7 +37,7 @@ public class Samples implements Curve {
 					if(MathUtils.isNear(left, position)){
 						return sampleData[left];
 					}else{
-						return MathUtils.bezier2(sampleData[left], sampleData[left+1], position-left);
+						return MathUtils.bezier2to4(sampleData[left], sampleData[left+1], position-left);
 					}
 				}
 			}
