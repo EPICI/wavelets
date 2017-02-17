@@ -1,6 +1,7 @@
 package main;
 
 import java.util.Arrays;
+import utils.*;
 
 //Sample data
 public class Samples implements Curve {

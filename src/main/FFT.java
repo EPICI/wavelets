@@ -23,6 +23,7 @@
 package main;
 
 import java.util.*;//Only used for testing
+import utils.BitUtils;
 
 public class FFT {
 	
