@@ -109,7 +109,7 @@ public final class MathUtils {
 	 * @param a the first value
 	 * @param b the second value
 	 * @param epsilon custom epsilon value
-	 * @return true if |a-b|<epsilon
+	 * @return true if |a-b|&lt;epsilon
 	 */
 	public static boolean isNear(double a,double b,double epsilon){
 		return Math.abs(a-b)<epsilon;
@@ -134,7 +134,7 @@ public final class MathUtils {
 	 * @param a the first value
 	 * @param b the second value
 	 * @param epsilon custom epsilon value
-	 * @return true if |a-b|<epsilon
+	 * @return true if |a-b|&lt;epsilon
 	 */
 	public static boolean isNear(float a,float b,float epsilon){
 		return Math.abs(a-b)<epsilon;

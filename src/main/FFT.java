@@ -39,7 +39,7 @@ public class FFT {
 	 * Get shared FFT object for known power of 2
 	 * 
 	 * @param m the exponent of 2
-	 * @return an FFT object which can process arrays of length 1<<m
+	 * @return an FFT object which can process arrays of length 1&lt;&lt;m
 	 */
 	public static FFT getFft(int m){
 		if(m<1){
@@ -73,7 +73,7 @@ public class FFT {
 	 * Assumed valid (checks should be done elsewhere)
 	 * 
 	 * @param m the exponent of 2
-	 * @return an FFT object which can process arrays of length 1<<m
+	 * @return an FFT object which can process arrays of length 1&lt;&lt;m
 	 */
 	public static FFT getNewFft(int m){
 		return new FFT(1<<m);

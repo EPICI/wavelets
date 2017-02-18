@@ -15,7 +15,7 @@ public final class BitUtils {
 	 * Taken from http://stackoverflow.com/questions/3305059/how-do-you-calculate-log-base-2-in-java-for-integers#3305710
 	 * Returns 0 for 0
 	 * <br>
-	 * If the original number was a power of 2, 1<<(the returned result) should be original number
+	 * If the original number was a power of 2, 1&lt;&lt;(the returned result) should be original number
 	 * 
 	 * @param bits the integer to calculate the log base 2 of
 	 * @return the log base 2 of that integer
