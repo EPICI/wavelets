@@ -1,23 +1,44 @@
 package main;
 
 import java.util.*;
+import javax.swing.*;
 
-import javax.swing.JComponent;
-
-//Contains tracks, which will combine to be layered on top of original samples
+/**
+ * Contains tracks
+ * <br>
+ * A new blank {@link MetaSamples} object is created, all tracks process that,
+ * and that object is finally layered onto the given one
+ * 
+ * @author EPICI
+ * @version 1.0
+ */
 public class TrackLayerCompound implements Track, TransientContainer<TLCParent>, TLCParent {
 	private static final long serialVersionUID = 1L;
 
-	/*
+	/**
 	 * Don't modify this, ever
+	 * <br>
 	 * Empty time bounds
 	 */
 	private static final double[] emptyBounds = new double[]{Double.MAX_VALUE,Double.MIN_VALUE};
 	
-	public ArrayList<Track> tracks;
-	public transient Composition parentComposition;
-	public transient TrackLayerCompound parentTLC;
-	public transient boolean parentIsComposition;
+	/**
+	 * All contained tracks
+	 */
+	protected ArrayList<Track> tracks;
+	/**
+	 * If this is the root {@link TrackLayerCompound}, the parent composition
+	 */
+	protected transient Composition parentComposition;
+	/**
+	 * If this is not the root {@link TrackLayerCompound}, the parent {@link TrackLayerCompound}
+	 */
+	protected transient TrackLayerCompound parentTLC;
+	/**
+	 * If it is the root {@link TrackLayerCompound}, and therefore
+	 * its parent is the composition
+	 */
+	protected transient boolean parentIsComposition;
 	
 	@Override
 	public void applyTo(MetaSamples current) {
@@ -70,13 +91,13 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 	}
 
 	@Override
-	public MetaComponent<? extends JComponent> getUI() {
+	public MetaComponent<JInternalFrame> getUI() {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public MetaComponent<? extends JComponent> getViewComponent() {
+	public MetaComponent<JPanel> getViewComponent() {
 		// TODO Auto-generated method stub
 		return null;
 	}

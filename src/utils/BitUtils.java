@@ -1,14 +1,24 @@
 package utils;
 
-//Utility class
+/**
+ * Utility class containing all bit twiddling hacks and the like
+ * 
+ * @author EPICI
+ * @version 1.0
+ */
 public final class BitUtils {
 	//Disallow invoking constructor
 	private BitUtils(){}
 	
-	/*
-	 * Fast log base 2 for integers
+	/**
+	 * Fast (floor) log base 2 for integers
 	 * Taken from http://stackoverflow.com/questions/3305059/how-do-you-calculate-log-base-2-in-java-for-integers#3305710
 	 * Returns 0 for 0
+	 * <br>
+	 * If the original number was a power of 2, 1<<(the returned result) should be original number
+	 * 
+	 * @param bits the integer to calculate the log base 2 of
+	 * @return the log base 2 of that integer
 	 */
 	public static int binLog(int bits){
 		int log = 0;
@@ -19,13 +29,22 @@ public final class BitUtils {
 		return log + ( bits >>> 1 );
 	}
 	
-	/*
+	/**
 	 * Fast power of 2 test
+	 * Also returns true for 0, even though it isn't a power of 2
+	 * 
+	 * @param bits the number to test
+	 * @return true if the number is a power of 2
 	 */
 	public static boolean isPo2(int bits){
 		return (bits&(bits-1))==0;
 	}
 	
+	/**
+	 * Main method, used only for testing
+	 * 
+	 * @param args ignored
+	 */
 	public static void main(String[] args){
 		//Log base 2 sanity tests
 		System.out.println("log2(1024)="+binLog(1024)+" (expected 10)");

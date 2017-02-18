@@ -3,27 +3,65 @@ package main;
 import java.nio.*;
 import javax.sound.sampled.*;
 
-//Uses a double buffer to allow real time sound
+/**
+ * An implementation of the {@link Player} interface which
+ * uses a double buffer to allow for continuous audio playback
+ * 
+ * @author EPICI
+ * @version 1.0
+ */
 public class PlayerDoubleBuffer implements Player {
 	
-	/*
+	/**
 	 * Don't modify this, ever
+	 * <br>
 	 * Empty time bounds
 	 */
 	private static final double[] emptyBounds = new double[]{Double.MAX_VALUE,Double.MIN_VALUE};
 	
-	//Continue looping
+	/**
+	 * Flag that says if it should continue looping
+	 * <br>
+	 * Set to false to stop playing
+	 */
 	private volatile boolean cont = true;
+	/**
+	 * Volume multiplier, default is fine since values will be shorts
+	 * and the amplitude is expected to cap at 1.0
+	 */
 	public volatile double volume = 32768d;
+	/**
+	 * Buffer size
+	 */
 	public int bufferSize;
 	
-	//The other thread needed
+	/**
+	 * The other thread which works in conjunction with this one
+	 * to provide audio
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
 	private class TrackPoller extends Thread{
-		//The track to poll
+		/**
+		 * The track to poll
+		 */
 		public Track toPoll;
+		/**
+		 * Results stored here
+		 */
 		public MetaSamples result;
+		/**
+		 * True when done, should always finish in time
+		 */
 		public boolean done;
 		
+		/**
+		 * Standard constructor
+		 * 
+		 * @param toPoll track to poll
+		 * @param copyFrom {@link MetaSamples} to copy from
+		 */
 		public TrackPoller(Track toPoll,MetaSamples copyFrom){
 			this.toPoll = toPoll;
 			result = MetaSamples.blankSamplesFrom(copyFrom);
@@ -38,6 +76,11 @@ public class PlayerDoubleBuffer implements Player {
 		}
 	}
 	
+	/**
+	 * Standard constructor
+	 * 
+	 * @param bufferSize buffer size
+	 */
 	public PlayerDoubleBuffer(int bufferSize){
 		this.bufferSize = bufferSize;
 	}

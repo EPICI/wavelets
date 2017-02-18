@@ -2,15 +2,30 @@ package main;
 
 import java.util.*;
 
+/**
+ * An actual composition, the parent of everything else
+ * 
+ * @author EPICI
+ * @version 1.0
+ */
 public class Composition implements TransientContainer<Object>, TLCParent, Destructable{
 	private static final long serialVersionUID = 1L;
 	
-	//Generic storage
+	/**
+	 * Generic storage, acts like a global variables map
+	 */
 	public HashMap<String,Object> globalsStatic;
-	//Copied when playing
+	/**
+	 * When playback starts, copy to this, then reference this
+	 * in the new MetaSamples
+	 */
 	public transient HashMap<String,Object> globalsDynamic;
+	/**
+	 * Seconds per measure
+	 */
+	public double baseSpeed;
 
-	/*
+	/**
 	 * Deep copy static globals to dynamic
 	 */
 	public void pushGlobals(){

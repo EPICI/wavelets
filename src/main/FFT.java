@@ -25,13 +25,21 @@ package main;
 import java.util.*;//Only used for testing
 import utils.BitUtils;
 
+/**
+ * Fast Fourier Transform
+ * 
+ * @author Columbia University (see license)
+ * @version 1.0
+ */
 public class FFT {
 	
 	private static FFT[] sharedFFTs = new FFT[29];
 	
-	/*
+	/**
 	 * Get shared FFT object for known power of 2
-	 * n=1<<m
+	 * 
+	 * @param m the exponent of 2
+	 * @return an FFT object which can process arrays of length 1<<m
 	 */
 	public static FFT getFft(int m){
 		if(m<1){
@@ -47,9 +55,11 @@ public class FFT {
 		}
 	}
 	
-	/*
+	/**
 	 * Dereference a shared FFT object
 	 * Only really used to free up memory
+	 * 
+	 * @param m the exponent of 2
 	 */
 	public static void removeFft(int m){
 		//Fail-safe
@@ -58,9 +68,12 @@ public class FFT {
 		}
 	}
 	
-	/*
+	/**
 	 * Gets a new FFT object for a known power of 2
 	 * Assumed valid (checks should be done elsewhere)
+	 * 
+	 * @param m the exponent of 2
+	 * @return an FFT object which can process arrays of length 1<<m
 	 */
 	public static FFT getNewFft(int m){
 		return new FFT(1<<m);
@@ -141,6 +154,9 @@ public class FFT {
 	* 
 	*	 Permission to copy and use this program is granted 
 	*	 as long as this header is included. 
+	*
+	* @param x the real array
+	* @param y the matching imaginary array
 	****************************************************************/
 	public void fft(double[] x, double[] y)
 	{
@@ -194,19 +210,42 @@ public class FFT {
 			}
 		}
 		
-		//Symmetric modification
+		/*
+		 * After two iterations, value would normally be n times larger
+		 * Dividing by square root of n each time will make it so that
+		 * inverse FFT after FFT should give the original data,
+		 * with floating point rounding errors of course
+		 */
 		double mult = Math.pow(n, -0.5d);
 		for(i=0;i<n;i++){
 			x[i]*=mult;
 			y[i]*=mult;
 		}
 	}
-	public void ifft(double[] x,double[] y){//Inverse FFT
+	/**
+	 * Inverse FFT
+	 * <br>
+	 * Conveniently swapping the real and imaginary parts will do this
+	 * 
+	 * @param x the real array
+	 * @param y the matching imaginary array
+	 */
+	public void ifft(double[] x,double[] y){
 		fft(y,x);
 	}
+	/**
+	 * FFT shorthand
+	 * 
+	 * @param xy an array containing two other arrays, first the real, then the imaginary
+	 */
 	public void fft(double[][] xy){//Convenience method
 		fft(xy[0],xy[1]);
 	}
+	/**
+	 * Inverse FFT shorthand
+	 * 
+	 * @param xy an array containing two other arrays, first the real, then the imaginary
+	 */
 	public void ifft(double[][] xy){//Convenience method
 		ifft(xy[0],xy[1]);
 	}
@@ -214,7 +253,11 @@ public class FFT {
 
 
 
-	// Test the FFT to make sure it's working
+	/**
+	 * Main method, only for testing
+	 * 
+	 * @param args ignored
+	 */
 	public static void main(String[] args) {
 		int N = 1<<7;
 		Random random = new Random();
