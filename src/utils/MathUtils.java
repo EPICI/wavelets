@@ -103,14 +103,18 @@ public final class MathUtils {
 			double i = t1*t1;
 			double j = t*t;
 			double k = t1*t;
+			double l = 4d*k;
 			/*
-			 * Hardcoded for n=4
-			 * Total of 14+4=18 floating point operations
-			 *       1  2   3 4  5   6 7   8   9   10 11 12 13 14
+			 * Hardcoded for n=5
+			 * Total of 12+5=17 floating point operations
+			 *       1  2  3  4   5 6   7   8   9 10 11  12
 			 */
-			return (a*i + 4d*b*k + 6d*c*j) * i + (4d*d*k + e*j) * j;
+			return (a*i + b*l + 6d*c*j) * i + (d*l + e*j) * j;
 		}
 		default:{
+			if(count<10){
+				return decasteljauBezier(ds,t);
+			}
 			double t1 = 1d - t;
 			int n1 = count - 1;
 			int halfn = (n1>>1)+1;
@@ -160,7 +164,8 @@ public final class MathUtils {
 	 * <br>
 	 * https://en.wikipedia.org/wiki/De_Casteljau%27s_algorithm
 	 * <br>
-	 * Please don't use it
+	 * Please don't use it, the only advantage it offers is stability,
+	 * but honestly you shouldn't ever have hundreds of control points
 	 * 
 	 * @param ds double array contianing the points
 	 * @param t the interpolation value, must be between 0 and 1
@@ -282,17 +287,11 @@ public final class MathUtils {
 	 */
 	public static double chooseDouble(int n,int k){
 		int n1 = n+1;
-		double numerator = 1d;
-		double denominator = 1d;
+		double product = 1d;
 		for(int i=1;i<=k;i++){
-			numerator *= n1 - i;
-			denominator *= i;
-			if((i&31)==0){
-				numerator/=denominator;
-				denominator = 1d;
-			}
+			product = (product * (n1-i)) / i;
 		}
-		return numerator/denominator;
+		return product;
 	}
 	
 	/**
@@ -306,19 +305,12 @@ public final class MathUtils {
 	 */
 	public static double[] chooseDoubleRange(int n,int k){
 		int n1 = n+1;
-		double numerator = 1d;
-		double denominator = 1d;
+		double product = 1d;
 		double[] result = new double[k+1];
 		result[0] = 1;
 		for(int i=1;i<=k;i++){
-			numerator *= n1 - i;
-			denominator *= i;
-			double div = numerator/denominator;
-			if((i&31)==0){
-				numerator=div;
-				denominator = 1d;
-			}
-			result[i] = div;
+			product = (product * (n1-i)) / i;
+			result[i] = product;
 		}
 		return result;
 	}
