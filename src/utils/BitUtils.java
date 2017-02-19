@@ -7,8 +7,86 @@ package utils;
  * @version 1.0
  */
 public final class BitUtils {
+	
+	/**
+	 * An int that reads 100000... in binary
+	 */
+	public static final int INT_LEFT_ONE = 1<<31;
+	/**
+	 * A long that reads 100000... in binary
+	 */
+	public static final long LONG_LEFT_ONE = 1L<<63L;
+	
 	//Disallow invoking constructor
 	private BitUtils(){}
+	
+	/**
+	 * Sets a bit in an int value
+	 * 
+	 * @param encoded the original int value
+	 * @param index the position of the bit to change, from 0 to 31 inclusive,
+	 * 0 would be the sign bit
+	 * @param bit the bit to write
+	 * @return the modified int
+	 */
+	public static int writeBit(int encoded,int index,boolean bit){
+		int bits = INT_LEFT_ONE >>> index;
+		if(bit){
+			return encoded | bits;
+		}else{
+			return encoded & (~bits);
+		}
+	}
+	
+	/**
+	 * Reads a bit from an int value
+	 * 
+	 * @param encoded the int value to read from
+	 * @param index the position of the bit to read, from 0 to 31 inclusive,
+	 * 0 would be the sign bit
+	 * @return true if the bit is 1, false if the bit is 0
+	 */
+	public static boolean readBit(int encoded,int index){
+		return (encoded << index) < 0;
+	}
+	
+	/**
+	 * Sets a bit in a long value
+	 * 
+	 * @param encoded the original long value
+	 * @param index the position of the bit to change, from 0 to 63 inclusive,
+	 * 0 would be the sign bit
+	 * @param bit the bit to write
+	 * @return the modified long
+	 */
+	public static long writeBit(long encoded,int index,boolean bit){
+		long bits = LONG_LEFT_ONE >>> index;
+		if(bit){
+			return encoded | bits;
+		}else{
+			return encoded & (~bits);
+		}
+	}
+	
+	/**
+	 * Reads a bit from an long value
+	 * 
+	 * @param encoded the long value to read from
+	 * @param index the position of the bit to read, from 0 to 63 inclusive,
+	 * 0 would be the sign bit
+	 * @return true if the bit is 1, false if the bit is 0
+	 */
+	public static boolean readBit(long encoded,int index){
+		return (encoded << index) < 0;
+	}
+	
+	public static int oneAtInt(int index){
+		return INT_LEFT_ONE >>> index;
+	}
+	
+	public static long oneAtLong(int index){
+		return LONG_LEFT_ONE >>> index;
+	}
 	
 	/**
 	 * Fast (floor) log base 2 for integers
