@@ -231,7 +231,7 @@ public class Samples implements Curve {
 			spectrumImag = blankArray(total);
 			fft.fft(spectrumReal,spectrumImag);
 		}else{
-			int secondStart = total-nearestPower;
+			/*int secondStart = total-nearestPower;
 			double[] origFirst = Arrays.copyOfRange(sampleData, 0, nearestPower);
 			double[] origSecond = Arrays.copyOfRange(sampleData, secondStart, total);
 			double[] imagFirst = blankArray(nearestPower);
@@ -254,7 +254,8 @@ public class Samples implements Curve {
 			for(int i=nearestPower;i<total;i++){
 				spectrumReal[i]=origSecond[i-secondStart];
 				spectrumImag[i]=imagSecond[i-secondStart];
-			}
+			}*/
+			throw new IllegalArgumentException("FFT requires power of 2");
 		}
 		sampleHash = newHash;
 		spectrumHash = spectrumHash();
@@ -277,7 +278,7 @@ public class Samples implements Curve {
 			double[] sampleImag = Arrays.copyOf(spectrumImag, total);
 			fft.fft(sampleData,sampleImag);
 		}else{
-			int secondStart = total-nearestPower;
+			/*int secondStart = total-nearestPower;
 			double[] origFirst = Arrays.copyOfRange(spectrumReal, 0, nearestPower);
 			double[] origSecond = Arrays.copyOfRange(spectrumReal, secondStart, total);
 			double[] imagFirst = Arrays.copyOfRange(spectrumImag, 0, nearestPower);
@@ -296,7 +297,8 @@ public class Samples implements Curve {
 			}
 			for(int i=nearestPower;i<total;i++){
 				sampleData[i]=origSecond[i-secondStart];
-			}
+			}*/
+			throw new IllegalArgumentException("FFT requires power of 2");
 		}
 		spectrumHash = newHash;
 		sampleHash = sampleHash();

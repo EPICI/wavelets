@@ -24,6 +24,10 @@ public class Composition implements TransientContainer<Object>, TLCParent, Destr
 	 * Seconds per measure
 	 */
 	public double baseSpeed;
+	/**
+	 * Current session
+	 */
+	public transient Session currentSession = new Session();
 
 	/**
 	 * Deep copy static globals to dynamic

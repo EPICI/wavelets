@@ -80,17 +80,33 @@ public final class BitUtils {
 		return (encoded << index) < 0;
 	}
 	
+	/**
+	 * Gets an int with a 1 at the specified position and
+	 * the rest 0s
+	 * 
+	 * @param index the position, from 0 to 31 inclusive, 0 is sign bit
+	 * @return said int value
+	 */
 	public static int oneAtInt(int index){
 		return INT_LEFT_ONE >>> index;
 	}
 	
+	/**
+	 * Gets an long with a 1 at the specified position and
+	 * the rest 0s
+	 * 
+	 * @param index the position, from 0 to 63 inclusive, 0 is sign bit
+	 * @return said long value
+	 */
 	public static long oneAtLong(int index){
 		return LONG_LEFT_ONE >>> index;
 	}
 	
 	/**
 	 * Fast (floor) log base 2 for integers
+	 * <br>
 	 * Taken from http://stackoverflow.com/questions/3305059/how-do-you-calculate-log-base-2-in-java-for-integers#3305710
+	 * <br>
 	 * Returns 0 for 0
 	 * <br>
 	 * If the original number was a power of 2, 1&lt;&lt;(the returned result) should be original number
@@ -109,6 +125,7 @@ public final class BitUtils {
 	
 	/**
 	 * Fast power of 2 test
+	 * <br>
 	 * Also returns true for 0, even though it isn't a power of 2
 	 * 
 	 * @param bits the number to test

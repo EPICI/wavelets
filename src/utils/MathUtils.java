@@ -41,6 +41,19 @@ public final class MathUtils {
 		//      1 2  3
 		return a+t*(b-a);
 	}
+	
+	/**
+	 * At the cost of one more operation, is more accurate
+	 * 
+	 * @param a the first value to interpolate between
+	 * @param b the second value to interpolate between
+	 * @param t interpolation value, must be between 0 and 1
+	 * @return the interpolated value
+	 */
+	public static double accurateBezier2(double a,double b,double t){
+		return (1d-t)*a+t*b;
+	}
+	
 	/**
 	 * Bezier with more points
 	 * <br>
@@ -111,30 +124,17 @@ public final class MathUtils {
 			 */
 			return (a*i + b*l + 6d*c*j) * i + (d*l + e*j) * j;
 		}
+		case 6:
+		case 7:
+		case 8:
+		case 9:
+		case 10:
+		case 11:return decasteljauBezier(ds,t);
 		default:{
-			if(count<10){
-				return decasteljauBezier(ds,t);
-			}
 			double t1 = 1d - t;
 			int n1 = count - 1;
 			int halfn = (n1>>1)+1;
-			int halfn1 = halfn+1;
-			double[] choose;
-			if(count<29){
-				choose = new double[halfn1];
-				int[] chooseInt = chooseIntRange(n1,halfn);
-				for(int i=0;i<halfn1;i++){
-					choose[i]=chooseInt[i];
-				}
-			}else if(count<60){
-				choose = new double[halfn1];
-				long[] chooseLong = chooseLongRange(n1,halfn);
-				for(int i=0;i<halfn1;i++){
-					choose[i]=chooseLong[i];
-				}
-			}else{
-				choose = chooseDoubleRange(n1,halfn);
-			}
+			double[] choose = adaptiveChooseDoubleRange(n1,halfn);
 			double[] terms = new double[count];
 			double power = 1d;
 			for(int i=0;i<halfn;i++){
@@ -177,6 +177,26 @@ public final class MathUtils {
 		for(int i=n-1;i>0;i--){
 			for(int j=0;j<i;j++){
 				result[j]+=(result[j+1]-result[j])*t;
+			}
+		}
+		return result[0];
+	}
+	
+	/**
+	 * More accurate but slower variant of De Casteljau's
+	 * 
+	 * @param ds double array contianing the points
+	 * @param t the interpolation value, must be between 0 and 1
+	 * @return the interpolated value
+	 */
+	public static double accurateDecasteljauBezier(double[] ds,double t){
+		int n = ds.length;
+		double[] result = Arrays.copyOf(ds, n);
+		for(int i=n-1;i>0;i--){
+			for(int j=0;j<i;j++){
+				double a = result[j];
+				double b = result[j+1];
+				result[j] = (1d-t)*a+t*b;
 			}
 		}
 		return result[0];
@@ -313,6 +333,37 @@ public final class MathUtils {
 			result[i] = product;
 		}
 		return result;
+	}
+	
+	/**
+	 * Calculates n choose p for 0 &#x2264; p &#x2264; k
+	 * <br>
+	 * Adaptive
+	 * 
+	 * @param n n
+	 * @param k k
+	 * @return values for that range
+	 */
+	public static double[] adaptiveChooseDoubleRange(int n,int k){
+		if(n>=60){
+			return chooseDoubleRange(n,k);
+		}else if(n>=29){
+			long[] pre = chooseLongRange(n,k);
+			double[] result = new double[pre.length];
+			for(int i=0;i<pre.length;i++){
+				result[i]=pre[i];
+			}
+			return result;
+		}else if(n>0){
+			int[] pre = chooseIntRange(n,k);
+			double[] result = new double[pre.length];
+			for(int i=0;i<pre.length;i++){
+				result[i]=pre[i];
+			}
+			return result;
+		}else{
+			throw new IllegalArgumentException("n ("+n+") must be 1 or greater");
+		}
 	}
 
 	/**
