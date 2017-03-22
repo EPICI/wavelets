@@ -255,7 +255,7 @@ public class Samples implements Curve {
 				spectrumReal[i]=origSecond[i-secondStart];
 				spectrumImag[i]=imagSecond[i-secondStart];
 			}*/
-			throw new IllegalArgumentException("FFT requires power of 2");
+			throw new IllegalArgumentException("FFT requires power of 2, chirp-z transform not implemented yet");
 		}
 		sampleHash = newHash;
 		spectrumHash = spectrumHash();
@@ -298,7 +298,7 @@ public class Samples implements Curve {
 			for(int i=nearestPower;i<total;i++){
 				sampleData[i]=origSecond[i-secondStart];
 			}*/
-			throw new IllegalArgumentException("FFT requires power of 2");
+			throw new IllegalArgumentException("FFT requires power of 2, chirp-z transform not implemented yet");
 		}
 		spectrumHash = newHash;
 		sampleHash = sampleHash();

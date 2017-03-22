@@ -16,7 +16,8 @@ public interface VoiceFactory {
 	 * <br>
 	 * http://www.jython.org/javadoc/org/python/core/PyObject.html#__call__(org.python.core.PyObject[], java.lang.String[])
 	 * <br>
-	 * This works because in Python, you're not calling the constructor, you're calling the class
+	 * This works because in Python, you're not calling the constructor,
+	 * you're __call__ing the class
 	 * 
 	 * @param args Python args
 	 * @param keywords Python keywords

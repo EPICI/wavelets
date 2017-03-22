@@ -1,6 +1,9 @@
 package main;
 
 import utils.*;
+import components.*;
+import javax.swing.*;
+import org.apache.pivot.wtk.*;
 
 /**
  * 
@@ -17,11 +20,44 @@ public class Session {
 	protected int bufferSizeShift = 6;
 	protected int bufferSize = 1<<bufferSizeShift;
 	
+	public Composition composition;
+	public String filename;
+	
+	public WindowManager windowManager;
+	public JInternalFrame windowManagerFrame;
+	
+	public JDesktopPane desktopPane;
+	public JFrame mainFrame;
+	
 	/**
-	 * Default constructor, should try to find user preferences on its own
+	 * Default constructor, try to find preferences on its own
 	 */
 	public Session(){
-		
+		init(null);
+	}
+	
+	/**
+	 * Initialize (reset) with given location at which preferences should be found
+	 * 
+	 * @param prefSource filename/location, or null for default
+	 */
+	public void init(String prefSource){
+		windowManager = PivotSwingUtils.loadBxml(WindowManager.class, "windowManager.bxml");
+		windowManagerFrame = PivotSwingUtils.wrapPivotWindow(windowManager);
+		desktopPane = new JDesktopPane();
+		mainFrame = new JFrame("Wavelets");
+		mainFrame.add(desktopPane);
+		mainFrame.setVisible(true);
+		//TODO
+	}
+	
+	/**
+	 * Delegated method for creating a new composition object,
+	 * primary purpose is to allow customization
+	 */
+	public void newComposition(){
+		composition = new Composition();
+		filename = null;
 	}
 	
 	/**
