@@ -108,9 +108,8 @@ public class WindowManager extends Window implements Bindable {
 			// It already exists, don't re-add it
 			return;
 		}
-		LinkedTablePane linked;
 		try {
-			linked = (LinkedTablePane) new BXMLSerializer().readObject(WindowManager.class,"windowManager.bxml");
+			LinkedTablePane linked = (LinkedTablePane) new BXMLSerializer().readObject(WindowManager.class,"windowManagerTable.bxml");
 			linked.parent = this;
 			linked.name = name;
 			linked.frame = window;

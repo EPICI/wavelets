@@ -20,10 +20,16 @@ import javax.swing.*;
  */
 public class PivotSwingUtils {
 	
-	public static org.apache.pivot.collections.ArrayList<Display> displays = new org.apache.pivot.collections.ArrayList<>();
-	
 	//Disallow invoking constructor
 	private PivotSwingUtils(){}
+	
+	static{
+		new ApplicationContext(){
+			{
+				createTimer();
+			}
+		};
+	}
 	
 	/**
 	 * Convenient shortcut for loading BXML
@@ -62,7 +68,7 @@ public class PivotSwingUtils {
 		ApplicationContext.DisplayHost displayHost = new ApplicationContext.DisplayHost();
 		result.add(displayHost);
 		Display display = displayHost.getDisplay();
-		displays.add(display);
+		ApplicationContext.getDisplays().add(display);
 		pivotWindow.open(display);
 		return result;
 	}

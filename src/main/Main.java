@@ -59,6 +59,7 @@ public class Main {
 		if(session.composition==null){
 			session.newComposition();
 		}
+		session.composition.currentSession=session;
 		//TODO
 	}
 	

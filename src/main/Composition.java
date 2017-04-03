@@ -27,7 +27,7 @@ public class Composition implements TransientContainer<Object>, TLCParent, Destr
 	/**
 	 * Current session
 	 */
-	public transient Session currentSession = new Session();
+	public transient Session currentSession;
 
 	/**
 	 * Deep copy static globals to dynamic

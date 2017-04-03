@@ -46,7 +46,14 @@ public class Session {
 		windowManagerFrame = PivotSwingUtils.wrapPivotWindow(windowManager);
 		desktopPane = new JDesktopPane();
 		mainFrame = new JFrame("Wavelets");
-		mainFrame.add(desktopPane);
+		mainFrame.setContentPane(desktopPane);
+		desktopPane.add(windowManagerFrame);
+		windowManagerFrame.setLocation(240, 100);
+		windowManagerFrame.setSize(480, 360);
+		windowManagerFrame.setVisible(true);
+		windowManagerFrame.setResizable(true);
+		desktopPane.setVisible(true);
+		mainFrame.setSize(1280, 720);
 		mainFrame.setVisible(true);
 		//TODO
 	}
