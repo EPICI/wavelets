@@ -39,8 +39,27 @@ public class PivotSwingUtils {
 	 * @return an object of the correct type if successful, otherwise null
 	 */
 	public static <T> T loadBxml(Class<?> source,String filename){
+		return loadBxml(source,filename,new BXMLSerializer());
+	}
+	/**
+	 * Convenient shortcut for loading BXML
+	 * <br>
+	 * Uses the given {@link BXMLSerializer} instead of a new instance,
+	 * which has its uses
+	 * <br>
+	 * Note that if it fails, the {@link BXMLSerializer} gets messed up,
+	 * so if this returns null and the {@link BXMLSerializer} is intended
+	 * to be reused, make a new one and be sure to copy all the data from
+	 * the original one
+	 * 
+	 * @param source a class, resource should be in the same folder
+	 * @param filename the name of the file to open
+	 * @param serializer the serializer object to use
+	 * @return  an object of the correct type if successful, otherwise null
+	 */
+	public static <T> T loadBxml(Class<?> source,String filename,BXMLSerializer serializer){
 		try {
-			return (T) new BXMLSerializer().readObject(source,filename);
+			return (T) serializer.readObject(source,filename);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

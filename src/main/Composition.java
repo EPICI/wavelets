@@ -25,6 +25,10 @@ public class Composition implements TransientContainer<Object>, TLCParent, Destr
 	 */
 	public double baseSpeed;
 	/**
+	 * The main {@link TrackLayerCompound} which holds all tracks
+	 */
+	public TrackLayerCompound tracks;
+	/**
 	 * Current session
 	 */
 	public transient Session currentSession;

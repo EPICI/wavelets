@@ -14,18 +14,11 @@ import javax.swing.*;
  */
 public class TrackLayerCompound implements Track, TransientContainer<TLCParent>, TLCParent {
 	private static final long serialVersionUID = 1L;
-
-	/**
-	 * Don't modify this, ever
-	 * <br>
-	 * Empty time bounds
-	 */
-	private static final double[] emptyBounds = new double[]{Double.MAX_VALUE,Double.MIN_VALUE};
 	
 	/**
 	 * All contained tracks
 	 */
-	protected ArrayList<Track> tracks;
+	public ArrayList<Track> tracks;
 	/**
 	 * If this is the root {@link TrackLayerCompound}, the parent composition
 	 */
@@ -39,6 +32,10 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 	 * its parent is the composition
 	 */
 	protected transient boolean parentIsComposition;
+	/**
+	 * The name, if it is named
+	 */
+	protected String name;
 	
 	@Override
 	public void applyTo(MetaSamples current) {
@@ -46,7 +43,7 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 			MetaSamples toAdd = MetaSamples.blankSamplesFrom(current);
 			for(Track track:tracks){
 				double[] trackTimeBounds = track.getTimeBounds();
-				if(trackTimeBounds!=emptyBounds&&trackTimeBounds[0]<current.endPos&&trackTimeBounds[1]>current.startPos){
+				if(trackTimeBounds[0]!=Double.MAX_VALUE&&trackTimeBounds[1]!=Double.MIN_VALUE&&trackTimeBounds[0]<current.endPos&&trackTimeBounds[1]>current.startPos){
 					track.applyTo(toAdd);
 				}
 			}
@@ -103,11 +100,32 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 	}
 	
 	public int hashCode(){
-		int result = 4441;
+		int result = 0x98f7f542;
 		for(Track track:tracks){
 			result = 262147*result+track.hashCode();
 		}
 		return result;
+	}
+	
+	/**
+	 * @return this instance's name
+	 */
+	public String getName(){
+		if(name==null || name.length()==0)return defaultName();
+		return name;
+	}
+	
+	protected String defaultName(){
+		if(parentIsComposition)return "Root Track";
+		StringBuilder sb = new StringBuilder();
+		sb.append("Layered Track #");
+		int id = System.identityHashCode(this);
+		while(id!=0){
+			int cut = id&15;
+			id = id>>>4;
+			sb.append((char)(cut<10?cut+48:cut+55));
+		}
+		return sb.toString();
 	}
 
 }

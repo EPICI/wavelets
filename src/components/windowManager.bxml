@@ -12,10 +12,12 @@
 			</ScrollPane>
 		</TablePane.Row>
 		<TablePane.Row height="-1">
-			<ListButton bxml:id="selector" listData="[
-				'Track Manager'
-			]"/>
-			<PushButton bxml:id="add" buttonData="Add new"/>
+			<FillPane orientation="horizontal">
+				<ListButton bxml:id="selector" listData="[
+					'Track Manager'
+				]"/>
+				<PushButton bxml:id="add" buttonData="Add new"/>
+			</FillPane>
 		</TablePane.Row>
 	</TablePane>
 </components:WindowManager>

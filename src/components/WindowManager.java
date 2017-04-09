@@ -18,8 +18,11 @@ import javax.swing.event.InternalFrameListener;
 
 import java.util.HashMap;
 
+import main.*;
+import utils.*;
+
 /**
- * Window manager, allows the user to manage the windows
+ * Window manager UI, allows the user to manage the windows
  * 
  * @author EPICI
  * @version 1.0
@@ -27,21 +30,25 @@ import java.util.HashMap;
 public class WindowManager extends Window implements Bindable {
 	
 	/**
+	 * The current/linked session
+	 */
+	public Session session;
+	/**
 	 * A {@link BoxPane} containing all window controls
 	 */
-	public static BoxPane list;
+	public BoxPane list;
 	/**
 	 * Maps all names to window controls
 	 */
-	public static HashMap<String,LinkedTablePane> windows;
+	public HashMap<String,LinkedTablePane> windows;
 	/**
 	 * Selector, used to select some core windows to open
 	 */
-	public static ListButton addSelector;
+	public ListButton addSelector;
 	/**
 	 * Click to open the selected window
 	 */
-	public static PushButton addButton;
+	public PushButton addButton;
 
 	/**
 	 * Part of {@link Bindable}, allows for initialization by {@link BXMLSerializer}
@@ -104,66 +111,62 @@ public class WindowManager extends Window implements Bindable {
 	 * @param window the window to add
 	 */
 	public void addWindow(String name,JInternalFrame window){
-		if(windows.containsKey(name)){
-			// It already exists, don't re-add it
-			return;
-		}
-		try {
-			LinkedTablePane linked = (LinkedTablePane) new BXMLSerializer().readObject(WindowManager.class,"windowManagerTable.bxml");
-			linked.parent = this;
-			linked.name = name;
-			linked.frame = window;
-			linked.label.setText(name);
-			window.addInternalFrameListener(new InternalFrameListener(){
+		if(!windows.containsKey(name)){// If it already exists, don't re-add it
+			try {
+				LinkedTablePane linked = PivotSwingUtils.loadBxml(WindowManager.class,"windowManagerTable.bxml");
+				linked.parent = this;
+				linked.name = name;
+				linked.frame = window;
+				linked.label.setText(name);
+				window.addInternalFrameListener(new InternalFrameListener(){
 
-				@Override
-				public void internalFrameActivated(InternalFrameEvent arg0) {
-					// TODO Auto-generated method stub
+					@Override
+					public void internalFrameActivated(InternalFrameEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void internalFrameClosed(InternalFrameEvent arg0) {
+						removeWindow(name);
+					}
+
+					@Override
+					public void internalFrameClosing(InternalFrameEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void internalFrameDeactivated(InternalFrameEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void internalFrameDeiconified(InternalFrameEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void internalFrameIconified(InternalFrameEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
+
+					@Override
+					public void internalFrameOpened(InternalFrameEvent arg0) {
+						// TODO Auto-generated method stub
+						
+					}
 					
-				}
-
-				@Override
-				public void internalFrameClosed(InternalFrameEvent arg0) {
-					removeWindow(name);
-				}
-
-				@Override
-				public void internalFrameClosing(InternalFrameEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void internalFrameDeactivated(InternalFrameEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void internalFrameDeiconified(InternalFrameEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void internalFrameIconified(InternalFrameEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void internalFrameOpened(InternalFrameEvent arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-				
-			});
-			list.add(linked);
-			windows.put(name, linked);
-		} catch (IOException e) {
-			e.printStackTrace();
-		} catch (SerializationException e) {
-			e.printStackTrace();
+				});
+				list.add(linked);
+				windows.put(name, linked);
+			}catch(NullPointerException exception){//Load failed
+				exception.printStackTrace();
+			}
 		}
 	}
 	

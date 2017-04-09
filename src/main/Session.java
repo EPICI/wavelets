@@ -43,6 +43,7 @@ public class Session {
 	 */
 	public void init(String prefSource){
 		windowManager = PivotSwingUtils.loadBxml(WindowManager.class, "windowManager.bxml");
+		windowManager.session = this;
 		windowManagerFrame = PivotSwingUtils.wrapPivotWindow(windowManager);
 		desktopPane = new JDesktopPane();
 		mainFrame = new JFrame("Wavelets");
