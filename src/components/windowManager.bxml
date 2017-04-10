@@ -14,7 +14,7 @@
 		<TablePane.Row height="-1">
 			<FillPane orientation="horizontal">
 				<ListButton bxml:id="selector" listData="[
-					'Track Manager'
+					'Layered Track Editor'
 				]"/>
 				<PushButton bxml:id="add" buttonData="Add new"/>
 			</FillPane>

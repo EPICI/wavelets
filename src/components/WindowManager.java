@@ -29,6 +29,11 @@ import utils.*;
  */
 public class WindowManager extends Window implements Bindable {
 	
+	private static final String NAME_TRACKLCEDITOR = "Layered Track Editor";
+	private static final String NAME_LIST = "list";
+	private static final String NAME_SELECTOR = "selector";
+	private static final String NAME_ADD = "add";
+	
 	/**
 	 * The current/linked session
 	 */
@@ -54,10 +59,10 @@ public class WindowManager extends Window implements Bindable {
 	 * Part of {@link Bindable}, allows for initialization by {@link BXMLSerializer}
 	 */
 	public void initialize(Map<String, Object> namespace, URL location, Resources resources) {
-		list = (BoxPane) namespace.get("list");
+		list = (BoxPane) namespace.get(NAME_LIST);
 		windows = new HashMap<>();
-		addSelector = (ListButton) namespace.get("selector");
-		addButton = (PushButton) namespace.get("add");
+		addSelector = (ListButton) namespace.get(NAME_SELECTOR);
+		addButton = (PushButton) namespace.get(NAME_ADD);
 		addButton.getButtonListeners().add(new ButtonListener(){
 
 			@Override
@@ -66,7 +71,14 @@ public class WindowManager extends Window implements Bindable {
 				if(selection instanceof String){//Safety
 					String sel = (String) selection;
 					switch(sel){
-					//TODO
+					case NAME_TRACKLCEDITOR:{
+						if(!windows.containsKey(NAME_TRACKLCEDITOR)){
+							TrackLCEditor trackLCEditor = PivotSwingUtils.loadBxml(TrackLCEditor.class, "trackLCEditor.bxml");
+							JInternalFrame wrapped = PivotSwingUtils.wrapPivotWindow(trackLCEditor);
+							addWindow(NAME_TRACKLCEDITOR,wrapped);
+						}
+						break;
+					}
 					}
 				}
 			}
@@ -177,6 +189,7 @@ public class WindowManager extends Window implements Bindable {
 	 */
 	public void removeWindow(String name){
 		LinkedTablePane linked = windows.get(name);
+		if(linked==null)return;//Safety
 		JInternalFrame window = linked.frame;
 		if(!window.isClosed()){
 			try {

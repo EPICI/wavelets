@@ -2,6 +2,7 @@ package main;
 
 import java.io.Serializable;
 import javax.swing.*;
+import org.apache.pivot.wtk.*;
 
 /**
  * Any audio track
@@ -56,8 +57,8 @@ public interface Track extends Serializable {
 	 * Get component to display inline in the track viewer
 	 * which would be part of a TrackLayerCompound's UI
 	 * 
-	 * @return component with metadata
+	 * @return component
 	 * @see TrackLayerCompound
 	 */
-	public MetaComponent<? extends JComponent> getViewComponent();
+	public org.apache.pivot.wtk.Component getViewComponent();
 }

@@ -35,6 +35,13 @@ public class TrackLCEditor extends Window implements Bindable {
 	}
 	
 	/**
+	 * Call after fields are initialized
+	 */
+	public void init(){
+		addTLC(session.composition.tracks);
+	}
+	
+	/**
 	 * Add UI for a {@link TrackLayerCompound} if it isn't already present
 	 * 
 	 * @param track the track to add the UI for
@@ -92,10 +99,12 @@ public class TrackLCEditor extends Window implements Bindable {
 				for(Track track:view.tracks){
 					LinkedTableRow row = PivotSwingUtils.loadBxml(TrackLCEditor.class, "trackLCEditorTableRow.bxml", serializer);
 					row.parent = this;
+					row.view = track;
 					row.init();
 					getRows().add(row);
 				}
 			}
+			//TODO listeners
 		}
 	}
 	
@@ -138,7 +147,8 @@ public class TrackLCEditor extends Window implements Bindable {
 		 * Initialize, called after setting fields
 		 */
 		public void init(){
-			//TODO
+			fill.add(view.getViewComponent());
+			//TODO listeners
 		}
 	}
 

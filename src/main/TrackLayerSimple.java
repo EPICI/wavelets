@@ -205,7 +205,7 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	}
 
 	@Override
-	public MetaComponent<JPanel> getViewComponent() {
+	public org.apache.pivot.wtk.Component getViewComponent() {
 		// TODO Auto-generated method stub
 		return null;
 	}
