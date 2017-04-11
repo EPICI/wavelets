@@ -3,6 +3,8 @@ package main;
 import java.util.*;
 import javax.swing.*;
 
+import utils.Hash;
+
 /**
  * Contains tracks
  * <br>
@@ -36,6 +38,10 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 	 * The name, if it is named
 	 */
 	protected String name;
+	
+	public TrackLayerCompound(TLCParent parent){
+		initTransient(parent);
+	}
 	
 	@Override
 	public void applyTo(MetaSamples current) {
@@ -100,11 +106,7 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 	}
 	
 	public int hashCode(){
-		int result = 0x98f7f542;
-		for(Track track:tracks){
-			result = 262147*result+track.hashCode();
-		}
-		return result;
+		return Hash.of(tracks);
 	}
 	
 	/**

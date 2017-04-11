@@ -49,10 +49,7 @@ public class Session {
 		mainFrame = new JFrame("Wavelets");
 		mainFrame.setContentPane(desktopPane);
 		desktopPane.add(windowManagerFrame);
-		windowManagerFrame.setLocation(240, 100);
-		windowManagerFrame.setSize(480, 360);
-		windowManagerFrame.setVisible(true);
-		windowManagerFrame.setResizable(true);
+		PivotSwingUtils.showFrameDefault(windowManagerFrame);
 		desktopPane.setVisible(true);
 		mainFrame.setSize(1280, 720);
 		mainFrame.setVisible(true);
@@ -64,7 +61,7 @@ public class Session {
 	 * primary purpose is to allow customization
 	 */
 	public void newComposition(){
-		composition = new Composition();
+		composition = new Composition(this);
 		filename = null;
 	}
 	

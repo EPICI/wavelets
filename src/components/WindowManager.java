@@ -63,10 +63,10 @@ public class WindowManager extends Window implements Bindable {
 		windows = new HashMap<>();
 		addSelector = (ListButton) namespace.get(NAME_SELECTOR);
 		addButton = (PushButton) namespace.get(NAME_ADD);
-		addButton.getButtonListeners().add(new ButtonListener(){
+		addButton.getButtonPressListeners().add(new ButtonPressListener(){
 
 			@Override
-			public void actionChanged(Button button, Action action) {
+			public void buttonPressed(Button button) {
 				Object selection = addSelector.getSelectedItem();
 				if(selection instanceof String){//Safety
 					String sel = (String) selection;
@@ -76,41 +76,12 @@ public class WindowManager extends Window implements Bindable {
 							TrackLCEditor trackLCEditor = PivotSwingUtils.loadBxml(TrackLCEditor.class, "trackLCEditor.bxml");
 							JInternalFrame wrapped = PivotSwingUtils.wrapPivotWindow(trackLCEditor);
 							addWindow(NAME_TRACKLCEDITOR,wrapped);
+							openWindow(NAME_TRACKLCEDITOR);
 						}
 						break;
 					}
 					}
 				}
-			}
-
-			@Override
-			public void buttonDataChanged(Button arg0, Object arg1) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void buttonGroupChanged(Button arg0, ButtonGroup arg1) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void dataRendererChanged(Button arg0, DataRenderer arg1) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void toggleButtonChanged(Button arg0) {
-				// TODO Auto-generated method stub
-				
-			}
-
-			@Override
-			public void triStateChanged(Button arg0) {
-				// TODO Auto-generated method stub
-				
 			}
 			
 		});
@@ -176,10 +147,24 @@ public class WindowManager extends Window implements Bindable {
 				});
 				list.add(linked);
 				windows.put(name, linked);
+				session.desktopPane.add(window);
 			}catch(NullPointerException exception){//Load failed
 				exception.printStackTrace();
 			}
 		}
+	}
+	
+	/**
+	 * Open a window by name
+	 * 
+	 * @param name the name of the window to open
+	 * @return true if successful
+	 */
+	public boolean openWindow(String name){
+		LinkedTablePane linked = windows.get(name);
+		if(linked==null)return false;
+		JInternalFrame frame = linked.frame;
+		return PivotSwingUtils.showFrameDefault(frame);
 	}
 	
 	/**
@@ -243,82 +228,22 @@ public class WindowManager extends Window implements Bindable {
 			open = (PushButton) namespace.get("open");
 			label = (Label) namespace.get("label");
 			final LinkedTablePane self = this;
-			remove.getButtonListeners().add(new ButtonListener(){
+			remove.getButtonPressListeners().add(new ButtonPressListener(){
 
 				@Override
-				public void actionChanged(Button button, Action action) {
+				public void buttonPressed(Button button) {
 					self.parent.removeWindow(self.name);
-				}
-
-				@Override
-				public void buttonDataChanged(Button arg0, Object arg1) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void buttonGroupChanged(Button arg0, ButtonGroup arg1) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void dataRendererChanged(Button arg0, DataRenderer arg1) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void toggleButtonChanged(Button arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void triStateChanged(Button arg0) {
-					// TODO Auto-generated method stub
-					
 				}
 				
 			});
-			open.getButtonListeners().add(new ButtonListener(){
+			open.getButtonPressListeners().add(new ButtonPressListener(){
 
 				@Override
-				public void actionChanged(Button button, Action action) {
+				public void buttonPressed(Button button) {
 					JInternalFrame frame = self.frame;
 					frame.setVisible(true);
 					frame.toFront();
 					frame.requestFocusInWindow();
-				}
-
-				@Override
-				public void buttonDataChanged(Button arg0, Object arg1) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void buttonGroupChanged(Button arg0, ButtonGroup arg1) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void dataRendererChanged(Button arg0, DataRenderer arg1) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void toggleButtonChanged(Button arg0) {
-					// TODO Auto-generated method stub
-					
-				}
-
-				@Override
-				public void triStateChanged(Button arg0) {
-					// TODO Auto-generated method stub
-					
 				}
 				
 			});

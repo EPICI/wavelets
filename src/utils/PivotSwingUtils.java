@@ -74,6 +74,23 @@ public class PivotSwingUtils {
 	}
 	
 	/**
+	 * Pops open the frame, if it exists
+	 * 
+	 * @param frame the {@link JInternalFrame} to show
+	 * @return true if successful
+	 */
+	public static boolean showFrameDefault(JInternalFrame frame){
+		if(frame==null)return false;
+		frame.setLocation(60, 60);
+		frame.setSize(1280, 720);
+		frame.setVisible(true);
+		frame.setResizable(true);
+		frame.toFront();
+		frame.requestFocusInWindow();
+		return true;
+	}
+	
+	/**
 	 * Creates a JInternalFrame with the content
 	 * of the Pivot Window or something like that.
 	 * <br>

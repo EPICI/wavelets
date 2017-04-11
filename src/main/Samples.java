@@ -154,14 +154,14 @@ public class Samples implements Curve {
 	 * @return hash for sample data
 	 */
 	public int sampleHash(){
-		return Arrays.hashCode(sampleData);
+		return Hash.lazy(sampleData);
 	}
 	
 	/**
 	 * @return hash for spectrum data
 	 */
 	public int spectrumHash(){
-		return Arrays.hashCode(spectrumReal)*268435459+Arrays.hashCode(spectrumImag)*8388617;
+		return Hash.lazy(spectrumReal)+Hash.lazy(spectrumImag);
 	}
 	
 	/**
@@ -231,31 +231,7 @@ public class Samples implements Curve {
 			spectrumImag = blankArray(total);
 			fft.fft(spectrumReal,spectrumImag);
 		}else{
-			/*int secondStart = total-nearestPower;
-			double[] origFirst = Arrays.copyOfRange(sampleData, 0, nearestPower);
-			double[] origSecond = Arrays.copyOfRange(sampleData, secondStart, total);
-			double[] imagFirst = blankArray(nearestPower);
-			double[] imagSecond = blankArray(nearestPower);
-			fft.fft(origFirst,imagFirst);
-			fft.fft(origSecond,imagSecond);
-			spectrumReal = blankArray(total);
-			spectrumImag = blankArray(total);
-			for(int i=0;i<secondStart;i++){
-				spectrumReal[i]=origFirst[i];
-				spectrumImag[i]=imagFirst[i];
-			}
-			double mult = 1d/(nearestPower-secondStart);
-			for(int i=secondStart;i<nearestPower;i++){
-				int j = i-secondStart;
-				double t = j*mult;
-				spectrumReal[i]=MathUtils.bezier2(origFirst[i],origSecond[j],t);
-				spectrumImag[i]=MathUtils.bezier2(imagFirst[i],imagSecond[j],t);
-			}
-			for(int i=nearestPower;i<total;i++){
-				spectrumReal[i]=origSecond[i-secondStart];
-				spectrumImag[i]=imagSecond[i-secondStart];
-			}*/
-			throw new IllegalArgumentException("FFT requires power of 2, chirp-z transform not implemented yet");
+			throw new IllegalArgumentException("FFT requires power of 2, Chirp Z-Transform not implemented yet");
 		}
 		sampleHash = newHash;
 		spectrumHash = spectrumHash();
@@ -278,27 +254,7 @@ public class Samples implements Curve {
 			double[] sampleImag = Arrays.copyOf(spectrumImag, total);
 			fft.fft(sampleData,sampleImag);
 		}else{
-			/*int secondStart = total-nearestPower;
-			double[] origFirst = Arrays.copyOfRange(spectrumReal, 0, nearestPower);
-			double[] origSecond = Arrays.copyOfRange(spectrumReal, secondStart, total);
-			double[] imagFirst = Arrays.copyOfRange(spectrumImag, 0, nearestPower);
-			double[] imagSecond = Arrays.copyOfRange(spectrumImag, secondStart, total);
-			fft.fft(origFirst,imagFirst);
-			fft.fft(origSecond,imagSecond);
-			sampleData = new double[total];
-			for(int i=0;i<secondStart;i++){
-				sampleData[i]=origFirst[i];
-			}
-			double mult = 1d/(nearestPower-secondStart);
-			for(int i=secondStart;i<nearestPower;i++){
-				int j = i-secondStart;
-				double t = j*mult;
-				sampleData[i]=MathUtils.bezier2(origFirst[i],origSecond[j],t);
-			}
-			for(int i=nearestPower;i<total;i++){
-				sampleData[i]=origSecond[i-secondStart];
-			}*/
-			throw new IllegalArgumentException("FFT requires power of 2, chirp-z transform not implemented yet");
+			throw new IllegalArgumentException("FFT requires power of 2, Chirp Z-Transform not implemented yet");
 		}
 		spectrumHash = newHash;
 		sampleHash = sampleHash();

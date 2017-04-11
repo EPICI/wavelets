@@ -8,7 +8,7 @@ import java.util.*;
  * @author EPICI
  * @version 1.0
  */
-public class Composition implements TransientContainer<Object>, TLCParent, Destructable{
+public class Composition implements TransientContainer<Session>, TLCParent, Destructable{
 	private static final long serialVersionUID = 1L;
 	
 	/**
@@ -32,6 +32,17 @@ public class Composition implements TransientContainer<Object>, TLCParent, Destr
 	 * Current session
 	 */
 	public transient Session currentSession;
+	
+	/**
+	 * Default constructor, creates a default composition
+	 * 
+	 * @param session {@link Session} object
+	 */
+	public Composition(Session session){
+		currentSession = session;
+		tracks = new TrackLayerCompound(this);
+		initTransient(currentSession);
+	}
 
 	/**
 	 * Deep copy static globals to dynamic
@@ -65,7 +76,7 @@ public class Composition implements TransientContainer<Object>, TLCParent, Destr
 	}
 
 	@Override
-	public void initTransient(Object parent) {
+	public void initTransient(Session parent) {
 		// TODO Auto-generated method stub
 		
 	}
