@@ -1,6 +1,7 @@
 package main;
 
 import org.python.core.PyObject;
+import util.jython.*;
 import java.util.HashMap;
 import javax.swing.*;
 
@@ -69,9 +70,9 @@ public interface Synthesizer extends Destructable {
 	 * Should only be used for Java synths, since otherwise
 	 * it would actually be slower or more complicated
 	 * 
-	 * @return {@link VoiceFactory} object for this synthesizer
+	 * @return factory object for this synthesizer
 	 */
-	public VoiceFactory getVoiceFactory();
+	public Factory<Voice> getVoiceFactory();
 	
 	/**
 	 * Get a list, tuple, or dict with information needed to make a PyVoiceFactory

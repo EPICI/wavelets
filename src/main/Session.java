@@ -1,7 +1,9 @@
 package main;
 
-import utils.*;
 import components.*;
+import util.*;
+import util.ui.PivotSwingUtils;
+
 import javax.swing.*;
 import org.apache.pivot.wtk.*;
 

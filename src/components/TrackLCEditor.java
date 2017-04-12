@@ -10,7 +10,7 @@ import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.content.ButtonData;
 
 import main.*;
-import utils.PivotSwingUtils;
+import util.ui.PivotSwingUtils;
 
 /**
  * Editor UI for {@link TrackLayerCompound}

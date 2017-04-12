@@ -1,7 +1,9 @@
 package main;
 
 import java.util.Arrays;
-import utils.*;
+
+import util.*;
+import util.math.*;
 
 /**
  * Sampled sound
@@ -69,10 +71,10 @@ public class Samples implements Curve {
 					return 0d;
 				}else{
 					int left = (int) position;
-					if(MathUtils.isNear(left, position)){
+					if(Floats.isNear(left, position)){
 						return sampleData[left];
 					}else{
-						return MathUtils.bezier2to4(sampleData[left], sampleData[left+1], position-left);
+						return Bezier.bezier2to4(sampleData[left], sampleData[left+1], position-left);
 					}
 				}
 			}
@@ -223,15 +225,13 @@ public class Samples implements Curve {
 	 */
 	public synchronized void fft(int newHash){
 		int total = sampleData.length;
-		int nearestExp = BitUtils.binLog(total);
-		int nearestPower = 1<<nearestExp;
-		FFT fft = FFT.getFft(nearestPower);
-		if(nearestPower==total){
+		if(BitUtils.isPo2(total)){
+			FFTRadix2 fft = FFTRadix2.getFft(BitUtils.binLog(total));
 			spectrumReal = Arrays.copyOf(sampleData, total);
 			spectrumImag = blankArray(total);
 			fft.fft(spectrumReal,spectrumImag);
 		}else{
-			throw new IllegalArgumentException("FFT requires power of 2, Chirp Z-Transform not implemented yet");
+			throw new IllegalArgumentException("FFT requires power of 2, other algorithms not implemented yet");
 		}
 		sampleHash = newHash;
 		spectrumHash = spectrumHash();
@@ -246,15 +246,13 @@ public class Samples implements Curve {
 	 */
 	public synchronized void ifft(int newHash){
 		int total = spectrumReal.length;
-		int nearestExp = BitUtils.binLog(total);
-		int nearestPower = 1<<nearestExp;
-		FFT fft = FFT.getFft(nearestPower);
-		if(nearestPower==total){
+		if(BitUtils.isPo2(total)){
+			FFTRadix2 fft = FFTRadix2.getFft(BitUtils.binLog(total));
 			sampleData = Arrays.copyOf(spectrumReal, total);
 			double[] sampleImag = Arrays.copyOf(spectrumImag, total);
 			fft.fft(sampleData,sampleImag);
 		}else{
-			throw new IllegalArgumentException("FFT requires power of 2, Chirp Z-Transform not implemented yet");
+			throw new IllegalArgumentException("FFT requires power of 2, other algorithms not implemented yet");
 		}
 		spectrumHash = newHash;
 		sampleHash = sampleHash();

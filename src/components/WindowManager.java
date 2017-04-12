@@ -19,7 +19,8 @@ import javax.swing.event.InternalFrameListener;
 import java.util.HashMap;
 
 import main.*;
-import utils.*;
+import util.*;
+import util.ui.PivotSwingUtils;
 
 /**
  * Window manager UI, allows the user to manage the windows

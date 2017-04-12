@@ -3,7 +3,7 @@ package main;
 import java.util.*;
 import javax.swing.*;
 
-import utils.Hash;
+import util.Hash;
 
 /**
  * Contains tracks

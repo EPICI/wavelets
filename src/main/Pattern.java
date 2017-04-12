@@ -2,6 +2,7 @@ package main;
 
 import java.util.ArrayList;
 import org.python.core.*;
+import util.jython.*;
 
 /**
  * A standard pattern containing clips
@@ -57,7 +58,7 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	 * <br>
 	 * Not a PyVoiceFactory because there are some Java synths
 	 */
-	protected transient VoiceFactory voiceFactory;
+	protected transient Factory<Voice> voiceFactory;
 	
 	/**
 	 * Standard constructor where everything is specified
@@ -125,13 +126,13 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	 * @see PyVoiceFactory
 	 */
 	protected void setPyVoiceFactory(String a,String b,boolean asScript){
-		voiceFactory = new PyVoiceFactory(a,b,asScript);
+		voiceFactory = new PyFactory<Voice>(Voice.class,a,b,asScript);
 	}
 	
 	/**
 	 * @return voice factory object
 	 */
-	public VoiceFactory getVoiceFactory(){
+	public Factory<Voice> getVoiceFactory(){
 		if(voiceFactory==null){
 			setDefaultVoiceFactory();
 		}

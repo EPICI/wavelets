@@ -13,13 +13,6 @@ import javax.sound.sampled.*;
 public class PlayerDoubleBuffer implements Player {
 	
 	/**
-	 * Don't modify this, ever
-	 * <br>
-	 * Empty time bounds
-	 */
-	private static final double[] emptyBounds = new double[]{Double.MAX_VALUE,Double.MIN_VALUE};
-	
-	/**
 	 * Flag that says if it should continue looping
 	 * <br>
 	 * Set to false to stop playing
@@ -103,7 +96,7 @@ public class PlayerDoubleBuffer implements Player {
 		
 		//Sanity checks
 		double[] timeBounds = track.getTimeBounds();
-		if(timeBounds!=null&&timeBounds!=emptyBounds){
+		if(timeBounds!=null&&timeBounds[0]!=Double.MAX_VALUE&&timeBounds[1]!=Double.MIN_VALUE){
 			if(timeBounds[1]>timeBounds[0]){
 				//Format object
 				AudioFormat audioFormat;
@@ -144,7 +137,7 @@ public class PlayerDoubleBuffer implements Player {
 						long timeout = (long)(secondLength*1000d)+1;
 						MetaSamples copySamples = MetaSamples.blankSamples(44100,bufferSize);
 						doubleBuffer[1] = copySamples.sampleData;
-						//TODO speed mult
+						copySamples.speedMult = track.parentComposition().baseSpeed;
 						copySamples.length = secondLength;
 						copySamples.endPos = timeBounds[0];
 						copySamples.pushToNext();

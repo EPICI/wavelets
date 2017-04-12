@@ -3,7 +3,8 @@ package main;
 import java.util.*;
 import javax.swing.*;
 import org.python.core.*;
-import utils.*;
+import util.jython.*;
+import util.*;
 
 /**
  * Contains patterns
@@ -113,7 +114,7 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	 * @param keywords Python keywords
 	 */
 	public void addVoice(Pattern pattern,PyObject[] args,String[] keywords){
-		VoiceFactory voiceFactory = pattern.getVoiceFactory();
+		Factory<Voice> voiceFactory = pattern.getVoiceFactory();
 		Voice toAdd = voiceFactory.create(args, keywords);
 		voices.add(toAdd);
 	}

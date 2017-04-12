@@ -23,7 +23,7 @@ public class Main {
 	 * <li>&quot;-open &lt;location&gt;&quot; to open a project file</li>
 	 * </ul>
 	 * 
-	 * @param args
+	 * @param args program arguments
 	 */
 	public static void main(String[] args) {
 		session = new Session();

@@ -13,9 +13,21 @@ import org.python.core.*;
 public class MetaSamples extends Samples {
 	private static final long serialVersionUID = 1L;
 	
+	/**
+	 * Time to complete one measure in seconds
+	 */
 	public double speedMult = 1d;
+	/**
+	 * Current start position
+	 */
 	public double startPos = 0d;
+	/**
+	 * Current end position
+	 */
 	public double endPos = 1d;
+	/**
+	 * Current length
+	 */
 	public double length = 1d;
 	
 	/**
