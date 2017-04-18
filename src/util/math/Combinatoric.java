@@ -1,9 +1,17 @@
 package util.math;
 
+/**
+ * Some combinatorics stuff
+ * <br>
+ * This is covered by Apache Commons Math, but this provides
+ * implementations for primitives
+ * 
+ * @author EPICI
+ * @version 1.0
+ */
 public final class Combinatoric {
 
 	private Combinatoric(){}
-	
 
 	/**
 	 * Calculates n choose k in O(n) time

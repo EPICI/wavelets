@@ -55,10 +55,66 @@ public class Any {
 		public int hashCode(){
 			return Hash.array(a,b);
 		}
+		
+		public boolean equals(Object o){
+			if(this==o)return true;
+			if(o==null)return false;
+			if(!(o instanceof O2<?,?>))return false;
+			O2<?,?> other = (O2<?,?>) o;
+			return a.equals(other.a) && b.equals(other.b);
+		}
 	}
 	
 	/**
-	 * Generic 2-object container
+	 * The same as {@link O2}, except only the key is used for
+	 * hashing and equals, allowing a second hidden value to be stored
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 *
+	 * @param <K>
+	 * @param <V>
+	 */
+	public static class Keyed<K,V>{
+		/**
+		 * The key
+		 */
+		public K key;
+		/**
+		 * The value
+		 */
+		public V value;
+		
+		/**
+		 * Standard constructor
+		 * 
+		 * @param key the key
+		 * @param value the value
+		 */
+		public Keyed(K key,V value){
+			this.key=key;
+			this.value=value;
+		}
+		
+		public String toString(){
+			return "("+key+":"+value+")";
+		}
+		
+		public int hashCode(){
+			return Hash.array(key);
+		}
+		
+		public boolean equals(Object o){
+			if(this==o)return true;
+			if(o==null)return false;
+			if(!(o instanceof Keyed<?,?>))return false;
+			Keyed<?,?> other = (Keyed<?,?>) o;
+			return key.equals(other.key);
+		}
+	}
+	
+	/**
+	 * Generic 3-object container
 	 * 
 	 * @author EPICI
 	 * @version 1.0
@@ -100,6 +156,14 @@ public class Any {
 		
 		public int hashCode(){
 			return Hash.array(a,b,c);
+		}
+		
+		public boolean equals(Object o){
+			if(this==o)return true;
+			if(o==null)return false;
+			if(!(o instanceof O3<?,?,?>))return false;
+			O3<?,?,?> other = (O3<?,?,?>) o;
+			return a.equals(other.a) && b.equals(other.b) && c.equals(other.c);
 		}
 	}
 }

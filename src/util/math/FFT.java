@@ -1,6 +1,9 @@
 package util.math;
 
+import java.util.Random;
+
 import util.Any;
+import util.BitUtils;
 import util.Any.O2;
 
 /**
@@ -9,11 +12,53 @@ import util.Any.O2;
  * Depending on the algorithm, it may not always work,
  * but when it does, it guarantees O(NlogN) running time,
  * though the constant may be bad
+ * <br>
+ * Not thread safe
+ * <br>
+ * Currently implemented/supported FFTs:
+ * <ul>
+ * <li>Radix-2 DIT DFT ({@link FFTRadix2}) - chosen for powers of 2</li>
+ * <li>Bluestein FFT ({@link FFTBluestein}) - chosen for everything else</li>
+ * </ul>
  * 
  * @author EPICI
  * @version 1.0
  */
 public abstract class FFT {
+	
+	/**
+	 * Automatically get a usable object to perform the FFT with
+	 * and do the FFT in place
+	 * <br>
+	 * Not thread safe
+	 * <br>
+	 * Fastest case is for powers of 2 using radix-2 FFT, if exact bounds do
+	 * not need to be preserved, it's advantageous to zero-pad to a power of 2
+	 * length and use {@link FFTRadix2} instead
+	 * 
+	 * @param real the real array
+	 * @param imaginary the matching imaginary array
+	 */
+	public static void adaptiveFft(double[] real,double[] imaginary){
+		int nr = real.length, ni = imaginary.length;
+		if(nr!=ni)throw new IllegalArgumentException("FFT length mismatch ("+nr+","+ni+")");
+		getAdaptiveFft(nr).fft(real, imaginary);
+	}
+	
+	/**
+	 * Get a usable FFT object for this specific length
+	 * 
+	 * @param n the desired length
+	 * @return an FFT object for n only
+	 */
+	public static FFT getAdaptiveFft(int n){
+		if(n<2)throw new IllegalArgumentException("FFT length too short ("+n+"<2)");
+		if(BitUtils.isPo2(n)){
+			return FFTRadix2.getFft(BitUtils.binLog(n));
+		}else{
+			return FFTBluestein.getFft(n);
+		}
+	}
 	
 	/**
 	 * Is it a valid length for this FFT?
@@ -45,7 +90,7 @@ public abstract class FFT {
 	 * @param imaginary the matching imaginary array
 	 */
 	public void fft(double[] real,double[] imaginary){
-		if(checkBounds(real.length) && checkBounds(imaginary.length))
+		if(real.length==imaginary.length && checkBounds(real.length))
 			fftInternal(real,imaginary);
 		else
 			throw new IllegalArgumentException("Invalid length for FFT ("+real.length+","+imaginary.length+")");
@@ -103,5 +148,163 @@ public abstract class FFT {
 	 */
 	public void ifft(Any.O2<double[], double[]> both){
 		ifft(both.a,both.b);
+	}
+	
+	// --- Testing code ---
+	/**
+	 * Main method, only for testing
+	 * 
+	 * @param args ignored
+	 */
+	public static void main(String[] args) {
+		for(int N:new int[]{60,64,67}){
+			Random random = new Random();
+
+			FFT fft = getAdaptiveFft(N);
+			System.out.println("--- N="+N+" ---");
+
+			double[] re = new double[N];
+			double[] im = new double[N];
+
+			System.out.println("Impulse");
+			re[0] = 1; im[0] = 0;
+			for(int i=1; i<N; i++)
+				re[i] = im[i] = 0;
+			beforeAfter(fft, re, im);
+
+			System.out.println("Nyquist");
+			for(int i=0; i<N; i++) {
+				re[i] = Math.pow(-1, i);
+				im[i] = 0;
+			}
+			beforeAfter(fft, re, im);
+
+			System.out.println("Sine");
+			for(int i=0; i<N; i++) {
+				re[i] = Math.cos(8*Math.PI*i / N);
+				im[i] = 0;
+			}
+			beforeAfter(fft, re, im);
+
+			System.out.println("Ramp");
+			for(int i=0; i<N; i++) {
+				re[i] = i;
+				im[i] = 0;
+			}
+			beforeAfter(fft, re, im);
+
+			System.out.println("Saw (8)");
+			for(int i=0; i<N; i++) {
+				re[i] = i%8-3.5d;
+				im[i] = 0;
+			}
+			beforeAfter(fft, re, im);
+
+			System.out.println("Saw (4)");
+			for(int i=0; i<N; i++) {
+				re[i] = i%4-1.5d;
+				im[i] = 0;
+			}
+			beforeAfter(fft, re, im);
+
+			System.out.println("Pulse (4)");
+			for(int i=0; i<N; i++) {
+				re[i] = i%4==0?1d:0d;
+				im[i] = 0;
+			}
+			beforeAfter(fft, re, im);
+
+			System.out.println("Noise");
+			for(int i=0; i<N; i++) {
+				re[i] = random.nextDouble()-0.5d;
+				im[i] = 0;
+			}
+			beforeAfter(fft, re, im);
+		}
+
+		System.out.println("--- Benchmarks ---");
+		for(int[] t:new int[][]{
+			// Throw powers of 2 at radix-2
+			new int[]{1<<4,0},
+			new int[]{1<<5,0},
+			new int[]{1<<6,0},
+			new int[]{1<<7,0},
+			new int[]{1<<8,0},
+			new int[]{1<<9,1},
+			new int[]{1<<12,2},
+			new int[]{1<<16,3},
+			new int[]{1<<20,4},
+			new int[]{1<<22,5},
+			
+			// Test batch 1: near 32
+			new int[]{31,1},// 31
+			new int[]{32,1},// 2...
+			new int[]{35,1},// 5 7
+			new int[]{36,1},// 2 2 3 3
+			
+			// Test batch 2: near 128
+			new int[]{120,2},// 2 2 2 3 5
+			new int[]{121,2},// 11 11
+			new int[]{125,2},// 5 5 5
+			new int[]{127,2},// 127
+			new int[]{128,2},// 128
+			new int[]{129,2},// 3 43
+			
+			// Test batch 3: near 2048
+			new int[]{2021,4},// 43 47
+			new int[]{2023,4},// 7 17 17
+			new int[]{2025,4},// 3 3 3 3 5 5
+			new int[]{2027,4},// 2027
+			new int[]{2042,4},// 2 1021
+			new int[]{2048,4},// 2...
+			new int[]{2051,4},// 7 293
+		}){
+			doBenchmark(t[0],(200000000/t[0])>>t[1]);
+		}
+	}
+
+	private static void beforeAfter(FFT fft, double[] re, double[] im) {
+		System.out.println("Before: ");
+		printReIm(re, im);
+		fft.fft(re, im);
+		System.out.println("After: ");
+		printReIm(re, im);
+		fft.ifft(re, im);
+		System.out.println("Inverse: ");
+		printReIm(re, im);
+	}
+
+	private static void printReIm(double[] re, double[] im) {
+		double f = re[0];
+		System.out.print("Re: [");
+		for(int i=0; i<re.length; i++)
+			System.out.print((Math.round(re[i]*1000)/1000.0) + " ");
+
+		System.out.print("]\nIm: [");
+		for(int i=0; i<im.length; i++)
+			System.out.print((Math.round(im[i]*1000)/1000.0) + " ");
+
+		System.out.println("]");
+		System.out.println("Error of "+Math.abs(Math.log(re[0]/f)));
+	}
+	
+	private static void doBenchmark(int N, double iter){
+		FFT fft = getAdaptiveFft(N);
+		double[] re = new double[N];
+		double[] im = new double[N];
+		double modulus = Math.sqrt(N)*(Math.log(N)+1);
+		double offset = (modulus-1d)*-0.5d;
+		for(int i=0; i<N; i++) {
+			re[i] = i%modulus-offset;
+			im[i] = 0;
+		}
+
+		long time = System.currentTimeMillis();
+		for(int i=0; i<iter; i++)
+			fft.fft(re,im);
+		time = System.currentTimeMillis() - time;
+		double times = N/44100d;
+		double iterms = time/iter;
+		System.out.println("Averaged " + iterms + "ms per iteration (N = "+N+", "+times+"s at 44100Hz, ratio="+(1000d*times/iterms)+")");
 	}
 }

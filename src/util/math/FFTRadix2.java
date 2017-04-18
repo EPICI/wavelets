@@ -22,8 +22,6 @@
 
 package util.math;
 
-import java.util.*;//Only used for testing
-
 import util.BitUtils;
 
 /**
@@ -34,6 +32,7 @@ import util.BitUtils;
  * Optimized further by EPICI
  * 
  * @author Columbia University (see license)
+ * @author EPICI
  * @version 1.0
  */
 public class FFTRadix2 extends FFT {
@@ -50,7 +49,7 @@ public class FFTRadix2 extends FFT {
 		if(m<1){
 			throw new IllegalArgumentException("FFT length exponent "+Integer.toString(m)+" is too small. Minimum value is 1.");
 		}else if(m>30){
-			throw new IllegalArgumentException("FFT length exponent "+Integer.toString(m)+" is too large. Minimum value is 30.");
+			throw new IllegalArgumentException("FFT length exponent "+Integer.toString(m)+" is too large. Maximum value is 30.");
 		}else{
 			int index = m-1;
 			if(sharedFFTs[index]==null){
@@ -62,6 +61,7 @@ public class FFTRadix2 extends FFT {
 	
 	/**
 	 * Dereference a shared FFT object
+	 * <br>
 	 * Only really used to free up memory
 	 * 
 	 * @param m the exponent of 2
@@ -75,6 +75,7 @@ public class FFTRadix2 extends FFT {
 	
 	/**
 	 * Gets a new FFT object for a known power of 2
+	 * <br>
 	 * Assumed valid (checks should be done elsewhere)
 	 * 
 	 * @param m the exponent of 2
@@ -258,133 +259,5 @@ public class FFTRadix2 extends FFT {
 			x[i]*=mult;
 			y[i]*=mult;
 		}
-	}
-
-	/**
-	 * Main method, only for testing
-	 * 
-	 * @param args ignored
-	 */
-	public static void main(String[] args) {
-		int N = 1<<7;
-		Random random = new Random();
-
-		FFTRadix2 fft = getFft(7);
-
-		double[] re = new double[N];
-		double[] im = new double[N];
-
-		System.out.println("Impulse");
-		re[0] = 1; im[0] = 0;
-		for(int i=1; i<N; i++)
-			re[i] = im[i] = 0;
-		beforeAfter(fft, re, im);
-
-		System.out.println("Nyquist");
-		for(int i=0; i<N; i++) {
-			re[i] = Math.pow(-1, i);
-			im[i] = 0;
-		}
-		beforeAfter(fft, re, im);
-
-		System.out.println("Sine");
-		for(int i=0; i<N; i++) {
-			re[i] = Math.cos(8*Math.PI*i / N);
-			im[i] = 0;
-		}
-		beforeAfter(fft, re, im);
-
-		System.out.println("Ramp");
-		for(int i=0; i<N; i++) {
-			re[i] = i;
-			im[i] = 0;
-		}
-		beforeAfter(fft, re, im);
-
-		System.out.println("Saw (8)");
-		for(int i=0; i<N; i++) {
-			re[i] = i%8-3.5d;
-			im[i] = 0;
-		}
-		beforeAfter(fft, re, im);
-
-		System.out.println("Saw (4)");
-		for(int i=0; i<N; i++) {
-			re[i] = i%4-1.5d;
-			im[i] = 0;
-		}
-		beforeAfter(fft, re, im);
-
-		System.out.println("Pulse (4)");
-		for(int i=0; i<N; i++) {
-			re[i] = i%4==0?1d:0d;
-			im[i] = 0;
-		}
-		beforeAfter(fft, re, im);
-
-		System.out.println("Noise");
-		for(int i=0; i<N; i++) {
-			re[i] = random.nextDouble()-0.5d;
-			im[i] = 0;
-		}
-		beforeAfter(fft, re, im);
-		
-		removeFft(7);
-
-		doBenchmark(4,10000000);
-		doBenchmark(5,5000000);
-		doBenchmark(6,2000000);
-		doBenchmark(7,1000000);
-		doBenchmark(8,500000);
-		doBenchmark(9,200000);
-		doBenchmark(12,5000);
-		doBenchmark(16,200);
-		doBenchmark(20,2);
-		doBenchmark(22,1);
-	}
-
-	private static void beforeAfter(FFTRadix2 fft, double[] re, double[] im) {
-		System.out.println("Before: ");
-		printReIm(re, im);
-		fft.fft(re, im);
-		System.out.println("After: ");
-		printReIm(re, im);
-		fft.ifft(re, im);
-		System.out.println("Inverse: ");
-		printReIm(re, im);
-	}
-
-	private static void printReIm(double[] re, double[] im) {
-		System.out.print("Re: [");
-		for(int i=0; i<re.length; i++)
-			System.out.print(((int)(re[i]*1000)/1000.0) + " ");
-
-		System.out.print("]\nIm: [");
-		for(int i=0; i<im.length; i++)
-			System.out.print(((int)(im[i]*1000)/1000.0) + " ");
-
-		System.out.println("]");
-	}
-	
-	private static void doBenchmark(int M, double iter){
-		int N = 1<<M;
-		FFTRadix2 fft = getFft(M);
-		double[] re = new double[N];
-		double[] im = new double[N];
-		double modulus = M*1.77913d+0.414793d;
-		double offset = (modulus-1d)*-0.5d;
-		for(int i=0; i<N; i++) {
-			re[i] = i%modulus-offset;
-			im[i] = 0;
-		}
-
-		long time = System.currentTimeMillis();
-		for(int i=0; i<iter; i++)
-			fft.fft(re,im);
-		time = System.currentTimeMillis() - time;
-		double times = N/44100d;
-		double iterms = time/iter;
-		System.out.println("Averaged " + iterms + "ms per iteration (N = 2^"+M+" = "+N+", "+times+"s at 44100Hz, ratio="+(1000d*times/iterms)+")");
-		removeFft(M);
 	}
 }

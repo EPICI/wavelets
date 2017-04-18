@@ -3,7 +3,6 @@ package main;
 import components.*;
 import util.*;
 import util.ui.PivotSwingUtils;
-
 import javax.swing.*;
 import org.apache.pivot.wtk.*;
 
@@ -13,7 +12,6 @@ import org.apache.pivot.wtk.*;
  * @version 1.0
  */
 public class Session {
-	
 	/**
 	 * Clipboard, for copypasta
 	 */
@@ -30,6 +28,8 @@ public class Session {
 	
 	public JDesktopPane desktopPane;
 	public JFrame mainFrame;
+	
+	protected ColorScheme colors = ColorScheme.getPivotColors();
 	
 	/**
 	 * Default constructor, try to find preferences on its own
@@ -97,5 +97,14 @@ public class Session {
 		}else{
 			throw new IllegalArgumentException("n ("+n+") must be between 4 and 12 inclusive");
 		}
+	}
+	
+	/**
+	 * Get the current color scheme
+	 * 
+	 * @return the current color scheme
+	 */
+	public ColorScheme getColors(){
+		return colors;
 	}
 }

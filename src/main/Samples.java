@@ -225,14 +225,9 @@ public class Samples implements Curve {
 	 */
 	public synchronized void fft(int newHash){
 		int total = sampleData.length;
-		if(BitUtils.isPo2(total)){
-			FFTRadix2 fft = FFTRadix2.getFft(BitUtils.binLog(total));
-			spectrumReal = Arrays.copyOf(sampleData, total);
-			spectrumImag = blankArray(total);
-			fft.fft(spectrumReal,spectrumImag);
-		}else{
-			throw new IllegalArgumentException("FFT requires power of 2, other algorithms not implemented yet");
-		}
+		spectrumReal = Arrays.copyOf(sampleData, total);
+		spectrumImag = blankArray(total);
+		FFT.adaptiveFft(spectrumReal,spectrumImag);
 		sampleHash = newHash;
 		spectrumHash = spectrumHash();
 	}
@@ -246,14 +241,9 @@ public class Samples implements Curve {
 	 */
 	public synchronized void ifft(int newHash){
 		int total = spectrumReal.length;
-		if(BitUtils.isPo2(total)){
-			FFTRadix2 fft = FFTRadix2.getFft(BitUtils.binLog(total));
-			sampleData = Arrays.copyOf(spectrumReal, total);
-			double[] sampleImag = Arrays.copyOf(spectrumImag, total);
-			fft.fft(sampleData,sampleImag);
-		}else{
-			throw new IllegalArgumentException("FFT requires power of 2, other algorithms not implemented yet");
-		}
+		sampleData = Arrays.copyOf(spectrumReal, total);
+		double[] sampleImag = Arrays.copyOf(spectrumImag, total);
+		FFT.adaptiveFft(sampleData,sampleImag);
 		spectrumHash = newHash;
 		sampleHash = sampleHash();
 	}

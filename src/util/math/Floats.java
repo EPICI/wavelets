@@ -1,5 +1,11 @@
 package util.math;
 
+/**
+ * Some generic floating point utilities
+ * 
+ * @author EPICI
+ * @version 1.0
+ */
 public final class Floats {
 	
 	private Floats(){}
@@ -18,7 +24,8 @@ public final class Floats {
 	public static final double F_EPSILON = 1e-6;
 	
 	/**
-	 * Checks if two values are absolutely near, uses default double epsilon value
+	 * Checks if two values are absolutely or relatively near,
+	 * uses default double epsilon value
 	 * <br>
 	 * Use this instead of equality check
 	 * 
@@ -30,7 +37,8 @@ public final class Floats {
 		return isNear(a,b,D_EPSILON);
 	}
 	/**
-	 * Checks if two values are absolutely near, uses given epsilon value
+	 * Checks if two values are absolutely or relatively near,
+	 * uses given double epsilon value
 	 * <br>
 	 * Use this instead of equality check
 	 * 
@@ -45,7 +53,8 @@ public final class Floats {
 		return (1d-epsilon)<=r && r<=(1d+epsilon);
 	}
 	/**
-	 * Checks if two values are absolutely near, uses default float epsilon value
+	 * Checks if two values are absolutely or relatively near,
+	 * uses default float epsilon value
 	 * <br>
 	 * Use this instead of equality check
 	 * 
@@ -57,7 +66,8 @@ public final class Floats {
 		return isNear(a,b,F_EPSILON);
 	}
 	/**
-	 * Checks if two values are absolutely near, uses given epsilon value
+	 * Checks if two values are absolutely or relatively near,
+	 * uses default float epsilon value
 	 * <br>
 	 * Use this instead of equality check
 	 * 

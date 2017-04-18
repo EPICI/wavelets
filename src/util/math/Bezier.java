@@ -3,7 +3,7 @@ package util.math;
 import java.util.Arrays;
 
 /**
- * Utility class containing everything math related
+ * Fast or accurate bezier evaluation
  * 
  * @author EPICI
  * @version 1.0
@@ -69,10 +69,7 @@ public final class Bezier {
 		case 1:return ds[0];
 		case 2:return bezier2(ds[0],ds[1],t);
 		case 3:{
-			double a = ds[0];
-			double b = ds[1];
-			double c = ds[2];
-			double t1 = 1d - t;
+			double a = ds[0],b = ds[1],c = ds[2],t1 = 1d - t;
 			/*
 			 * Hardcoded for n=3
 			 * Total of 8+1=9 floating point operations
@@ -81,11 +78,7 @@ public final class Bezier {
 			return (a*t1+2d*b*t)*t1+c*t*t;
 		}
 		case 4:{
-			double a = ds[0];
-			double b = ds[1];
-			double c = ds[2];
-			double d = ds[3];
-			double t1 = 1d - t;
+			double a = ds[0],b = ds[1],c = ds[2],d = ds[3],t1 = 1d - t;
 			/*
 			 * Hardcoded for n=4
 			 * Total of 13+1=9 floating point operations
@@ -94,15 +87,8 @@ public final class Bezier {
 			return (a*t1+3d*b*t)*t1*t1+(3d*c*t1+d*t)*t*t;
 		}
 		case 5:{
-			double a = ds[0];
-			double b = ds[1];
-			double c = ds[2];
-			double d = ds[3];
-			double e = ds[4];
-			double t1 = 1d - t;
-			double i = t1*t1;
-			double j = t*t;
-			double k = t1*t;
+			double a = ds[0],b = ds[1],c = ds[2],d = ds[3],e = ds[4],t1 = 1d - t;
+			double i = t1*t1,j = t*t,k = t1*t;
 			double l = 4d*k;
 			/*
 			 * Hardcoded for n=5

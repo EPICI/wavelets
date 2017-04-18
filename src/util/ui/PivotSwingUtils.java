@@ -2,10 +2,9 @@ package util.ui;
 
 import org.apache.pivot.serialization.SerializationException;
 import org.apache.pivot.wtk.*;
+import org.apache.pivot.wtk.skin.terra.*;
 import org.apache.pivot.beans.*;
-
 import java.io.IOException;
-
 import javax.swing.*;
 
 /**

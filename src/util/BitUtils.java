@@ -136,6 +136,49 @@ public final class BitUtils {
 	}
 	
 	/**
+	 * Makes all bits to the right of the most significant bits 1
+	 * <br>
+	 * For any negative number, returns -1
+	 * 
+	 * @param bits the original number
+	 * @return the modified number
+	 */
+	public static int fill(int bits){
+		bits |= bits>>1;
+		bits |= bits>>2;
+		bits |= bits>>4;
+		bits |= bits>>8;
+		bits |= bits>>16;
+		return bits;
+	}
+	
+	/**
+	 * Return the smallest power of 2 which is greater than
+	 * the given number
+	 * <br>
+	 * No error checking
+	 * 
+	 * @param bits the number to find the next power of 2 for
+	 * @return the next power of 2, or 0
+	 */
+	public static int gtPo2(int bits){
+		return fill(bits)+1;
+	}
+	
+	/**
+	 * Returns the smallest power of 2 which is greater than
+	 * or equals to the given number
+	 * <br>
+	 * No error checking
+	 * 
+	 * @param bits the number to find the next power of 2 for
+	 * @return the next power of 2, or 0
+	 */
+	public static int gePo2(int bits){
+		return fill(bits-1)+1;
+	}
+	
+	/**
 	 * Main method, used only for testing
 	 * 
 	 * @param args ignored
@@ -152,5 +195,13 @@ public final class BitUtils {
 		System.out.println("ispo2(65537)="+isPo2(65537)+" (expected false)");
 		System.out.println("ispo2(3)="+isPo2(3)+" (expected false)");
 		System.out.println("ispo2(4)="+isPo2(4)+" (expected true)");
+		//Next power of 2 sanity tests
+		System.out.println("gtpo2(2)="+gtPo2(2)+" (expected 4)");
+		System.out.println("gtpo2(23)="+gtPo2(23)+" (expected 32)");
+		System.out.println("gtpo2(234)="+gtPo2(234)+" (expected 256)");
+		System.out.println("gepo2(511)="+gePo2(511)+" (expected 512)");
+		System.out.println("gepo2(512)="+gePo2(512)+" (expected 512)");
+		System.out.println("gepo2(513)="+gePo2(513)+" (expected 1024)");
+		System.out.println("gtpo2(1<<30)="+gtPo2(1<<30)+" (expected -1<<31)");
 	}
 }
