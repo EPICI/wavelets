@@ -35,7 +35,7 @@ import util.BitUtils;
  * @author EPICI
  * @version 1.0
  */
-public class FFTRadix2 extends FFT {
+public final class FFTRadix2 extends FFT {
 	
 	private static FFTRadix2[] sharedFFTs = new FFTRadix2[29];
 	
@@ -206,7 +206,7 @@ public class FFTRadix2 extends FFT {
 	* @param y the matching imaginary array
 	****************************************************************/
 	@Override
-	protected void fftInternal(double[] x, double[] y) {
+	public void fftUnsafe(double[] x, double[] y) {
 		int i,j,k,n1,n2,a;
 		double c,s,t1,t2;
 	
@@ -247,17 +247,9 @@ public class FFTRadix2 extends FFT {
 				}
 			}
 		}
-		
-		/*
-		 * After two iterations, value would normally be n times larger
-		 * Dividing by square root of n each time will make it so that
-		 * inverse FFT after FFT should give the original data,
-		 * with floating point rounding errors of course
-		 */
-		double mult = Math.pow(n, -0.5d);
-		for(i=0;i<n;i++){
-			x[i]*=mult;
-			y[i]*=mult;
-		}
+	}
+	
+	public String toString(){
+		return "<Radix-2 DIT DFT for N="+n+">";
 	}
 }

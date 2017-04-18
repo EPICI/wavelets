@@ -1,10 +1,9 @@
 package util.math;
 
+import java.text.*;
 import java.util.Random;
 
-import util.Any;
-import util.BitUtils;
-import util.Any.O2;
+import util.*;
 
 /**
  * A Fast Fourier Transform object
@@ -72,14 +71,51 @@ public abstract class FFT {
 	public abstract boolean checkBounds(int length);
 	
 	/**
+	 * Subclasses should implement this
+	 * <br>
 	 * In-place FFT
 	 * <br>
 	 * Both array lengths are expected to be correct
+	 * <br>
+	 * Does not scale
+	 * <br>
+	 * Behaviour varies between FFTs
 	 * 
 	 * @param real the real array
 	 * @param imaginary the matching imaginary array
 	 */
-	protected abstract void fftInternal(double[] real,double[] imaginary);
+	public abstract void fftUnsafe(double[] real,double[] imaginary);
+	
+	/**
+	 * Scale both arrays
+	 * <br>
+	 * Subclasses with different scaling behaviour should override
+	 * 
+	 * @param real the real array
+	 * @param imaginary the matching imaginary array
+	 * @param iterations the number of "missed" FFT iterations
+	 */
+	protected void scale(double[] real,double[] imaginary,int iterations){
+		FFT.scale(real, iterations);
+		FFT.scale(imaginary, iterations);
+	}
+	
+	/**
+	 * In-place FFT
+	 * <br>
+	 * Both array lengths are expected to be correct
+	 * <br>
+	 * Calls fftUnsafe, then scale with iterations=1, the general contract is that
+	 * after calling fftUnsafe N times, calling scale with iterations=N should
+	 * correctly rescale the data
+	 * 
+	 * @param real the real array
+	 * @param imaginary the matching imaginary array
+	 */
+	protected void fftInternal(double[] real,double[] imaginary){
+		fftUnsafe(real,imaginary);
+		scale(real,imaginary,1);
+	}
 	
 	/**
 	 * Visible in-place FFT
@@ -150,6 +186,20 @@ public abstract class FFT {
 		ifft(both.a,both.b);
 	}
 	
+	/**
+	 * Scales down the array values
+	 * 
+	 * @param array the array to scale
+	 * @param iterations the total number of FFTs and IFFTs done prior,
+	 * so after one round of FFT + IFFT, pass 2
+	 */
+	public static void scale(double[] array,int iterations){
+		final int n = array.length;
+		final double mult = Math.pow(n, -0.5d*iterations);
+		for(int i=0;i<n;i++)
+			array[i] *= mult;
+	}
+	
 	// --- Testing code ---
 	/**
 	 * Main method, only for testing
@@ -161,7 +211,7 @@ public abstract class FFT {
 			Random random = new Random();
 
 			FFT fft = getAdaptiveFft(N);
-			System.out.println("--- N="+N+" ---");
+			System.out.println("\n----- N="+N+" -----");
 
 			double[] re = new double[N];
 			double[] im = new double[N];
@@ -223,6 +273,7 @@ public abstract class FFT {
 		}
 
 		System.out.println("--- Benchmarks ---");
+		System.out.println("Benchmarks also include how long the audio would be if that were sampled sound, and how many times the FFT and IFFT could be done in that timespan with these averages");
 		for(int[] t:new int[][]{
 			// Throw powers of 2 at radix-2
 			new int[]{1<<4,0},
@@ -234,7 +285,7 @@ public abstract class FFT {
 			new int[]{1<<12,2},
 			new int[]{1<<16,3},
 			new int[]{1<<20,4},
-			new int[]{1<<22,5},
+			new int[]{1<<22,4},
 			
 			// Test batch 1: near 32
 			new int[]{31,1},// 31
@@ -259,11 +310,12 @@ public abstract class FFT {
 			new int[]{2048,4},// 2...
 			new int[]{2051,4},// 7 293
 		}){
-			doBenchmark(t[0],(200000000/t[0])>>t[1]);
+			doBenchmark(t[0],(100000000/t[0])>>t[1]);
 		}
 	}
 
 	private static void beforeAfter(FFT fft, double[] re, double[] im) {
+		double f = re[0];
 		System.out.println("Before: ");
 		printReIm(re, im);
 		fft.fft(re, im);
@@ -272,20 +324,20 @@ public abstract class FFT {
 		fft.ifft(re, im);
 		System.out.println("Inverse: ");
 		printReIm(re, im);
+		double c = re[0];
+		System.out.println("Error of "+Math.abs(Math.log(c/f))+" relative, "+Math.abs(c-f)+" absolute");
 	}
 
 	private static void printReIm(double[] re, double[] im) {
-		double f = re[0];
 		System.out.print("Re: [");
 		for(int i=0; i<re.length; i++)
-			System.out.print((Math.round(re[i]*1000)/1000.0) + " ");
+			System.out.print((Math.round(re[i]*1000d)/1000d) + " ");
 
 		System.out.print("]\nIm: [");
 		for(int i=0; i<im.length; i++)
-			System.out.print((Math.round(im[i]*1000)/1000.0) + " ");
+			System.out.print((Math.round(im[i]*1000d)/1000d) + " ");
 
 		System.out.println("]");
-		System.out.println("Error of "+Math.abs(Math.log(re[0]/f)));
 	}
 	
 	private static void doBenchmark(int N, double iter){
@@ -294,17 +346,42 @@ public abstract class FFT {
 		double[] im = new double[N];
 		double modulus = Math.sqrt(N)*(Math.log(N)+1);
 		double offset = (modulus-1d)*-0.5d;
+		
 		for(int i=0; i<N; i++) {
 			re[i] = i%modulus-offset;
 			im[i] = 0;
 		}
 
-		long time = System.currentTimeMillis();
-		for(int i=0; i<iter; i++)
+		long t1 = System.currentTimeMillis();
+		for(int i=0; i<iter; i++){
 			fft.fft(re,im);
-		time = System.currentTimeMillis() - time;
+			fft.ifft(re,im);
+		}
+		t1 = System.currentTimeMillis() - t1;
+		
+		for(int i=0; i<N; i++) {
+			re[i] = i%modulus-offset;
+			im[i] = 0;
+		}
+		
+		long t2 = System.currentTimeMillis();
+		for(int i=0; i<iter; i++){
+			fft.fftUnsafe(re,im);
+			fft.fftUnsafe(im,re);
+			fft.scale(re, im, 2);
+		}
+		t2 = System.currentTimeMillis() - t2;
+		
 		double times = N/44100d;
-		double iterms = time/iter;
-		System.out.println("Averaged " + iterms + "ms per iteration (N = "+N+", "+times+"s at 44100Hz, ratio="+(1000d*times/iterms)+")");
+		double iterms1 = t1/iter, iterms2 = t2/iter;
+		DecimalFormat format = new DecimalFormat("#00.0000");
+		System.out.println("For N="+N+" ("+format.format(times)+"s at 44100Hz with "+fft+")");
+		System.out.println("> Using regular API call:");
+		System.out.println("> > "+format.format(iterms1)+"ms average per FFT/IFFT iteration");
+		System.out.println("> > "+format.format(1000d*times/iterms1)+"x real time");
+		System.out.println("> Using lazy-like optimizations:");
+		System.out.println("> > "+format.format(iterms2)+"ms average per FFT/IFFT iteration");
+		System.out.println("> > "+format.format(1000d*times/iterms2)+"x real time");
+		System.out.println("> "+format.format(iterms1/iterms2)+"x improvement");
 	}
 }

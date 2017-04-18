@@ -1,10 +1,3 @@
-package util.math;
-
-import util.*;
-import util.Any.Keyed;
-import java.util.Collections;
-import org.apache.commons.collections4.list.*;
-
 /* 
  * Free FFT and convolution (Java)
  * 
@@ -29,8 +22,15 @@ import org.apache.commons.collections4.list.*;
  *   Software.
  */
 
+package util.math;
+
+import util.*;
+import org.apache.commons.collections4.list.*;
+
 /**
  * Bluestein FFT for arbitrary sizes
+ * <br>
+ * From: https://www.nayuki.io/res/free-small-fft-in-multiple-languages/Fft.java
  * <br>
  * Note that this is many times slower than {@link FFTRadix2},
  * it's only good because it can handle any size
@@ -39,7 +39,7 @@ import org.apache.commons.collections4.list.*;
  * @author EPICI
  * @version 1.0
  */
-public class FFTBluestein extends FFT {
+public final class FFTBluestein extends FFT {
 	
 	/**
 	 * The maximum number of Bluestein FFT objects to keep
@@ -79,21 +79,22 @@ public class FFTBluestein extends FFT {
 		}else{
 			int len = sharedFfts.size();
 			for(int i=0;i<len;i++){
-				Keyed<Integer,FFTBluestein> keyed = sharedFfts.get(i);
+				Any.Keyed<Integer,FFTBluestein> keyed = sharedFfts.get(i);
 				FFTBluestein fft = keyed.value;
 				if(fft.n==n){
 					int nkey = ++keyed.key;
 					
 					//Backwards insertion sort
 					int j;
-					while(i>0 && sharedFfts.get(j=i-1).key<nkey)
-						Collections.swap(sharedFfts, i, i=j);
+					sharedFfts.remove(i);
+					while(i>0 && sharedFfts.get(j=i-1).key<nkey)i=j;
+					sharedFfts.add(i,keyed);
 					
 					return fft;
 				}
 			}
 			FFTBluestein result = getNewFft(n);
-			Keyed<Integer,FFTBluestein> keyed = new Keyed<>(INITIAL_KEY,result);
+			Any.Keyed<Integer,FFTBluestein> keyed = new Any.Keyed<>(INITIAL_KEY,result);
 			int i=len;
 			if(len==MAX_SHARED_FFTS)
 				sharedFfts.set(i=len-1, keyed);
@@ -102,8 +103,9 @@ public class FFTBluestein extends FFT {
 			
 			//Backwards insertion sort, moves further back to protect against immediate deletion
 			int j;
-			while(i>0 && sharedFfts.get(j=i-1).key<=INITIAL_KEY)
-				Collections.swap(sharedFfts, i, i=j);
+			sharedFfts.remove(i);
+			while(i>0 && sharedFfts.get(j=i-1).key<=INITIAL_KEY)i=j;
+			sharedFfts.add(i,keyed);
 			
 			return result;
 		}
@@ -118,7 +120,7 @@ public class FFTBluestein extends FFT {
 	 */
 	public static void removeFft(int n){
 		for(int i=0;i<sharedFfts.size();i++){
-			Keyed<Integer,FFTBluestein> keyed = sharedFfts.get(i);
+			Any.Keyed<Integer,FFTBluestein> keyed = sharedFfts.get(i);
 			if(keyed.value.n==n){
 				sharedFfts.remove(i);
 				break;
@@ -181,16 +183,25 @@ public class FFTBluestein extends FFT {
 		}
 		cos[0] = 1d;sin[0] = 0d;
 		kr[0] = cos[0];ki[0] = sin[0];
-		FFTRadix2.getFft(BitUtils.binLog(m)).fft(kr, ki);
+		FFTRadix2.getFft(BitUtils.binLog(m)).fftUnsafe(kr, ki);
 	}
 
 	@Override
 	public boolean checkBounds(int length) {
 		return length==n;
 	}
+	
+	@Override
+	protected void scale(double[] real,double[] imaginary,int iterations) {
+		double mult = Math.pow(n*(double)m*m, -0.5d*iterations);
+		for(int i=0;i<n;i++){
+			real[i] *= mult;
+			imaginary[i] *= mult;
+		}
+	}
 
 	@Override
-	protected void fftInternal(double[] real, double[] imaginary) {
+	public void fftUnsafe(double[] real, double[] imaginary) {
 		// Preliminary transform
 		double[] ar = new double[m], ai = new double[m];
 		for(int i=0;i<n;i++){
@@ -200,22 +211,23 @@ public class FFTBluestein extends FFT {
 		}
 		// Convolution
 		FFTRadix2 transformer = FFTRadix2.getFft(BitUtils.binLog(m));
-		transformer.fft(ar, ai);
+		transformer.fftUnsafe(ar, ai);
 		for(int i=0;i<m;i++){
 			double xr = ar[i], xi = ai[i], yr = kr[i], yi = ki[i];
 			ar[i] = xr*yr-xi*yi;
 			ai[i] = xi*yr+xr*yi;
 		}
-		transformer.ifft(ar, ai);
+		transformer.fftUnsafe(ai, ar);
 		// Copy back
-		double mult = Math.sqrt(m/(double)n);
 		for(int i=0;i<n;i++){
 			double x = ar[i], y = ai[i], cs = cos[i], sn = sin[i];
-			real[i] = (x*cs+y*sn)*mult;
-			imaginary[i] = (y*cs-x*sn)*mult;
+			real[i] = x*cs+y*sn;
+			imaginary[i] = y*cs-x*sn;
 		}
 	}
 	
-	
+	public String toString(){
+		return "<Bluestein FFT for N="+n+">";
+	}
 
 }
