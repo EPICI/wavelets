@@ -1,5 +1,6 @@
 package main;
 
+import java.io.*;
 import components.*;
 import util.*;
 import util.ui.PivotSwingUtils;
@@ -7,11 +8,13 @@ import javax.swing.*;
 import org.apache.pivot.wtk.*;
 
 /**
+ * Represents an active session
  * 
  * @author EPICI
  * @version 1.0
  */
 public class Session {
+	
 	/**
 	 * Clipboard, for copypasta
 	 */
@@ -30,6 +33,8 @@ public class Session {
 	public JFrame mainFrame;
 	
 	protected ColorScheme colors = ColorScheme.getPivotColors();
+	
+	protected PrintStream console;
 	
 	/**
 	 * Default constructor, try to find preferences on its own
@@ -106,5 +111,15 @@ public class Session {
 	 */
 	public ColorScheme getColors(){
 		return colors;
+	}
+	
+	/**
+	 * Get the active {@link PrintStream} which should be used
+	 * everywhere else in place of System.out and System.err
+	 * 
+	 * @return the target output
+	 */
+	public PrintStream getConsole(){
+		return console;
 	}
 }

@@ -344,11 +344,11 @@ public abstract class FFT {
 		FFT fft = getAdaptiveFft(N);
 		double[] re = new double[N];
 		double[] im = new double[N];
-		double modulus = Math.sqrt(N)*(Math.log(N)+1);
-		double offset = (modulus-1d)*-0.5d;
+		double modulus = Math.sqrt(N)/(Math.log(N)+1d);
+		double offset = -0.5d*modulus;
 		
 		for(int i=0; i<N; i++) {
-			re[i] = i%modulus-offset;
+			re[i] = i%modulus+offset;
 			im[i] = 0;
 		}
 
