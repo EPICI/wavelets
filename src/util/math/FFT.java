@@ -52,8 +52,8 @@ public abstract class FFT {
 	 */
 	public static FFT getAdaptiveFft(int n){
 		if(n<2)throw new IllegalArgumentException("FFT length too short ("+n+"<2)");
-		if(BitUtils.isPo2(n)){
-			return FFTRadix2.getFft(BitUtils.binLog(n));
+		if(Bits.isPo2(n)){
+			return FFTRadix2.getFft(Bits.binLog(n));
 		}else{
 			return FFTBluestein.getFft(n);
 		}

@@ -22,7 +22,7 @@
 
 package util.math;
 
-import util.BitUtils;
+import util.Bits;
 
 /**
  * Fast Fourier Transform
@@ -103,10 +103,10 @@ public final class FFTRadix2 extends FFT {
 		 * Make sure n is a power of 2
 		 * Also make sure it's 2 or larger
 		 */
-		if(n<2 || !BitUtils.isPo2(n))
+		if(n<2 || !Bits.isPo2(n))
 			throw new IllegalArgumentException("FFT length must be power of 2");
 		
-		this.m = BitUtils.binLog(n);//Modified to be faster
+		this.m = Bits.binLog(n);//Modified to be faster
 
 		// precompute tables
 		cos = new double[n/2];

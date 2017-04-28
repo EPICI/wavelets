@@ -1,0 +1,6 @@
+<components:TrackLCEditor title="Layered Track Editor" maximized="true"
+	xmlns:bxml="http://pivot.apache.org/bxml"
+	xmlns:components="components"
+	xmlns="org.apache.pivot.wtk">
+	<TabPane bxml:id="tabPane" closeable="true"/>
+</components:TrackLCEditor>

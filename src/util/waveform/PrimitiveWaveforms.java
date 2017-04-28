@@ -1,6 +1,6 @@
 package util.waveform;
 
-import main.Curve;
+import core.Curve;
 
 /**
  * Utility class with methods for sampling primitive waveforms

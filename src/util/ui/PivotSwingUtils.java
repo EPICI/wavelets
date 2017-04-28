@@ -83,7 +83,6 @@ public class PivotSwingUtils {
 		frame.setLocation(60, 60);
 		frame.setSize(1280, 720);
 		frame.setVisible(true);
-		frame.setResizable(true);
 		frame.toFront();
 		frame.requestFocusInWindow();
 		return true;

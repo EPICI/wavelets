@@ -164,7 +164,7 @@ public final class FFTBluestein extends FFT {
 	public FFTBluestein(int n){
 		this.n=n;
 		if(n<3) throw new IllegalArgumentException("FFT length too short");
-		m = BitUtils.gtPo2(n<<1);
+		m = Bits.gtPo2(n<<1);
 		if(m<n) throw new IllegalArgumentException("FFT length too large; caused overflow");
 		
 		// Make sine and cosine tables, as well as convolution kernel
@@ -183,7 +183,7 @@ public final class FFTBluestein extends FFT {
 		}
 		cos[0] = 1d;sin[0] = 0d;
 		kr[0] = cos[0];ki[0] = sin[0];
-		FFTRadix2.getFft(BitUtils.binLog(m)).fftUnsafe(kr, ki);
+		FFTRadix2.getFft(Bits.binLog(m)).fftUnsafe(kr, ki);
 	}
 
 	@Override
@@ -210,7 +210,7 @@ public final class FFTBluestein extends FFT {
 			ai[i] = y*cs-x*sn;
 		}
 		// Convolution
-		FFTRadix2 transformer = FFTRadix2.getFft(BitUtils.binLog(m));
+		FFTRadix2 transformer = FFTRadix2.getFft(Bits.binLog(m));
 		transformer.fftUnsafe(ar, ai);
 		for(int i=0;i<m;i++){
 			double xr = ar[i], xi = ai[i], yr = kr[i], yi = ki[i];

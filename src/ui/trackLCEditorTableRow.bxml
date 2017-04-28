@@ -1,0 +1,10 @@
+<components:TrackLCEditor.LinkedTableRow
+	xmlns:bxml="http://pivot.apache.org/bxml"
+	xmlns:components="components"
+	xmlns="org.apache.pivot.wtk">
+	<PushButton bxml:id="remove" buttonData="Remove"/>
+	<FillPane bxml:id="fill" orientation="vertical">
+		<PushButton bxml:id="up" buttonData="Move up"/>
+		<PushButton bxml:id="down" buttonData="Move down"/>
+	</FillPane>
+</components:TrackLCEditor.LinkedTableRow>
