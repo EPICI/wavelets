@@ -5,6 +5,7 @@ import javax.swing.*;
 import org.python.core.*;
 import util.jython.*;
 import util.*;
+import ui.*;
 
 /**
  * Contains patterns
@@ -16,13 +17,10 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * All the patterns
+	 * All the patterns and their respective delays,
+	 * encoded as set bits in a bitset
 	 */
-	protected ArrayList<Pattern> patterns;
-	/**
-	 * For each pattern, the delay in measures
-	 */
-	protected ArrayList<Integer> delays;
+	public final IdentityHashMap<Pattern,BitSet> patterns;
 	/**
 	 * List of active voices, used for playback
 	 */
@@ -38,39 +36,39 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	 * @see TrackLayerCompound
 	 */
 	public TrackLayerSimple(TrackLayerCompound parent){
-		patterns = new ArrayList<Pattern>();
-		delays = new ArrayList<Integer>();
+		patterns = new IdentityHashMap<>();
 		initTransient(parent);
 	}
 	
 	@Override
 	public void applyTo(MetaSamples current) {
 		//Setup
-		int numPatterns = patterns.size();
-		if(numPatterns>0){
+		if(!patterns.isEmpty()){
 			//Add new voices if necessary
-			for(int i=0;i<numPatterns;i++){
-				Pattern pattern = patterns.get(i);
-				int delay = delays.get(i);
-				double start = delay*current.speedMult;
-				double end = (delay+pattern.length)*current.speedMult;
-				if(start<=current.endPos&&end>=current.startPos){
-					double multiplier = current.speedMult/pattern.divisions;
-					ArrayList<double[]> toSendList = new ArrayList<double[]>();
-					for(int[] clip:pattern.clips){
-						double clipStart = clip[0]*multiplier+start;
-						double clipLength = clip[1]*multiplier;
-						double clipEnd = clipStart+clipLength;
-						if(clipStart<=current.endPos&&clipEnd>=current.startPos){
-							double voiceDelay = clipStart-current.startPos;
-							toSendList.add(new double[]{voiceDelay,clipLength,clip[2]});
+			for(Pattern pattern:patterns.keySet()){
+				PrimitiveIterator.OfInt iter = patterns.get(pattern).stream().iterator();
+				while(iter.hasNext()){
+					int delay = iter.nextInt();
+					double start = delay*current.speedMult;
+					double end = (delay+pattern.length)*current.speedMult;
+					if(start<=current.endPos&&end>=current.startPos){
+						double multiplier = current.speedMult/pattern.divisions;
+						ArrayList<double[]> toSendList = new ArrayList<double[]>();
+						for(int[] clip:pattern.clips){
+							double clipStart = clip[0]*multiplier+start;
+							double clipLength = clip[1]*multiplier;
+							double clipEnd = clipStart+clipLength;
+							if(clipStart<=current.endPos&&clipEnd>=current.startPos){
+								double voiceDelay = clipStart-current.startPos;
+								toSendList.add(new double[]{voiceDelay,clipLength,clip[2]});
+							}
 						}
-					}
-					int numToSend = toSendList.size();
-					if(numToSend>0){
-						double[][] toSend = toSendList.toArray(new double[numToSend][]);
-						pattern.synthesizer.setGlobals(current.vars);
-						pattern.synthesizer.spawnVoices(toSend, this, current.sampleRate);
+						int numToSend = toSendList.size();
+						if(numToSend>0){
+							double[][] toSend = toSendList.toArray(new double[numToSend][]);
+							pattern.synthesizer.setGlobals(current.vars);
+							pattern.synthesizer.spawnVoices(toSend, this, current.sampleRate);
+						}
 					}
 				}
 			}
@@ -144,49 +142,61 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	 * @param delay the delay to add with
 	 */
 	public void addPattern(Pattern pattern,int delay){
-		patterns.add(pattern);
-		delays.add(delay);
+		BitSet delays = patterns.get(pattern);
+		if(delays==null){
+			delays = new BitSet();
+			patterns.put(pattern, delays);
+		}
+		delays.set(delay);
 	}
 	
 	/**
-	 * Replaces a single pattern
+	 * Removes a pattern
 	 * 
-	 * @param index the index of the pattern to replace
-	 * @param pattern the new pattern to replace with
+	 * @param pattern the target pattern
+	 * @param delay the delay to remove
 	 */
-	public void replacePattern(int index,Pattern pattern){
-		patterns.set(index, pattern);
+	public void removePattern(Pattern pattern,int delay){
+		BitSet delays = patterns.get(pattern);
+		if(delays!=null){
+			delays.clear(delay);
+		}
 	}
 	
 	/**
-	 * Updates a single delay value
+	 * Attempts to change a delay
+	 * <br>
+	 * Force flag:
+	 * <ul>
+	 * <li>If true, functionally equivalent to <i>removePattern</i> followed by <i>addPattern</i></li>
+	 * <li>If false, will do nothing if there is no pattern at <i>oldDelay</i> or there is already a pattern at <i>newDelay</i></li>
+	 * </ul>
 	 * 
-	 * @param index the index of the pattern to change the delay of
-	 * @param delay the new delay
+	 * @param pattern the keyed pattern
+	 * @param oldDelay the original delay
+	 * @param newDelay the new delay to set it to
+	 * @param force explained in doc
+	 * @return true if successful or forced
 	 */
-	public void updateDelay(int index,int delay){
-		delays.set(index, delay);
-	}
-	
-	/**
-	 * Get a pattern with its delay
-	 * 
-	 * @param index the index to fetch
-	 * @return the pattern with delay
-	 */
-	public Any.O2<Pattern, Integer> getPattern(int index){
-		return new Any.O2<>(patterns.get(index), delays.get(index));
-	}
-	
-	/**
-	 * <b>Very dangerous, it's easy to mess up the lists, the method
-	 * is only provided for the few algorithms that may make good
-	 * use of it</b>
-	 * 
-	 * @return a pair containing the patterns list and delays list
-	 */
-	public Any.O2<ArrayList<Pattern>, ArrayList<Integer>> getPatterns(){
-		return new Any.O2<>(patterns,delays);
+	public boolean updateDelay(Pattern pattern,int oldDelay,int newDelay,boolean force){
+		BitSet delays = patterns.get(pattern);
+		if(force){
+			if(delays==null){
+				delays=new BitSet();
+				patterns.put(pattern, delays);
+			}
+			delays.clear(oldDelay);//No branch=faster
+			delays.set(newDelay);
+			return true;
+		}else{
+			boolean success = delays!=null&&delays.get(oldDelay)&&!delays.get(newDelay);
+			if(success&&oldDelay!=newDelay){
+				delays.clear(oldDelay);
+				delays.set(newDelay);
+			}
+			return success;
+		}
+		
 	}
 	
 	/**
@@ -199,18 +209,14 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	}
 	
 	public double[] getTimeBounds(){
-		double min = Double.MAX_VALUE;
-		double max = Double.MIN_VALUE;
-		int total = patterns.size();
-		for(int i=0;i<total;i++){
-			double start = delays.get(i);
-			double end = patterns.get(i).length+start;
-			if(start<min){
-				min=start;
-			}
-			if(end>max){
-				max=end;
-			}
+		double min = Double.POSITIVE_INFINITY;
+		double max = Double.NEGATIVE_INFINITY;
+		for(Pattern pattern:patterns.keySet()){
+			BitSet delays = patterns.get(pattern);
+			int first = delays.nextSetBit(0);
+			int last = delays.length()-1+pattern.length;
+			if(first<min)min=first;
+			if(last>max)max=last;
 		}
 		double rate = 1d/parentComposition().baseSpeed;
 		return new double[]{min*rate,max*rate};
@@ -224,12 +230,11 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 
 	@Override
 	public ViewComponent getViewComponent() {
-		// TODO Auto-generated method stub
-		return null;
+		return new TrackLSPreview(this);
 	}
 	
 	public int hashCode(){
-		return Hash.of(patterns,delays);
+		return Hash.of(patterns);
 	}
 
 }

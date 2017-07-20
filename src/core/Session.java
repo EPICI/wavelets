@@ -57,7 +57,7 @@ public class Session {
 		Theme theme = Theme.getTheme();
 		colors = ColorScheme.getPivotColors();
 		theme.set(CircularSlider.class, CircularSliderSkin.class);
-		theme.set(TLSPreview.class, TLSPreviewSkin.class);
+		theme.set(TrackLSPreview.class, TrackLSPreviewSkin.class);
 		
 		windowManager = PivotSwingUtils.loadBxml(WindowManager.class, "windowManager.bxml");
 		windowManager.session = this;

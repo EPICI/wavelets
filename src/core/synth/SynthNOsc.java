@@ -67,7 +67,8 @@ public class SynthNOsc implements Synthesizer {
 	}
 
 	@Override
-	public Voice spawnLiveVoice(int pitch, int sampleRate) {
+	public Voice spawnLiveVoice(int[] params, int sampleRate) {
+		int pitch = params[0];
 		int n = oscillators.size();
 		Voice[] all = new Voice[n];
 		for(int i=0;i<n;i++){
