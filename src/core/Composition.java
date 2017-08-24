@@ -23,8 +23,7 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	/**
 	 * Seconds per measure
 	 * <br>
-	 * Expected to be replaced in the future with a bezier spline,
-	 * the integral of which would define the canonical time
+	 * Time curves are hard to do, so this won't be getting replaced anytime soon
 	 */
 	public double baseSpeed;
 	/**
