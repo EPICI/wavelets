@@ -2,6 +2,7 @@
 	xmlns:bxml="http://pivot.apache.org/bxml"
 	xmlns:components="components"
 	xmlns="org.apache.pivot.wtk">
+	<PushButton bxml:id="select" buttonData="Select" toggleButton="true"/>
 	<PushButton bxml:id="remove" buttonData="Remove"/>
 	<FillPane bxml:id="fill" orientation="vertical">
 		<PushButton bxml:id="up" buttonData="Move up"/>

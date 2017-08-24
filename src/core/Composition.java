@@ -22,6 +22,9 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	public transient HashMap<String,Object> globalsDynamic;
 	/**
 	 * Seconds per measure
+	 * <br>
+	 * Expected to be replaced in the future with a bezier spline,
+	 * the integral of which would define the canonical time
 	 */
 	public double baseSpeed;
 	/**

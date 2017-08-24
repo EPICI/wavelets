@@ -77,12 +77,11 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 	@Override
 	public void initTransient(TLCParent parent) {
 		// TODO Auto-generated method stub
-		if(parent instanceof Composition){
+		parentIsComposition=parent instanceof Composition;
+		if(parentIsComposition){
 			parentComposition = (Composition) parent;
-			parentIsComposition = true;
 		}else{
 			parentTLC = (TrackLayerCompound) parent;
-			parentIsComposition = false;
 		}
 	}
 	

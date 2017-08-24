@@ -5,6 +5,7 @@ import javax.swing.*;
 import org.python.core.*;
 import util.jython.*;
 import util.*;
+import ui.*;
 
 /**
  * Contains patterns
@@ -16,9 +17,10 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	private static final long serialVersionUID = 1L;
 
 	/**
-	 * All the patterns and their respective delays
+	 * All the patterns and their respective delays,
+	 * encoded as set bits in a bitset
 	 */
-	public final IdentityHashMap<Pattern,HashSet<Integer>> patterns;
+	public final IdentityHashMap<Pattern,BitSet> patterns;
 	/**
 	 * List of active voices, used for playback
 	 */
@@ -44,7 +46,9 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 		if(!patterns.isEmpty()){
 			//Add new voices if necessary
 			for(Pattern pattern:patterns.keySet()){
-				for(int delay:patterns.get(pattern)){
+				PrimitiveIterator.OfInt iter = patterns.get(pattern).stream().iterator();
+				while(iter.hasNext()){
+					int delay = iter.nextInt();
 					double start = delay*current.speedMult;
 					double end = (delay+pattern.length)*current.speedMult;
 					if(start<=current.endPos&&end>=current.startPos){
@@ -138,29 +142,61 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	 * @param delay the delay to add with
 	 */
 	public void addPattern(Pattern pattern,int delay){
-		HashSet<Integer> delays = patterns.get(pattern);
+		BitSet delays = patterns.get(pattern);
 		if(delays==null){
-			delays = new HashSet<>();
+			delays = new BitSet();
 			patterns.put(pattern, delays);
 		}
-		delays.add(delay);
+		delays.set(delay);
+	}
+	
+	/**
+	 * Removes a pattern
+	 * 
+	 * @param pattern the target pattern
+	 * @param delay the delay to remove
+	 */
+	public void removePattern(Pattern pattern,int delay){
+		BitSet delays = patterns.get(pattern);
+		if(delays!=null){
+			delays.clear(delay);
+		}
 	}
 	
 	/**
 	 * Attempts to change a delay
 	 * <br>
-	 * Because sets don't allow duplicates, this can result in removing a pattern instance
+	 * Force flag:
+	 * <ul>
+	 * <li>If true, functionally equivalent to <i>removePattern</i> followed by <i>addPattern</i></li>
+	 * <li>If false, will do nothing if there is no pattern at <i>oldDelay</i> or there is already a pattern at <i>newDelay</i></li>
+	 * </ul>
 	 * 
 	 * @param pattern the keyed pattern
 	 * @param oldDelay the original delay
 	 * @param newDelay the new delay to set it to
+	 * @param force explained in doc
+	 * @return true if successful or forced
 	 */
-	public void updateDelay(Pattern pattern,int oldDelay,int newDelay){
-		HashSet<Integer> delays = patterns.get(pattern);
-		if(delays!=null){
-			delays.remove(oldDelay);
-			delays.add(newDelay);
+	public boolean updateDelay(Pattern pattern,int oldDelay,int newDelay,boolean force){
+		BitSet delays = patterns.get(pattern);
+		if(force){
+			if(delays==null){
+				delays=new BitSet();
+				patterns.put(pattern, delays);
+			}
+			delays.clear(oldDelay);//No branch=faster
+			delays.set(newDelay);
+			return true;
+		}else{
+			boolean success = delays!=null&&delays.get(oldDelay)&&!delays.get(newDelay);
+			if(success&&oldDelay!=newDelay){
+				delays.clear(oldDelay);
+				delays.set(newDelay);
+			}
+			return success;
 		}
+		
 	}
 	
 	/**
@@ -173,15 +209,14 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	}
 	
 	public double[] getTimeBounds(){
-		double min = Double.MAX_VALUE;
-		double max = Double.MIN_VALUE;
+		double min = Double.POSITIVE_INFINITY;
+		double max = Double.NEGATIVE_INFINITY;
 		for(Pattern pattern:patterns.keySet()){
-			HashSet<Integer> delays = patterns.get(pattern);
-			for(int start:delays){
-				double end = pattern.length+start;
-				if(start<min)min=start;
-				if(end>max)max=end;
-			}
+			BitSet delays = patterns.get(pattern);
+			int first = delays.nextSetBit(0);
+			int last = delays.length()-1+pattern.length;
+			if(first<min)min=first;
+			if(last>max)max=last;
 		}
 		double rate = 1d/parentComposition().baseSpeed;
 		return new double[]{min*rate,max*rate};
@@ -195,8 +230,7 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 
 	@Override
 	public ViewComponent getViewComponent() {
-		// TODO Auto-generated method stub
-		return null;
+		return new TrackLSPreview(this);
 	}
 	
 	public int hashCode(){

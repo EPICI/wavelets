@@ -67,7 +67,8 @@ public class SynthNOsc implements Synthesizer {
 	}
 
 	@Override
-	public Voice spawnLiveVoice(int pitch, int sampleRate) {
+	public Voice spawnLiveVoice(int[] params, int sampleRate) {
+		int pitch = params[0];
 		int n = oscillators.size();
 		Voice[] all = new Voice[n];
 		for(int i=0;i<n;i++){
@@ -492,7 +493,7 @@ public class SynthNOsc implements Synthesizer {
 						continue;
 					}
 					
-					// Load values
+					// Load values (TODO move this outside the loop, the specification doesn't require deterministic anyways)
 					double ldetune = getDetune(time), lvolume = getVolume(time), lattackConst = getAttackConst(time), lattackFrac = getAttackFrac(time), lholdConst = getHoldConst(time),
 							lholdFrac = getHoldFrac(time), ldecayConst = getDecayConst(time), ldecayFrac = getDecayFrac(time), lminVolume = getMinVolume(time);
 					double afreq = freq*Math.pow(SEMITONE, ldetune), aattack = sampleRate*lminVolume/(lattackConst*measure+lattackFrac*note),

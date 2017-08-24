@@ -8,6 +8,16 @@
 	<columns>
 		<TablePane.Column width="-1"/>
 		<TablePane.Column width="-1"/>
+		<TablePane.Column width="-1"/>
 		<TablePane.Column width="1*"/>
 	</columns>
+	<TablePane.Row>
+		<PushButton bxml:id="move" buttonData="Move selected to here"/>
+		<PushButton bxml:id="deselect" buttonData="Deselect all"/>
+		<PushButton bxml:id="add" buttonData="Add new"/>
+		<ListButton bxml:id="selector" listData="[
+					'Layered Track',
+					'Pattern Track'
+				]"/>
+	</TablePane.Row>
 </components:TrackLCEditor.LinkedTablePane>

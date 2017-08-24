@@ -23,21 +23,54 @@ public class Session {
 	 */
 	public BetterClone<?,?> clipBoard;
 	
+	/**
+	 * Log2 of buffer size
+	 */
 	protected int bufferSizeShift = 7;
+	/**
+	 * Samples in buffer
+	 */
 	protected int bufferSize = 1<<bufferSizeShift;
+	/**
+	 * Samples per second
+	 */
 	protected int sampleRate = 44100;
 	
+	/**
+	 * The composition being edited
+	 */
 	public Composition composition;
+	/**
+	 * The filename to load from and save to
+	 */
 	public String filename;
 	
+	/**
+	 * The window manager object
+	 */
 	public WindowManager windowManager;
+	/**
+	 * The window for the window manager
+	 */
 	public JInternalFrame windowManagerFrame;
 	
+	/**
+	 * The desktop pane that contains everything in the UI
+	 */
 	public JDesktopPane desktopPane;
+	/**
+	 * The JFrame that holds the JDesktopPane
+	 */
 	public JFrame mainFrame;
 	
+	/**
+	 * Color scheme, from TerraTheme
+	 */
 	protected ColorScheme colors;
 	
+	/**
+	 * Pointer to the console or whatever was originally stdout
+	 */
 	protected PrintStream console;
 	
 	/**
@@ -57,7 +90,7 @@ public class Session {
 		Theme theme = Theme.getTheme();
 		colors = ColorScheme.getPivotColors();
 		theme.set(CircularSlider.class, CircularSliderSkin.class);
-		theme.set(TLSPreview.class, TLSPreviewSkin.class);
+		theme.set(TrackLSPreview.class, TrackLSPreviewSkin.class);
 		
 		windowManager = PivotSwingUtils.loadBxml(WindowManager.class, "windowManager.bxml");
 		windowManager.session = this;
@@ -71,6 +104,24 @@ public class Session {
 		mainFrame.setSize(1280, 720);
 		mainFrame.setVisible(true);
 		//TODO
+	}
+	
+	/**
+	 * Utility method, will open the UI of some track
+	 * <br>
+	 * JInternalFrame instances get opened as expected,
+	 * otherwise it's added to a shared editor window
+	 * 
+	 * @param track the track to open the UI for
+	 */
+	public void openUI(Track track){
+		MetaComponent<? extends JComponent> meta = track.getUI();
+		JComponent component = meta.component;
+		if(component instanceof JInternalFrame){
+			windowManager.addWindow(meta.group,(JInternalFrame)component);
+		}else{
+			//TODO
+		}
 	}
 	
 	/**

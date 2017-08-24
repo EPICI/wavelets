@@ -22,9 +22,12 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	public transient int length;
 	/**
 	 * Contains int arrays with length 3 containing:
-	 * <ol><li>Delay, which will be multiplied later</li>
+	 * <ol>
+	 * <li>Delay, which will be multiplied later</li>
 	 * <li>Length, which will be multiplied later</li>
-	 * <li>Pitch as semitones from A4 for convenience</li></ol>
+	 * <li>Pitch as semitones from A4 for convenience</li>
+	 * <li>More optional parameters...</li>
+	 * </ol>
 	 */
 	public final ArrayList<int[]> clips;
 	
