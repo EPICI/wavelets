@@ -8,7 +8,7 @@ import core.*;
 import util.*;
 import util.waveform.*;
 import util.jython.*;
-import util.math.Floats;
+import util.math.*;
 
 /**
  * The Nx Osc synth. A direct upgrade from 3x Osc.
@@ -232,12 +232,15 @@ public class SynthNOsc implements Synthesizer {
 		/**
 		 * Duration in measures to reach full volume
 		 * <br>
+		 * Negative snaps to threshold
+		 * <br>
 		 * Part of envelope
 		 * 
 		 * @param attackConst
 		 */
 		public synchronized void setAttackConst(double attackConst) {
-			properties[2].set(attackConst);
+			final double t=Floats.D_EPSILON;
+			properties[2].set(attackConst<t?t:attackConst);
 		}
 
 		/**
@@ -256,12 +259,15 @@ public class SynthNOsc implements Synthesizer {
 		/**
 		 * Fraction of note length to reach full volume
 		 * <br>
+		 * Negative snaps to threshold
+		 * <br>
 		 * Part of envelope
 		 * 
 		 * @param attackFrac
 		 */
 		public synchronized void setAttackFrac(double attackFrac) {
-			properties[3].set(attackFrac);;
+			final double t=Floats.D_EPSILON;
+			properties[3].set(attackFrac<t?t:attackFrac);
 		}
 
 		/**
@@ -280,12 +286,15 @@ public class SynthNOsc implements Synthesizer {
 		/**
 		 * Duration in measures to hold at full volume
 		 * <br>
+		 * Negative snaps to threshold
+		 * <br>
 		 * Part of envelope
 		 * 
 		 * @param holdConst
 		 */
 		public synchronized void setHoldConst(double holdConst) {
-			properties[4].set(holdConst);
+			final double t=Floats.D_EPSILON;
+			properties[4].set(holdConst<t?t:holdConst);
 		}
 
 		/**
@@ -304,12 +313,15 @@ public class SynthNOsc implements Synthesizer {
 		/**
 		 * Fraction of note length to hold at full volume
 		 * <br>
+		 * Negative snaps to threshold
+		 * <br>
 		 * Part of envelope
 		 * 
 		 * @param holdFrac
 		 */
 		public synchronized void setHoldFrac(double holdFrac) {
-			properties[5].set(holdFrac);
+			final double t=Floats.D_EPSILON;
+			properties[5].set(holdFrac<t?t:holdFrac);
 		}
 
 		/**
@@ -328,12 +340,15 @@ public class SynthNOsc implements Synthesizer {
 		/**
 		 * Volume reduction per measure in B
 		 * <br>
+		 * Negative snaps to threshold
+		 * <br>
 		 * Part of envelope
 		 * 
 		 * @param decayConst
 		 */
 		public synchronized void setDecayConst(double decayConst) {
-			properties[6].set(decayConst);
+			final double t=Floats.D_EPSILON;
+			properties[6].set(decayConst<t?t:decayConst);
 		}
 
 		/**
@@ -352,12 +367,15 @@ public class SynthNOsc implements Synthesizer {
 		/**
 		 * Volume reduction per note length in B
 		 * <br>
+		 * Negative snaps to threshold
+		 * <br>
 		 * Part of envelope
 		 * 
 		 * @param decayFrac
 		 */
 		public synchronized void setDecayFrac(double decayFrac) {
-			properties[8].set(decayFrac);
+			final double t=Floats.D_EPSILON;
+			properties[8].set(decayFrac<t?t:decayFrac);
 		}
 
 		/**
@@ -380,14 +398,17 @@ public class SynthNOsc implements Synthesizer {
 		 * Threshold to kill the voice in B, so when the current
 		 * volume is this much lower than the cap, kill the voice
 		 * <br>
-		 * 0 insta-kills
+		 * Positive snaps to threshold
+		 * <br>
+		 * 0 would insta-kill it
 		 * <br>
 		 * Part of envelope
 		 * 
 		 * @param minVolume
 		 */
 		public synchronized void setMinVolume(double minVolume) {
-			properties[9].set(minVolume);
+			final double t=Floats.D_EPSILON;
+			properties[9].set(minVolume>t?t:minVolume);
 		}
 		
 		/**
@@ -426,6 +447,10 @@ public class SynthNOsc implements Synthesizer {
 			 * Time pre-adjustment
 			 */
 			public double time;
+			/**
+			 * Phase (for consistent waveforms)
+			 */
+			public double phase;
 			/**
 			 * The time of switching to hold
 			 */
@@ -468,6 +493,7 @@ public class SynthNOsc implements Synthesizer {
 				sampleLength=1d/sampleRate;
 				mult=getMinVolume(time);
 				time=0d;
+				phase=0d;
 				step=0;
 				freq=440d*Math.pow(SEMITONE, pitch);
 			}
@@ -487,19 +513,16 @@ public class SynthNOsc implements Synthesizer {
 				double[] data = new double[sampleCount];
 				if(step==3)return new Samples(sampleRate,data);
 				byte ltype = type;
-				for(int i=0;step!=3 && i<sampleCount;i++){
+				// Load values
+				double ldetune = getDetune(time), lvolume = getVolume(time), lattackConst = getAttackConst(time), lattackFrac = getAttackFrac(time), lholdConst = getHoldConst(time),
+						lholdFrac = getHoldFrac(time), ldecayConst = getDecayConst(time), ldecayFrac = getDecayFrac(time), lminVolume = getMinVolume(time);
+				double afreq = freq*Math.pow(SEMITONE, ldetune), aattack = -lminVolume/(sampleRate*(lattackConst*measure+lattackFrac*note)),
+						ahold = lholdConst*measure+lholdFrac*note, adecay = ldecayConst/measure+ldecayFrac/note, lvolmult = Math.pow(10d, lvolume);
+				for(int i=0;step<3 && i<sampleCount;i++){
 					if(delay>Floats.D_EPSILON){
 						delay-=sampleLength;
 						continue;
 					}
-					
-					// Load values (TODO move this outside the loop, the specification doesn't require deterministic anyways)
-					double ldetune = getDetune(time), lvolume = getVolume(time), lattackConst = getAttackConst(time), lattackFrac = getAttackFrac(time), lholdConst = getHoldConst(time),
-							lholdFrac = getHoldFrac(time), ldecayConst = getDecayConst(time), ldecayFrac = getDecayFrac(time), lminVolume = getMinVolume(time);
-					double afreq = freq*Math.pow(SEMITONE, ldetune), aattack = sampleRate*lminVolume/(lattackConst*measure+lattackFrac*note),
-							ahold = lholdConst*measure+lholdFrac*note, adecay = ldecayConst/measure+ldecayFrac/note, lvolmult = Math.pow(10d, lvolume);
-					
-					double phase = time*afreq;
 					double wf = 0d;
 					switch(ltype){
 					case 0:{//Sine
@@ -520,12 +543,13 @@ public class SynthNOsc implements Synthesizer {
 					}
 					}
 					time += sampleLength;
+					phase += sampleLength*afreq;
 					switch(step){
 					case 0:{
 						double vol = lvolmult*Math.pow(10d, mult+=aattack);
 						data[i] = wf*vol;
 						if(mult>=lvolume){
-							step++;
+							step=1;
 							mult=lvolume;
 							switched=time;
 						}
@@ -533,8 +557,8 @@ public class SynthNOsc implements Synthesizer {
 					}
 					case 1:{
 						data[i] = wf*lvolmult;
-						if(time-switched>=ahold){
-							step++;
+						if(time-switched>=ahold){//Not optimized away because the hold can change, and we like real time editing
+							step=2;
 						}
 						break;
 					}
@@ -542,7 +566,7 @@ public class SynthNOsc implements Synthesizer {
 						double vol = lvolmult*Math.pow(10d, mult-=adecay);
 						data[i] = wf*vol;
 						if(mult<=lminVolume){
-							step++;
+							step=3;
 						}
 						break;
 					}

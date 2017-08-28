@@ -23,7 +23,9 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	/**
 	 * Seconds per measure
 	 * <br>
-	 * Time curves are hard to do, so this won't be getting replaced anytime soon
+	 * This will be replaced in the far future by a special time curve
+	 * (1/Hz bezier -> integral)
+	 * which maps time to measures (use inverse for other way)
 	 */
 	public double baseSpeed;
 	/**
