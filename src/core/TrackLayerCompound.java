@@ -108,25 +108,13 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 		return Hash.of(tracks);
 	}
 	
-	/**
-	 * @return this instance's name
-	 */
 	public String getName(){
-		if(name==null || name.length()==0)return defaultName();
+		if(name==null || name.length()==0)return parentIsComposition?"Root Track":Track.defaultName("Layered Track", this);
 		return name;
 	}
 	
-	protected String defaultName(){
-		if(parentIsComposition)return "Root Track";
-		StringBuilder sb = new StringBuilder();
-		sb.append("Layered Track #");
-		int id = System.identityHashCode(this);
-		while(id!=0){
-			int cut = id&15;
-			id = id>>>4;
-			sb.append((char)(cut<10?cut+48:cut+55));
-		}
-		return sb.toString();
+	public void setName(String newName){
+		name=newName;
 	}
 
 }

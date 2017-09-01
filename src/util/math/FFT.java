@@ -1,8 +1,7 @@
 package util.math;
 
 import java.text.*;
-import java.util.Random;
-
+import java.util.*;
 import util.*;
 
 /**
@@ -207,7 +206,7 @@ public abstract class FFT {
 	 * @param args ignored
 	 */
 	public static void main(String[] args) {
-		for(int N:new int[]{60,64,67}){
+		for(int N:new int[]{32,60,64,67}){
 			Random random = new Random();
 
 			FFT fft = getAdaptiveFft(N);
@@ -222,6 +221,18 @@ public abstract class FFT {
 				re[i] = im[i] = 0;
 			beforeAfter(fft, re, im);
 
+			System.out.println("Impulse 4");
+			for(int i=0; i<N; i++)
+				re[i] = im[i] = 0;
+			re[4]=1;
+			beforeAfter(fft, re, im);
+
+			System.out.println("Impulse 4,N-4");
+			for(int i=0; i<N; i++)
+				re[i] = im[i] = 0;
+			re[4]=1;re[N-4]=1;
+			beforeAfter(fft, re, im);
+
 			System.out.println("Nyquist");
 			for(int i=0; i<N; i++) {
 				re[i] = Math.pow(-1, i);
@@ -229,9 +240,30 @@ public abstract class FFT {
 			}
 			beforeAfter(fft, re, im);
 
-			System.out.println("Sine");
+			System.out.println("Cosine 4x");
+			for(int i=0; i<N; i++) {
+				re[i] = Math.cos(4*Math.PI*i / N);
+				im[i] = 0;
+			}
+			beforeAfter(fft, re, im);
+
+			System.out.println("Cosine 8x");
 			for(int i=0; i<N; i++) {
 				re[i] = Math.cos(8*Math.PI*i / N);
+				im[i] = 0;
+			}
+			beforeAfter(fft, re, im);
+
+			System.out.println("Cosine 6x");
+			for(int i=0; i<N; i++) {
+				re[i] = Math.cos(6*Math.PI*i / N);
+				im[i] = 0;
+			}
+			beforeAfter(fft, re, im);
+
+			System.out.println("Cosine 6x+10x");
+			for(int i=0; i<N; i++) {
+				re[i] = Math.cos(6*Math.PI*i / N)+Math.cos(10*Math.PI*i / N);
 				im[i] = 0;
 			}
 			beforeAfter(fft, re, im);
@@ -253,6 +285,20 @@ public abstract class FFT {
 			System.out.println("Saw (4)");
 			for(int i=0; i<N; i++) {
 				re[i] = i%4-1.5d;
+				im[i] = 0;
+			}
+			beforeAfter(fft, re, im);
+
+			System.out.println("Saw (6)");
+			for(int i=0; i<N; i++) {
+				re[i] = i%6-2.5d;
+				im[i] = 0;
+			}
+			beforeAfter(fft, re, im);
+
+			System.out.println("Saw (7)");
+			for(int i=0; i<N; i++) {
+				re[i] = i%7-3d;
 				im[i] = 0;
 			}
 			beforeAfter(fft, re, im);
@@ -331,13 +377,32 @@ public abstract class FFT {
 	private static void printReIm(double[] re, double[] im) {
 		System.out.print("Re: [");
 		for(int i=0; i<re.length; i++)
-			System.out.print((Math.round(re[i]*1000d)/1000d) + " ");
+			System.out.print((Math.round(re[i]*100d)/100d) + " ");
 
 		System.out.print("]\nIm: [");
 		for(int i=0; i<im.length; i++)
-			System.out.print((Math.round(im[i]*1000d)/1000d) + " ");
+			System.out.print((Math.round(im[i]*100d)/100d) + " ");
 
 		System.out.println("]");
+		final int t=8;
+		int[] is=new int[t];
+		int j=0;
+		for(int i=0;i<re.length;i++){
+			if(Math.abs(re[i])>Floats.D_EPSILON||Math.abs(im[i])>Floats.D_EPSILON){
+				if(j>=t){
+					j=-1;
+					break;
+				}
+				is[j++]=i;
+			}
+		}
+		if(j>=0){
+			for(int i=0;i<j;i++){
+				System.out.print(is[i]);
+				System.out.print(' ');
+			}
+			System.out.println();
+		}
 	}
 	
 	private static void doBenchmark(int N, double iter){

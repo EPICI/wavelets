@@ -20,8 +20,12 @@ public class Session {
 	
 	/**
 	 * Clipboard, for copypasta
+	 * <br>
+	 * Used to force usage of the {@link BetterClone} interface,
+	 * but actually the "clipboard" is not always used to copy objects,
+	 * and in many instances a valid way to transfer or move objects
 	 */
-	public BetterClone<?,?> clipBoard;
+	public Object clipBoard;
 	
 	/**
 	 * Log2 of buffer size

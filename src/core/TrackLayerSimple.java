@@ -29,6 +29,10 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	 * Parent {@link TrackLayerCompound}
 	 */
 	protected transient TrackLayerCompound parentTLC;
+	/**
+	 * The name of this track.
+	 */
+	protected String name;
 	
 	/**
 	 * 
@@ -235,6 +239,15 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	
 	public int hashCode(){
 		return Hash.of(patterns);
+	}
+	
+	public String getName(){
+		if(name==null || name.length()==0)return Track.defaultName("Pattern Track", this);
+		return name;
+	}
+	
+	public void setName(String newName){
+		name=newName;
 	}
 
 }

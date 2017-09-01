@@ -63,6 +63,38 @@ public interface Track extends Serializable {
 	public ViewComponent getViewComponent();
 	
 	/**
+	 * Name getter
+	 * 
+	 * @return the track's name
+	 */
+	public String getName();
+	
+	/**
+	 * Name setter
+	 * 
+	 * @param newName the new name to (attempt to) give it
+	 */
+	public void setName(String newName);
+	
+	/**
+	 * Generic type id name
+	 * 
+	 * @param type type name
+	 * @param obj object
+	 * @return a random looking name
+	 */
+	public static String defaultName(String type,Track obj){
+		int id = System.identityHashCode(obj);//Needs more scrambling to look random?
+		String idstr = Integer.toString((id&Integer.MAX_VALUE)%1000000);
+		StringBuilder sb = new StringBuilder();
+		sb.append(type);
+		sb.append(" #");
+		for(int i=idstr.length();i<6;i++)sb.append('0');
+		sb.append(idstr);
+		return sb.toString();
+	}
+	
+	/**
 	 * View component
 	 * 
 	 * @author EPICI

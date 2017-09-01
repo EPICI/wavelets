@@ -58,11 +58,13 @@ public class SynthNOsc implements Synthesizer {
 		int n = oscillators.size();
 		Osc[] losc = oscillators.toArray(new Osc[n]);
 		for(double[] clip:clips){
+			Voice[] oscvoices = new Voice[n];
 			for(int i=0;i<n;i++){
 				Osc.OscVoice added = losc[i].spawn(clip[2], clip[1]);
 				added.delay = clip[0];
-				target.addVoice(added);
+				oscvoices[i]=added;
 			}
+			target.addVoice(Voice.combine(oscvoices));
 		}
 	}
 
@@ -72,7 +74,7 @@ public class SynthNOsc implements Synthesizer {
 		int n = oscillators.size();
 		Voice[] all = new Voice[n];
 		for(int i=0;i<n;i++){
-			Osc.OscVoice added = oscillators.get(i).spawn(pitch, Double.MAX_VALUE);
+			Osc.OscVoice added = oscillators.get(i).spawn(pitch, Floats.ID_TINY);
 			all[i] = added;
 			added.step = 1;
 		}
@@ -239,7 +241,7 @@ public class SynthNOsc implements Synthesizer {
 		 * @param attackConst
 		 */
 		public synchronized void setAttackConst(double attackConst) {
-			final double t=Floats.D_EPSILON;
+			final double t=Floats.D_TINY;
 			properties[2].set(attackConst<t?t:attackConst);
 		}
 
@@ -266,7 +268,7 @@ public class SynthNOsc implements Synthesizer {
 		 * @param attackFrac
 		 */
 		public synchronized void setAttackFrac(double attackFrac) {
-			final double t=Floats.D_EPSILON;
+			final double t=Floats.D_TINY;
 			properties[3].set(attackFrac<t?t:attackFrac);
 		}
 
@@ -293,7 +295,7 @@ public class SynthNOsc implements Synthesizer {
 		 * @param holdConst
 		 */
 		public synchronized void setHoldConst(double holdConst) {
-			final double t=Floats.D_EPSILON;
+			final double t=Floats.D_TINY;
 			properties[4].set(holdConst<t?t:holdConst);
 		}
 
@@ -320,7 +322,7 @@ public class SynthNOsc implements Synthesizer {
 		 * @param holdFrac
 		 */
 		public synchronized void setHoldFrac(double holdFrac) {
-			final double t=Floats.D_EPSILON;
+			final double t=Floats.D_TINY;
 			properties[5].set(holdFrac<t?t:holdFrac);
 		}
 
@@ -347,7 +349,7 @@ public class SynthNOsc implements Synthesizer {
 		 * @param decayConst
 		 */
 		public synchronized void setDecayConst(double decayConst) {
-			final double t=Floats.D_EPSILON;
+			final double t=Floats.D_TINY;
 			properties[6].set(decayConst<t?t:decayConst);
 		}
 
@@ -374,7 +376,7 @@ public class SynthNOsc implements Synthesizer {
 		 * @param decayFrac
 		 */
 		public synchronized void setDecayFrac(double decayFrac) {
-			final double t=Floats.D_EPSILON;
+			final double t=Floats.D_TINY;
 			properties[8].set(decayFrac<t?t:decayFrac);
 		}
 
@@ -407,7 +409,7 @@ public class SynthNOsc implements Synthesizer {
 		 * @param minVolume
 		 */
 		public synchronized void setMinVolume(double minVolume) {
-			final double t=Floats.D_EPSILON;
+			final double t=Floats.D_TINY;
 			properties[9].set(minVolume>t?t:minVolume);
 		}
 		
@@ -519,7 +521,7 @@ public class SynthNOsc implements Synthesizer {
 				double afreq = freq*Math.pow(SEMITONE, ldetune), aattack = -lminVolume/(sampleRate*(lattackConst*measure+lattackFrac*note)),
 						ahold = lholdConst*measure+lholdFrac*note, adecay = ldecayConst/measure+ldecayFrac/note, lvolmult = Math.pow(10d, lvolume);
 				for(int i=0;step<3 && i<sampleCount;i++){
-					if(delay>Floats.D_EPSILON){
+					if(delay>Floats.D_TINY){
 						delay-=sampleLength;
 						continue;
 					}

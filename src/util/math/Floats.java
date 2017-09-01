@@ -11,11 +11,21 @@ public final class Floats {
 	private Floats(){}
 	
 	/**
-	 * Default epsilon value used for doubles
+	 * Default comparison epsilon value used for doubles
 	 * <br>
 	 * Double has 53 mantissa bits, 2^-53 is around 1.1x10^-16, so 10^-12 is a safe value to use
 	 */
 	public static final double D_EPSILON = 1e-12;
+	/**
+	 * A tiny value that is still large enough to not mess up math
+	 */
+	public static final double D_TINY = 1e-30;
+	/**
+	 * Opposite of tiny: ridiculously large value
+	 * <br>
+	 * The number here is chosen so that this multiplied by the tiny value is still a very small value
+	 */
+	public static final double ID_TINY = 1e12;
 	/**
 	 * Default epsilon value used for floats
 	 * <br>
@@ -41,6 +51,8 @@ public final class Floats {
 	 * uses given double epsilon value
 	 * <br>
 	 * Use this instead of equality check
+	 * <br>
+	 * The order will only matter in edge cases
 	 * 
 	 * @param a the first value
 	 * @param b the second value
@@ -49,8 +61,7 @@ public final class Floats {
 	 */
 	public static boolean isNear(double a,double b,double epsilon){
 		if(Math.abs(a-b)<epsilon)return true;
-		double r = a/b;
-		return (1d-epsilon)<=r && r<=(1d+epsilon);
+		return Math.abs(a/b-1)<epsilon;
 	}
 	/**
 	 * Checks if two values are absolutely or relatively near,
@@ -70,6 +81,8 @@ public final class Floats {
 	 * uses default float epsilon value
 	 * <br>
 	 * Use this instead of equality check
+	 * <br>
+	 * The order will only matter in edge cases
 	 * 
 	 * @param a the first value
 	 * @param b the second value
@@ -78,7 +91,6 @@ public final class Floats {
 	 */
 	public static boolean isNear(float a,float b,float epsilon){
 		if(Math.abs(a-b)<epsilon)return true;
-		float r = a/b;
-		return (1f-epsilon)<=r && r<=(1f+epsilon);
+		return Math.abs(a/b-1)<epsilon;
 	}
 }

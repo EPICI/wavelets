@@ -2,15 +2,12 @@ package ui;
 
 import java.net.URL;
 import java.util.ArrayList;
-
 import javax.swing.JInternalFrame;
-
 import org.apache.pivot.beans.*;
 import org.apache.pivot.collections.Map;
 import org.apache.pivot.util.Resources;
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.content.ButtonData;
-
 import core.*;
 import util.ui.PivotSwingUtils;
 

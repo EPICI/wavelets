@@ -32,44 +32,56 @@ public interface Voice extends Destructable {
 	 * @return a single voice which wraps all the given
 	 */
 	public static Voice combine(Voice... gvoices){
-		return new Voice(){
+		return new Combined(gvoices);
+	}
+	
+	/**
+	 * Combined voice class
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static class Combined implements Voice{
 			
-			Voice[] voices = gvoices;
+		public Voice[] voices;
 
-			@Override
-			public void destroy() {
-				for(Voice voice:voices)
-					voice.destroy();
-				voices = null;
-			}
+		public Combined(Voice... gvoices){
+			voices=gvoices;
+		}
 
-			@Override
-			public void destroySelf() {
-				voices = null;
-			}
+		@Override
+		public void destroy() {
+			for(Voice voice:voices)
+				voice.destroy();
+			voices = null;
+		}
 
-			@Override
-			public Samples nextSegment(int sampleCount) {
-				Samples data = voices[0].nextSegment(sampleCount);
-				for(int i=1;i<voices.length;i++)
-					data.layerOnThisLazy(voices[i].nextSegment(sampleCount));
-				return data;
-			}
+		@Override
+		public void destroySelf() {
+			voices = null;
+		}
 
-			@Override
-			public boolean isAlive() {
-				for(Voice voice:voices)
-					if(voice.isAlive())
-						return true;
-				return false;
-			}
+		@Override
+		public Samples nextSegment(int sampleCount) {
+			Samples data = voices[0].nextSegment(sampleCount);
+			for(int i=1;i<voices.length;i++)
+				data.layerOnThisLazy(voices[i].nextSegment(sampleCount));
+			return data;
+		}
 
-			@Override
-			public void requestKill() {
-				for(Voice voice:voices)
-					voice.requestKill();
-			}
+		@Override
+		public boolean isAlive() {
+			for(Voice voice:voices)
+				if(voice.isAlive())
+					return true;
+			return false;
+		}
+
+		@Override
+		public void requestKill() {
+			for(Voice voice:voices)
+				voice.requestKill();
+		}
 			
-		};
 	}
 }
