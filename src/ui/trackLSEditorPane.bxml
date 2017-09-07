@@ -1,0 +1,8 @@
+<components:TrackLSEditor.LinkedEditorPane
+	xmlns:bxml="http://pivot.apache.org/bxml"
+	xmlns:components="ui"
+	xmlns="org.apache.pivot.wtk">
+	<TabPane.tabData>
+		<content:ButtonData bxml:id="tabName">
+	</TabPane.tabData>
+</components:TrackLSEditor.LinkedEditorPane>

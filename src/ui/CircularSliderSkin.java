@@ -5,10 +5,10 @@ import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.geom.RoundRectangle2D;
 import java.util.*;
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.skin.terra.*;
-
 import core.ColorScheme;
 import util.math.Angles;
 import util.math.Floats;
@@ -20,6 +20,11 @@ import util.math.Floats;
  * @version 1.0
  */
 public class CircularSliderSkin extends TerraSliderSkin {
+	
+	/**
+	 * Radius of rounded corner
+	 */
+	public static final int CORNER_RADIUS = 4;
 	
 	/**
 	 * A list of all ticks.
@@ -47,11 +52,11 @@ public class CircularSliderSkin extends TerraSliderSkin {
 	 */
 	public ColorScheme colors;
 	/**
-	 * Color override for left of the thumb.
+	 * Color override for left of the thumb. (not yet implemented, so does nothing)
 	 */
 	public Color trackLeft;
 	/**
-	 * Color override for right of the thumb.
+	 * Color override for right of the thumb. (not yet implemented, so does nothing)
 	 */
 	public Color trackRight;
 	
@@ -134,22 +139,30 @@ public class CircularSliderSkin extends TerraSliderSkin {
 		double lmx = curcos*lmag, lmy = cursin*lmag, hmx = curcos*hmag, hmy = cursin*hmag;
 		int trackWidth = getTrackWidth();
 		boolean enabled = slider.isEnabled();
-		Color trackCol, buttonCol, tickCol, sectCol;
+		Color bgCol, lineCol, trackCol, buttonCol, tickCol, sectCol;
 		if(colors==null){
 			TerraTheme theme = (TerraTheme)Theme.getTheme();
+			bgCol = enabled?TerraTheme.brighten(theme.getBaseColor(1)):theme.getBaseColor(2);
+			lineCol = theme.getBaseColor(2);
 			trackCol = getTrackColor();
 			buttonCol = getButtonBackgroundColor();
 			tickCol = enabled?theme.getBaseColor(4):theme.getBaseColor(2);
 			sectCol = mouseDown?theme.getColor(17):theme.getColor(8);
 		}else{
+			bgCol = enabled?ColorScheme.brighten(colors.gradient, 0.1f):colors.line;
+			lineCol = colors.line;
 			trackCol = colors.line;
 			buttonCol = colors.gradient;
 			tickCol = enabled?colors.highlight:colors.line;
-			sectCol = TerraTheme.brighten(mouseDown?colors.selected:colors.line);
+			sectCol = ColorScheme.brighten(mouseDown?colors.selected:colors.line,0.1f);
 		}
 		
 		// --- Drawing ---
 		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,RenderingHints.VALUE_ANTIALIAS_ON);
+		RoundRectangle2D.Double boundShape = new RoundRectangle2D.Double(0.5, 0.5, width-1, height-1, CORNER_RADIUS, CORNER_RADIUS);
+		// Background fill
+		graphics.setColor(bgCol);
+		graphics.fill(boundShape);
 		// Inner sector fill
 		graphics.setColor(sectCol);
 		graphics.fillArc(cx-r, cy-r, r<<1, r<<1, maxdeg, 360-diffdeg);
@@ -178,6 +191,10 @@ public class CircularSliderSkin extends TerraSliderSkin {
 		// Thumb
 		graphics.setPaint((enabled&&!mouseDown)?new GradientPaint((float)lmx,(float)lmy,buttonCol,(float)hmx,(float)hmy,TerraTheme.brighten(buttonCol)):TerraTheme.darken(buttonCol));
 		graphics.fillOval((int)Math.round(cx+dmx-thumbr), (int)Math.round(cy+dmy-thumbr), thumbd, thumbd);
+		// Edge
+		graphics.setColor(lineCol);
+		graphics.setStroke(new BasicStroke(1));
+		graphics.fill(boundShape);
 	}
 
 }

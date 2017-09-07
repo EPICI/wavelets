@@ -154,13 +154,15 @@ public class ColorScheme implements Serializable{
 	/**
 	 * Pass all colors in order pre-made
 	 * <br>
-	 * Done with array/varargs for compatiblity and convenience
+	 * Done with array/varargs for compatiblity and convenience,
+	 * extra elements will be ignored
 	 * 
 	 * @param colors in order: text, background, line, gradient,
 	 * highlight, selected, warning, error
 	 */
 	public ColorScheme(Color... colors){
 		//Null check
+		if(colors.length<8)throw new IllegalArgumentException("Must provide 8 colors");
 		for(int i=0;i<8;i++)
 			if(colors[i]==null)
 				throw new NullPointerException("Color cannot be null");
@@ -261,4 +263,22 @@ public class ColorScheme implements Serializable{
 	private static Color make3(double[] vec){
 		return new Color((float)vec[0],(float)vec[1],(float)vec[2]);
 	}
+	
+	/**
+	 * Taken from {@link TerraTheme}. Brightens or darkens a color <i>linearly</i>.
+	 * 
+	 * @param color original color
+	 * @param adjustment value between -1 and 1, 0 has no effect
+	 * @return brightness-adjusted color
+	 */
+	public static Color brighten(Color color, float adjustment) {
+		int argb = color.getRGB();
+		float[] hsb = Color.RGBtoHSB((argb>>16)&0xff, (argb>>8)&0xff, argb&0xff, null);
+		float nb = hsb[2]+adjustment;
+		if(nb<0f)nb=0f;
+		if(nb>1f)nb=1f;
+		int rgb = Color.HSBtoRGB(hsb[0], hsb[1], nb);
+		return new Color((argb&0xff000000) | (rgb & 0xffffff), true);
+	}
+	
 }

@@ -1,6 +1,6 @@
 <components:WindowManager title="Window Manager" maximized="true"
 	xmlns:bxml="http://pivot.apache.org/bxml"
-	xmlns:components="components"
+	xmlns:components="ui"
 	xmlns="org.apache.pivot.wtk">
 	<TablePane>
 		<columns>

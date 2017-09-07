@@ -1,6 +1,6 @@
 <components:TrackLCEditor.LinkedTablePane
 	xmlns:bxml="http://pivot.apache.org/bxml"
-	xmlns:components="components"
+	xmlns:components="ui"
 	xmlns="org.apache.pivot.wtk">
 	<TabPane.tabData>
 		<content:ButtonData bxml:id="tabName">
