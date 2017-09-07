@@ -25,7 +25,7 @@
 package util.math;
 
 import util.*;
-import org.apache.commons.collections4.list.*;
+import java.util.*;
 
 /**
  * Bluestein FFT for arbitrary sizes
@@ -42,28 +42,28 @@ import org.apache.commons.collections4.list.*;
 public final class FFTBluestein extends FFT {
 	
 	/**
-	 * The maximum number of Bluestein FFT objects to keep
+	 * Determines the maximum number of Bluestein FFT objects to keep
 	 * even if they aren't being used, because they might be common
+	 * <br>
+	 * After this many are reached, the least used ones are removed
 	 * <br>
 	 * Higher = more memory used and slower to access, but less redundant
 	 * work done because memoization
 	 */
-	public static final int MAX_SHARED_FFTS = 1<<6;
+	public static final int REMOVE_THRESHOLD = 1<<6;
 	
 	/**
-	 * The initial key used for priority tracking, set as low as possible
-	 * to last as long as possible without overflowing, which is far beyond
-	 * any reasonable usage anyways
+	 * The maximum to leave after a default removal
 	 */
-	private static final int INITIAL_KEY = Integer.MIN_VALUE;
+	public static final int KEEP_LIMIT = REMOVE_THRESHOLD>>1;
 	
 	/**
 	 * Shared, cached FFTs
 	 * <br>
-	 * Maintained to length at most MAX_SHARED_FFTS and in descending
-	 * order by keys to allow for faster access
+	 * Loosely maintained to length at most KEEP_LIMIT by deleting stuff
+	 * when there are at least REMOVE_THRESHOLD objects
 	 */
-	private static TreeList<Any.Keyed<Integer, FFTBluestein>> sharedFfts = new TreeList<>();
+	private static HashMap<Integer,Keyed> sharedFfts = new HashMap<>();
 	
 	/**
 	 * Get shared FFT object for any length
@@ -77,37 +77,14 @@ public final class FFTBluestein extends FFT {
 		}else if(n>((1<<30)-1)){
 			throw new IllegalArgumentException("FFT length "+n+" is too large. Maximum value is 2^30-1.");
 		}else{
-			int len = sharedFfts.size();
-			for(int i=0;i<len;i++){
-				Any.Keyed<Integer,FFTBluestein> keyed = sharedFfts.get(i);
-				FFTBluestein fft = keyed.value;
-				if(fft.n==n){
-					int nkey = ++keyed.key;
-					
-					//Backwards insertion sort
-					int j;
-					sharedFfts.remove(i);
-					while(i>0 && sharedFfts.get(j=i-1).key<nkey)i=j;
-					sharedFfts.add(i,keyed);
-					
-					return fft;
-				}
+			Keyed keyed = sharedFfts.get(n);
+			if(keyed==null){
+				keyed = new Keyed(getNewFft(n));
+				sharedFfts.put(n, keyed);
 			}
-			FFTBluestein result = getNewFft(n);
-			Any.Keyed<Integer,FFTBluestein> keyed = new Any.Keyed<>(INITIAL_KEY,result);
-			int i=len;
-			if(len==MAX_SHARED_FFTS)
-				sharedFfts.set(i=len-1, keyed);
-			else
-				sharedFfts.add(keyed);
-			
-			//Backwards insertion sort, moves further back to protect against immediate deletion
-			int j;
-			sharedFfts.remove(i);
-			while(i>0 && sharedFfts.get(j=i-1).key<=INITIAL_KEY)i=j;
-			sharedFfts.add(i,keyed);
-			
-			return result;
+			if(sharedFfts.size()>=REMOVE_THRESHOLD)trimTo(KEEP_LIMIT);
+			keyed.key++;
+			return keyed.fft;
 		}
 	}
 	
@@ -119,13 +96,7 @@ public final class FFTBluestein extends FFT {
 	 * @param n the length
 	 */
 	public static void removeFft(int n){
-		for(int i=0;i<sharedFfts.size();i++){
-			Any.Keyed<Integer,FFTBluestein> keyed = sharedFfts.get(i);
-			if(keyed.value.n==n){
-				sharedFfts.remove(i);
-				break;
-			}
-		}
+		sharedFfts.remove(n);
 	}
 	
 	/**
@@ -136,8 +107,18 @@ public final class FFTBluestein extends FFT {
 	 * @param limit the maximum to keep
 	 */
 	public static void trimTo(int limit){
-		for(int i=sharedFfts.size()-1;i>=limit;i--)
-			sharedFfts.remove(i);
+		if(limit<0)throw new IllegalArgumentException("Limit ("+limit+") cannot be negative");
+		HashMap<Integer,Keyed> cache = sharedFfts;
+		Keyed[] array = cache.values().toArray(new Keyed[0]);
+		int csize = array.length;
+		if(csize<=limit)return;
+		Arrays.sort(array,I_KEYED_COMPARE);
+		HashMap<Integer,Keyed> replace = new HashMap<>();
+		for(int i=0;i<limit;i++){
+			Keyed k = array[i];
+			replace.put(k.fft.n, k);
+		}
+		sharedFfts = replace;
 	}
 	
 	/**
@@ -148,6 +129,41 @@ public final class FFTBluestein extends FFT {
 	 */
 	public static FFTBluestein getNewFft(int n){
 		return new FFTBluestein(n);
+	}
+	
+	/**
+	 * Inverse keyed FFT comparator
+	 */
+	private static final Comparator<Keyed> I_KEYED_COMPARE = new Comparator<Keyed>(){
+		public int compare(Keyed a,Keyed b){
+			return Integer.compare(b.key, a.key);
+		}
+	};
+	
+	/**
+	 * Keyed FFT used by cache
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	private static class Keyed{
+		/**
+		 * Retrieve count
+		 */
+		public int key;
+		/**
+		 * Referenced FFT
+		 */
+		public FFTBluestein fft;
+		/**
+		 * Convenience constructor
+		 * 
+		 * @param given the FFT to track
+		 */
+		public Keyed(FFTBluestein given){
+			key=0;
+			fft=given;
+		}
 	}
 	
 	/**
