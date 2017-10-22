@@ -238,7 +238,7 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	}
 	
 	public int hashCode(){
-		return Hash.of(patterns);
+		return Hash.ofobj(patterns);
 	}
 	
 	public String getName(){

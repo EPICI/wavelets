@@ -6,37 +6,31 @@ package util;
  * Integers in Java are two's complement with big endian, and
  * floating point follows IEEE format
  * <br>
+ * We use little endian when possible
+ * <br>
  * In general, if it isn't provided here, the standard library
- * methods are already optimized
+ * methods are already optimized (though the JIT would be able
+ * to optimize the standard library but not these)
  * 
  * @author EPICI
  * @version 1.0
  */
 public final class Bits {
 	
-	/**
-	 * An int that reads 100000... in binary
-	 */
-	public static final int INT_LEFT_ONE = 1<<31;
-	/**
-	 * A long that reads 100000... in binary
-	 */
-	public static final long LONG_LEFT_ONE = 1L<<63;
-	
 	//Disallow invoking constructor
 	private Bits(){}
 	
 	/**
-	 * Sets a bit in an int value
+	 * Sets a bit in an int value, little endian
 	 * 
 	 * @param encoded the original int value
 	 * @param index the position of the bit to change, from 0 to 31 inclusive,
-	 * 0 would be the sign bit
+	 * 31 would be the sign bit
 	 * @param bit the bit to write
 	 * @return the modified int
 	 */
 	public static int writeBit(int encoded,int index,boolean bit){
-		int bits = INT_LEFT_ONE >>> index;
+		int bits = 1<<index;
 		if(bit){
 			return encoded | bits;
 		}else{
@@ -45,28 +39,28 @@ public final class Bits {
 	}
 	
 	/**
-	 * Reads a bit from an int value
+	 * Reads a bit from an int value, little endian
 	 * 
 	 * @param encoded the int value to read from
 	 * @param index the position of the bit to read, from 0 to 31 inclusive,
-	 * 0 would be the sign bit
+	 * 31 would be the sign bit
 	 * @return true if the bit is 1, false if the bit is 0
 	 */
 	public static boolean readBit(int encoded,int index){
-		return (encoded << index) < 0;
+		return ((encoded>>index)&1)!=0;
 	}
 	
 	/**
-	 * Sets a bit in a long value
+	 * Sets a bit in a long value, little endian
 	 * 
 	 * @param encoded the original long value
 	 * @param index the position of the bit to change, from 0 to 63 inclusive,
-	 * 0 would be the sign bit
+	 * 63 would be the sign bit
 	 * @param bit the bit to write
 	 * @return the modified long
 	 */
 	public static long writeBit(long encoded,int index,boolean bit){
-		long bits = LONG_LEFT_ONE >>> index;
+		long bits = 1L<<index;
 		if(bit){
 			return encoded | bits;
 		}else{
@@ -75,37 +69,37 @@ public final class Bits {
 	}
 	
 	/**
-	 * Reads a bit from an long value
+	 * Reads a bit from an long value, little endian
 	 * 
 	 * @param encoded the long value to read from
 	 * @param index the position of the bit to read, from 0 to 63 inclusive,
-	 * 0 would be the sign bit
+	 * 63 would be the sign bit
 	 * @return true if the bit is 1, false if the bit is 0
 	 */
 	public static boolean readBit(long encoded,int index){
-		return (encoded << index) < 0;
+		return ((encoded>>index)&1)!=0;
 	}
 	
 	/**
 	 * Gets an int with a 1 at the specified position and
-	 * the rest 0s
+	 * the rest 0s, little endian
 	 * 
-	 * @param index the position, from 0 to 31 inclusive, 0 is sign bit
+	 * @param index the position, from 0 to 31 inclusive, 31 is sign bit
 	 * @return said int value
 	 */
 	public static int oneAtInt(int index){
-		return INT_LEFT_ONE >>> index;
+		return 1<<index;
 	}
 	
 	/**
 	 * Gets an long with a 1 at the specified position and
-	 * the rest 0s
+	 * the rest 0s, little endian
 	 * 
-	 * @param index the position, from 0 to 63 inclusive, 0 is sign bit
+	 * @param index the position, from 0 to 63 inclusive, 63 is sign bit
 	 * @return said long value
 	 */
 	public static long oneAtLong(int index){
-		return LONG_LEFT_ONE >>> index;
+		return 1L<<index;
 	}
 	
 	/**
@@ -188,12 +182,14 @@ public final class Bits {
 	 * Absolute value without branching
 	 * <br>
 	 * From https://graphics.stanford.edu/~seander/bithacks.html
+	 * <br>
+	 * Breaks for -2^31
 	 * 
 	 * @param bits some number
 	 * @return the absolute value
 	 */
 	public static int abs(int bits){
-		int mask = bits>>31;
+		int mask = bits>>-1;
 		return (bits+mask)^mask;
 	}
 	
@@ -201,12 +197,14 @@ public final class Bits {
 	 * Absolute value without branching
 	 * <br>
 	 * From https://graphics.stanford.edu/~seander/bithacks.html
+	 * <br>
+	 * Breaks for -2^63
 	 * 
 	 * @param bits some number
 	 * @return the absolute value
 	 */
 	public static long abs(long bits){
-		long mask = bits>>63;
+		long mask = bits>>-1;
 		return (bits+mask)^mask;
 	}
 	
@@ -247,5 +245,8 @@ public final class Bits {
 		System.out.println("abs(-1777)="+abs(1777));
 		System.out.println("abs(12345678987654321)="+abs(12345678987654321L));
 		System.out.println("abs(-12345678987654321)="+abs(-12345678987654321L));
+		System.out.println("abs(2147483647)="+abs(2147483647));
+		System.out.println("abs(-2147483647)="+abs(-2147483647));
+		System.out.println("abs(-2147483648)="+abs(-2147483648));
 	}
 }

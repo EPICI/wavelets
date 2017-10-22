@@ -4,7 +4,10 @@ import java.awt.Color;
 import java.io.Serializable;
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.skin.terra.*;
+import java.util.*;
 import util.*;
+import util.math.*;
+import util.ds.*;
 
 /**
  * Represents an immutable color scheme matching Apache Pivot
@@ -32,6 +35,13 @@ public class ColorScheme implements Serializable{
 			);
 	
 	private static ColorScheme pivotColors;
+	
+	/**
+	 * Caches brightening; it's not such an expensive operation
+	 * but it's a little speed-up since most colors are derived
+	 * from color scheme colors by brightening or darkening
+	 */
+	private static HashMap<Any.O2<Color,float[]>,Color> memoHsb = new LhmCache<>(1<<10,true);
 	
 	static{
 		refreshDefaultPivotColors();
@@ -233,7 +243,7 @@ public class ColorScheme implements Serializable{
 	}
 	
 	public int hashCode(){
-		return Hash.of(text,background,line,gradient,highlight,selected,warning,error);
+		return Hash.ofobj(text,background,line,gradient,highlight,selected,warning,error);
 	}
 	
 	public boolean equals(Object obj) {
@@ -272,13 +282,30 @@ public class ColorScheme implements Serializable{
 	 * @return brightness-adjusted color
 	 */
 	public static Color brighten(Color color, float adjustment) {
+		return adjustHsb(color,0f,0f,adjustment);
+	}
+	
+	/**
+	 * Taken from {@link TerraTheme}. Adjusts hue, saturation and brightness <i>linearly</i>
+	 * and independently of the others.
+	 * 
+	 * @param color original color
+	 * @param dhue adjustment value for hue (1=360 degrees)
+	 * @param hsat adjustment value for saturation (-1 to greyscale, 1 to color)
+	 * @param dbright adjustment value brightness (-1 to black, 1 to white)
+	 * @return adjusted color
+	 */
+	public static Color adjustHsb(Color color, float dhue, float dsat, float dbright){
+		float[] fkey = {dhue,dsat,dbright};
+		Any.O2<Color,float[]> key = new Any.O2<Color,float[]>(color,fkey);
+		Color result = memoHsb.get(key);
+		if(result!=null)return result;
 		int argb = color.getRGB();
 		float[] hsb = Color.RGBtoHSB((argb>>16)&0xff, (argb>>8)&0xff, argb&0xff, null);
-		float nb = hsb[2]+adjustment;
-		if(nb<0f)nb=0f;
-		if(nb>1f)nb=1f;
-		int rgb = Color.HSBtoRGB(hsb[0], hsb[1], nb);
-		return new Color((argb&0xff000000) | (rgb & 0xffffff), true);
+		int rgb = Color.HSBtoRGB(hsb[0]+dhue, Floats.median(0, 1, hsb[1]+dsat), Floats.median(0, 1, hsb[2]+dbright));
+		result = new Color((argb&0xff000000) | (rgb & 0xffffff), true);
+		memoHsb.put(key, result);
+		return result;
 	}
 	
 }

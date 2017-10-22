@@ -105,7 +105,7 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 	}
 	
 	public int hashCode(){
-		return Hash.of(tracks);
+		return Hash.ofobj(tracks);
 	}
 	
 	public String getName(){

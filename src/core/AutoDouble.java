@@ -141,7 +141,7 @@ public interface AutoDouble {
 		/**
 		 * Referenced map
 		 */
-		public java.util.Map<T,? super Double> map;
+		public java.util.Map<T,Double> map;
 		/**
 		 * Map key
 		 */
@@ -153,13 +153,13 @@ public interface AutoDouble {
 		 * @param map the map
 		 * @param key the key
 		 */
-		public Map(java.util.Map<T,? super Double> map,T key){
+		public Map(java.util.Map<T,Double> map,T key){
 			this.map = map;
 			this.key = key;
 		}
 		
 		public double get(double time){
-			return (Double) map.get(key);
+			return map.get(key);
 		}
 		
 		public void set(double value){

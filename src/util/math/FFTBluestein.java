@@ -192,7 +192,7 @@ public final class FFTBluestein extends FFT {
 		ki = new double[m];
 		for(int i=1,j=0;i<n;i++){
 			j += (i<<1)-1;
-			if(j>n)j-=modulus;
+			j-=modulus&((j-n)>>-1);//Branchless
 			double a = j*inc;
 			kr[i] = kr[m-i] = cos[i] = Math.cos(a);
 			ki[i] = ki[m-i] = sin[i] = Math.sin(a);

@@ -25,10 +25,6 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 	 * Extra space to leave above and below, in semitones
 	 */
 	public static final int PITCH_MARGIN = 4;
-	/**
-	 * Radius for rounding for pattern backdrop
-	 */
-	public static final int PATTERN_BACKDROP_ROUND_RADIUS = 16;
 
 	/**
 	 * Active color scheme. If null, defaults to theme colors.
@@ -110,7 +106,7 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 	}
 
 	@Override
-	public void paint(Graphics2D graphics) {
+	public void paint(Graphics2D graphics) {//TODO replace boolean gradient setting with variable resolution (1 per pixel max, 1 for whole screen min)
 		/*
 		 * TLS style bits
 		 * 0 = toggle synth signature colour gradient or solid
@@ -190,13 +186,13 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 			// Octave indicators (each doubling is one gradient repetition)
 			for(int i=12*Math.floorDiv(maxPitch, 12);i>minPitch;i-=12){
 				int y1 = (int)Math.round(clipHeight*(maxPitch-i)), y2 = (int)Math.round(clipHeight*(maxPitch-i+12));// Recalculate because it can be out of bounds
-				graphics.setPaint(new GradientPaint(0,y1,bg,0,y2,TerraTheme.darken(bg)));
+				graphics.setPaint(new GradientPaint(0,y1,bg,0,y2,bgdark));
 				graphics.fillRect(0, y1, width, y2-y1);
 			}
 			// Octave indicators (each doubling is one gradient repetition)
 			for(int i=12*Math.floorDiv(maxPitch, 12);i>minPitch;i-=12){
 				int y1 = (int)Math.round(clipHeight*(maxPitch-i)), y2 = (int)Math.round(clipHeight*(maxPitch-i+12));// Recalculate because it can be out of bounds
-				graphics.setPaint(new GradientPaint(0,y1,bg,0,y2,TerraTheme.darken(bg)));
+				graphics.setPaint(new GradientPaint(0,y1,bg,0,y2,bgdark));
 				graphics.fillRect(0, y1, width, y2-y1);
 			}
 			// Draw bars
@@ -252,7 +248,7 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 			// Octave indicators (each doubling is one gradient repetition)
 			for(int i=12*Math.floorDiv(maxPitch, 12);i>minPitch;i-=12){
 				int y1 = (int)Math.round(clipHeight*(maxPitch-i)), y2 = (int)Math.round(clipHeight*(maxPitch-i+12));// Recalculate because it can be out of bounds
-				graphics.setPaint(new GradientPaint(0,y1,bg,0,y2,TerraTheme.darken(bg)));
+				graphics.setPaint(new GradientPaint(0,y1,bg,0,y2,bgdark));
 				graphics.fillRect(0, y1, width, y2-y1);
 			}
 			// Draw bars

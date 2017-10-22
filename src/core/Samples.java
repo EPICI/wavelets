@@ -31,11 +31,11 @@ public class Samples implements Curve {
 	 */
 	public transient double[] spectrumImag;
 	/**
-	 * Hash of sample data
+	 * Hash of sample data, when it's different the spectrum gets updated to match
 	 */
 	protected transient int sampleHash = 0;
 	/**
-	 * Hash of spectrum data
+	 * Hash of spectrum data, when it's different the samples gets updated to match
 	 */
 	protected transient int spectrumHash = 0;
 	
@@ -163,7 +163,7 @@ public class Samples implements Curve {
 	 * @return hash for spectrum data
 	 */
 	public int spectrumHash(){
-		return Hash.lazy(spectrumReal)+Hash.lazy(spectrumImag);
+		return Hash.of(Hash.llazy(spectrumReal),Hash.llazy(spectrumImag));
 	}
 	
 	/**
@@ -180,6 +180,8 @@ public class Samples implements Curve {
 	
 	/**
 	 * Check for discrepancy, automatically choose FFT or IFFT
+	 * <br>
+	 * If both are not equal, does nothing
 	 * <br>
 	 * <b>Use via API is discouraged, know whether you want
 	 * FFT or IFFT and call that instead</b>

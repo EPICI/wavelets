@@ -81,7 +81,7 @@ public final class Combinatoric {
 	 */
 	public static long[] chooseLongRange(int n,int k){
 		int n1 = n+1;
-		int product = 1;
+		long product = 1;
 		long[] result = new long[k+1];
 		result[0] = 1;
 		for(int i=1;i<=k;i++){

@@ -1,5 +1,6 @@
 package core;
 
+import java.io.Serializable;
 import java.util.*;
 import util.*;
 
@@ -9,8 +10,9 @@ import util.*;
  * @author EPICI
  * @version 1.0
  */
-public class Preferences {
-	
+public class Preferences implements Serializable {
+	private static final long serialVersionUID = 1L;
+
 	/**
 	 * Subpreferences defaults
 	 * <br>
