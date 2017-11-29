@@ -5,6 +5,7 @@ import javax.swing.*;
 import org.python.core.*;
 import util.jython.*;
 import util.*;
+import util.hash.*;
 import ui.*;
 
 /**
@@ -33,6 +34,11 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	 * The name of this track.
 	 */
 	protected String name;
+	
+	/**
+	 * Hash key for <i>hashCode()</i>
+	 */
+	public static final long HK_HC = HashTriArx.getKey("TrackLayerSimple.hashCode");
 	
 	/**
 	 * 
@@ -238,7 +244,9 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	}
 	
 	public int hashCode(){
-		return Hash.ofobj(patterns);
+		HashTriArx hash = new HashTriArx(HK_HC);
+		hash.absorbObj(patterns);
+		return hash.squeezeInt();
 	}
 	
 	public String getName(){

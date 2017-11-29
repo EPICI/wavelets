@@ -180,16 +180,16 @@ public final class FFTBluestein extends FFT {
 	public FFTBluestein(int n){
 		this.n=n;
 		if(n<3) throw new IllegalArgumentException("FFT length too short");
-		m = Bits.gtPo2(n<<1);
+		int m = this.m = Bits.gtPo2(n<<1);
 		if(m<n) throw new IllegalArgumentException("FFT length too large; caused overflow");
 		
 		// Make sine and cosine tables, as well as convolution kernel
-		cos = new double[n];
-		sin = new double[n];
+		double[] cos = this.cos = new double[n];
+		double[] sin = this.sin = new double[n];
 		long modulus = n<<1;
 		double inc = Math.PI/n;
-		kr = new double[m];
-		ki = new double[m];
+		double[] kr = this.kr = new double[m];
+		double[] ki = this.ki = new double[m];
 		for(int i=1,j=0;i<n;i++){
 			j += (i<<1)-1;
 			j-=modulus&((j-n)>>-1);//Branchless
@@ -209,6 +209,7 @@ public final class FFTBluestein extends FFT {
 	
 	@Override
 	protected void scale(double[] real,double[] imaginary,int iterations) {
+		int n = this.n, m = this.m;
 		double mult = Math.pow(n*(double)m*m, -0.5d*iterations);
 		for(int i=0;i<n;i++){
 			real[i] *= mult;
@@ -219,7 +220,9 @@ public final class FFTBluestein extends FFT {
 	@Override
 	public void fftUnsafe(double[] real, double[] imaginary) {
 		// Preliminary transform
+		int n = this.n, m = this.m;
 		double[] ar = new double[m], ai = new double[m];
+		double[] kr = this.kr, ki = this.ki, cos = this.cos, sin = this.sin;
 		for(int i=0;i<n;i++){
 			double x = real[i], y = imaginary[i], cs = cos[i], sn = sin[i];
 			ar[i] = x*cs+y*sn;

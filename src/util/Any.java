@@ -1,5 +1,7 @@
 package util;
 
+import util.hash.*;
+
 /**
  * For when you want to return multiple different values in a less awkward way
  * <br>
@@ -38,6 +40,11 @@ public class Any {
 		public B b;
 		
 		/**
+		 * Hash key for <i>hashCode()</i>
+		 */
+		public static final long HK_HC = HashTriArx.getKey("Any.O2.hashCode");
+		
+		/**
 		 * Standard constructor
 		 * 
 		 * @param a first object
@@ -53,7 +60,9 @@ public class Any {
 		}
 		
 		public int hashCode(){
-			return Hash.array(a,b);
+			HashTriArx hash = new HashTriArx(HK_HC);
+			hash.absorbArray(a,b);
+			return hash.squeezeInt();
 		}
 		
 		public boolean equals(Object o){
@@ -86,6 +95,11 @@ public class Any {
 		public V value;
 		
 		/**
+		 * Hash key for <i>hashCode()</i>
+		 */
+		public static final long HK_HC = HashTriArx.getKey("Any.Keyed.hashCode");
+		
+		/**
 		 * Standard constructor
 		 * 
 		 * @param key the key
@@ -101,7 +115,9 @@ public class Any {
 		}
 		
 		public int hashCode(){
-			return Hash.array(key);
+			HashTriArx hash = new HashTriArx(HK_HC);
+			hash.absorbArray(key);
+			return hash.squeezeInt();
 		}
 		
 		public boolean equals(Object o){
@@ -138,6 +154,11 @@ public class Any {
 		public C c;
 		
 		/**
+		 * Hash key for <i>hashCode()</i>
+		 */
+		public static final long HK_HC = HashTriArx.getKey("Any.O3.hashCode");
+		
+		/**
 		 * Standard constructor
 		 * 
 		 * @param a the first object
@@ -155,7 +176,9 @@ public class Any {
 		}
 		
 		public int hashCode(){
-			return Hash.array(a,b,c);
+			HashTriArx hash = new HashTriArx(HK_HC);
+			hash.absorbArray(a,b,c);
+			return hash.squeezeInt();
 		}
 		
 		public boolean equals(Object o){

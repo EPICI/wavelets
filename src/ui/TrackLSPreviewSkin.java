@@ -206,7 +206,7 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 					double xoffset = (delay+xadd)*xmult;
 					for(int[] clip:pattern.clips){
 						int from = (int)Math.round(xoffset+clip[0]*ixmult);
-						int to = from + (int)Math.ceil(clip[1]*xmult);
+						int to = from + (int)Math.ceil(clip[1]*ixmult);
 						int iy = ys[clip[2]-minPitch];
 						for(int x=from;x<to;x++){
 							Color col = sigs[x];

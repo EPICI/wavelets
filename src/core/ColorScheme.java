@@ -8,6 +8,7 @@ import java.util.*;
 import util.*;
 import util.math.*;
 import util.ds.*;
+import util.hash.*;
 
 /**
  * Represents an immutable color scheme matching Apache Pivot
@@ -115,6 +116,10 @@ public class ColorScheme implements Serializable{
 	 */
 	public final Color error;
 	
+	/**
+	 * Hash key for <i>hashCode()</i>
+	 */
+	public static final long HK_HC = HashTriArx.getKey("ColorScheme.hashCode");
 	
 	/**
 	 * Copy from the given theme
@@ -243,7 +248,9 @@ public class ColorScheme implements Serializable{
 	}
 	
 	public int hashCode(){
-		return Hash.ofobj(text,background,line,gradient,highlight,selected,warning,error);
+		HashTriArx hash = new HashTriArx(HK_HC);
+		hash.absorbObj(text,background,line,gradient,highlight,selected,warning,error);
+		return hash.squeezeInt();
 	}
 	
 	public boolean equals(Object obj) {

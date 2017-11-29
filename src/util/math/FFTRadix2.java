@@ -209,6 +209,9 @@ public final class FFTRadix2 extends FFT {
 	public void fftUnsafe(double[] x, double[] y) {
 		int i,j,k,n1,n2,a;
 		double c,s,t1,t2;
+		int n = this.n, m = this.m, bitreversecount = this.bitreversecount;
+		int[] bitreversea = this.bitreversea, bitreverseb = this.bitreverseb;
+		double[] sin = this.sin, cos = this.cos;
 	
 		for(i=0;i<bitreversecount;i++){
 			int ia = bitreversea[i];

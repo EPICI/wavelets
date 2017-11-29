@@ -9,6 +9,7 @@ import util.*;
 import util.waveform.*;
 import util.jython.*;
 import util.math.*;
+import util.ds.*;
 
 /**
  * The Nx Osc synth. A direct upgrade from 3x Osc.

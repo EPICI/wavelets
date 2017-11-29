@@ -2,13 +2,17 @@ package ui;
 
 import core.*;
 import org.apache.pivot.wtk.*;
+import org.apache.pivot.wtk.Mouse.Button;
+import org.apache.pivot.wtk.Mouse.ScrollType;
 import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
+import java.awt.event.KeyEvent;
 import java.net.URL;
 import java.util.*;
 import org.apache.pivot.beans.*;
 import org.apache.pivot.collections.Map;
+import org.apache.pivot.util.ListenerList;
 import org.apache.pivot.util.Resources;
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.content.ButtonData;
@@ -117,6 +121,14 @@ public class TrackLSEditor extends Window implements Bindable {
 		 */
 		public double anchory;
 		/**
+		 * Temporary unbounded anchorx
+		 */
+		public double uanchorx;
+		/**
+		 * Temporary unbounded anchory
+		 */
+		public double uanchory;
+		/**
 		 * The x scale of the UI, maps measures (world) to pixel x
 		 */
 		public double scalex;
@@ -153,11 +165,15 @@ public class TrackLSEditor extends Window implements Bindable {
 		 */
 		public int lastMousey;
 		/**
-		 * Y index (nonnegative) if a button is being pressed, otherwise -1
+		 * Y-index (nonnegative) if a button is being pressed, otherwise -1
+		 * <br>
+		 * Ex. the third button from the top would be 2
 		 */
 		public int buttony;
 		/**
-		 * X-index of button being pressed, overridden by <i>buttony</i>
+		 * X-index (nonnegative) if a button is being pressed, otherwise -1
+		 * <br>
+		 * Ex. the fourth button from the left would be 3
 		 */
 		public int buttonx;
 		
@@ -166,6 +182,102 @@ public class TrackLSEditor extends Window implements Bindable {
 			anchory=0;
 			scalex=500;
 			scaley=300;
+			/*
+			 * No need to add listeners, since Pivot takes care of that
+			 * for us as long as we implement the methods here
+			 */
+		}
+		
+		@Override
+		public boolean mouseMove(Component component, int x, int y) {
+			mouseDragged = true;
+			if(mouseDown==3){
+				// Middle mouse held -> drag to scroll
+				uanchorx += (x-lastMousex)/scalex;
+				uanchory += (y-lastMousey)/scaley;
+				anchorx = Math.max(0, uanchorx);
+				anchory = Math.max(0, uanchory);
+			}
+			lastMousex = x;
+			lastMousey = y;
+			// TODO Auto-generated method stub
+			return true;// Consume the event
+		}
+
+		@Override
+		public void mouseOut(Component component) {
+			// TODO Auto-generated method stub
+			
+		}
+
+		@Override
+		public void mouseOver(Component component) {
+			// TODO Auto-generated method stub
+			
+		}
+		
+		@Override
+		public boolean mouseClick(Component component, Button button, int x, int y, int count) {
+			// TODO Auto-generated method stub
+			return true;// Consume the event
+		}
+
+		@Override
+		public boolean mouseDown(Component component, Button button, int x, int y) {
+			switch(button){
+			case LEFT:
+				mouseDown = 1;
+				break;
+			case RIGHT:
+				mouseDown = 2;
+				break;
+			case MIDDLE:
+				mouseDown = 3;
+				break;
+			default:
+				mouseDown = 4;
+				break;
+			}
+			uanchorx = anchorx;
+			uanchory = anchory;
+			originMousex = x;
+			originMousey = y;
+			lastMousex = x;
+			lastMousey = y;
+			mouseDragged = false;
+			// TODO Auto-generated method stub
+			return true;// Consume the event
+		}
+
+		@Override
+		public boolean mouseUp(Component component, Button button, int x, int y) {
+			mouseDown = 0;
+			// TODO Auto-generated method stub
+			return true;// Consume the event
+		}
+		
+		@Override
+		public boolean mouseWheel(Component component, ScrollType scrollType, int scrollAmount, int wheelRotation, int x, int y) {
+			// TODO Auto-generated method stub
+			return true;// Consume the event
+		}
+		
+		@Override
+		public boolean keyPressed(Component component, int keyCode, Keyboard.KeyLocation keyLocation) {
+			if(keyCode==KeyEvent.VK_SHIFT)shiftHeld = true;
+			return true;// Consume the event
+		}
+
+		@Override
+		public boolean keyReleased(Component component, int keyCode, Keyboard.KeyLocation keyLocation) {
+			if(keyCode==KeyEvent.VK_SHIFT)shiftHeld = false;
+			return true;// Consume the event
+		}
+
+		@Override
+		public boolean keyTyped(Component component, char character) {
+			// TODO Auto-generated method stub
+			return true;// Consume the event
 		}
 
 		@Override
@@ -181,7 +293,7 @@ public class TrackLSEditor extends Window implements Bindable {
 			 * Determines resolution of gradient:
 			 * Call this x, a range of 2^x pixels is a solid tone
 			 * 0 is individual pixels (highest resolution)
-			 * 30 makes everything the same tone (lowest resolution), 31 would case overflow
+			 * 30 makes everything the same tone (lowest resolution), 31 would cause overflow
 			 */
 			int gradientShift = 30, gradientShiftInc = 1<<gradientShift, gradientShiftMask = gradientShiftInc-1, gradientShiftMaskInv = ~gradientShiftMask;
 			double imageScale = 0.5d;
@@ -236,11 +348,11 @@ public class TrackLSEditor extends Window implements Bindable {
 				x1 = 0;
 				y1 = (int)((i-anchory)*scaley);
 				x2 = swidtha;
-				y2 = (int)scaley;
-				Draw.drawButton(graphics, x1, y1, x2, y2, "Delete", null, null, lineCol, derrorCol, mouseDown==1&&!mouseDragged&&lastMousex>x1&&lastMousex<x1+x2&&lastMousey>y1&&lastMousey<y1+y2, Color.BLACK, null, 0.5d, 0.5d, imageScale, 0);
+				y2 = (int)scaley;// TODO use buttonx and buttony instead to determine if pressed
+				Draw.drawButton(graphics, x1, y1, x2, y2, "Delete", null, null, lineCol, derrorCol, mouseDown==1&&!mouseDragged&&lastMousex>x1&&lastMousex<x1+x2&&lastMousey>y1&&lastMousey<y1+y2, textCol, null, 0.5d, 0.5d, imageScale, 0);
 				x1 = swidtha;
 				x2 = swidthb;
-				Draw.drawButton(graphics, x1, y1, x2, y2, "Edit", null, null, lineCol, buttonCol, mouseDown==1&&!mouseDragged&&lastMousex>x1&&lastMousex<x1+x2&&lastMousey>y1&&lastMousey<y1+y2, Color.BLACK, null, 0.5d, 0.5d, imageScale, 0);
+				Draw.drawButton(graphics, x1, y1, x2, y2, "Edit", null, null, lineCol, buttonCol, mouseDown==1&&!mouseDragged&&lastMousex>x1&&lastMousex<x1+x2&&lastMousey>y1&&lastMousey<y1+y2, textCol, null, 0.5d, 0.5d, imageScale, 0);
 			}
 			if(pextend){
 				int x1,y1,x2,y2;
@@ -248,15 +360,19 @@ public class TrackLSEditor extends Window implements Bindable {
 				y1 = (int)((plast-anchory)*scaley);
 				x2 = swidtha;
 				y2 = height-y1;
-				Draw.drawButton(graphics, x1, y1, x2, y2, "Add new", null, null, lineCol, buttonCol, mouseDown==1&&!mouseDragged&&lastMousex>x1&&lastMousex<x1+x2&&lastMousey>y1&&lastMousey<y1+y2, Color.BLACK, null, 0.5d, 0.5d, imageScale, 0);
+				Draw.drawButton(graphics, x1, y1, x2, y2, "Add new", null, null, lineCol, buttonCol, mouseDown==1&&!mouseDragged&&lastMousex>x1&&lastMousex<x1+x2&&lastMousey>y1&&lastMousey<y1+y2, textCol, null, 0.5d, 0.5d, imageScale, 0);
 				x1 = swidtha;
 				x2 = swidthb;
-				Draw.drawButton(graphics, x1, y1, x2, y2, "Move here", null, null, lineCol, buttonCol, mouseDown==1&&!mouseDragged&&lastMousex>x1&&lastMousex<x1+x2&&lastMousey>y1&&lastMousey<y1+y2, Color.BLACK, null, 0.5d, 0.5d, imageScale, 0);
+				Draw.drawButton(graphics, x1, y1, x2, y2, "Move here", null, null, lineCol, buttonCol, mouseDown==1&&!mouseDragged&&lastMousex>x1&&lastMousex<x1+x2&&lastMousey>y1&&lastMousey<y1+y2, textCol, null, 0.5d, 0.5d, imageScale, 0);
 			}
 			// Draw patterns
 			graphics = (Graphics2D) graphics.create(swidth,0,ewidth,height);
 			IdentityHashMap<Synthesizer,Color[]> synthSigs = new IdentityHashMap<>();
-			int xrange = ((ewidth-1)>>gradientShift)+1;
+			double dxgradientInc = gradientShiftInc*iscalex;
+			int xrefBlocks = (int)(anchorx/dxgradientInc);
+			double dxref = xrefBlocks*dxgradientInc;
+			int xref = -((int)((anchorx-dxref)*scalex));//First x for gradient, cannot be positive
+			int xrange = ((ewidth-xref-1)>>gradientShift)+1;
 			for(i=pfirst;i<plast;i++){
 				Graphics2D dgraphics = (Graphics2D) graphics.create(0, (int)((i-anchory)*scaley), ewidth, (int)scaley);
 				Pattern pk = patternk[i];
@@ -269,7 +385,7 @@ public class TrackLSEditor extends Window implements Bindable {
 					sigs = new Color[xrange];
 					synthSigs.put(synth, sigs);
 					for(int j=0;j<xrange;j++){
-						double t=((j<<gradientShift)*iscalex+anchorx)*speed;
+						double t=((j<<gradientShift)*iscalex+dxref)*speed;
 						sigs[j] = synth.getColorSignature(t);
 					}
 				}
@@ -307,8 +423,8 @@ public class TrackLSEditor extends Window implements Bindable {
 					// Draw one
 					double xoffset = (delay-anchorx)*scalex;
 					for(int[] clip:pclips){
-						int from = (int)Math.round(xoffset+clip[0]*ixmult);
-						int to = from + (int)Math.ceil(clip[1]*scalex);
+						int from = (int)Math.round(xoffset+clip[0]*ixmult)-xref;
+						int to = from + (int)Math.ceil(clip[1]*ixmult)-xref;
 						int iy = ys[clip[2]-pmin];
 						int nf = (from&gradientShiftMaskInv)+gradientShiftInc;
 						int nt = (to-1)&gradientShiftMaskInv;
@@ -316,24 +432,25 @@ public class TrackLSEditor extends Window implements Bindable {
 						if(nf>=nt){// Enough distance between endpoints
 							col = sigs[from>>gradientShift];
 							dgraphics.setColor(col);
-							dgraphics.fillRect(from, iy, nf-from, iclipHeight);
+							dgraphics.fillRect(from+xref, iy, nf-from, iclipHeight);
 							for(int x=nf;x<nt;x+=gradientShiftInc){
 								col = sigs[x>>gradientShift];
 								dgraphics.setColor(col);
-								dgraphics.fillRect(x, iy, gradientShiftInc, iclipHeight);
+								dgraphics.fillRect(x+xref, iy, gradientShiftInc, iclipHeight);
 							}
 							col = sigs[nt>>gradientShift];
 							dgraphics.setColor(col);
-							dgraphics.fillRect(nt, iy, to-nt, iclipHeight);
+							dgraphics.fillRect(nt+xref, iy, to-nt, iclipHeight);
 						}else{// Only one block
 							col = sigs[from>>gradientShift];
 							dgraphics.setColor(col);
-							dgraphics.fillRect(from, iy, to-from, iclipHeight);
+							dgraphics.fillRect(from+xref, iy, to-from, iclipHeight);
 						}
 					}
 					// Finally, fetch next
 					delay = iter.nextInt();
 				}
+				Draw.drawTextImage(dgraphics, 0, 0, 0, 0, pk.getName(), null, null, ColorScheme.brighten(sigs[0], -0.3f), null, 0d, 0d, 0d, 0);
 			}
 		}
 	}

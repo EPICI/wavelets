@@ -2,8 +2,8 @@ package core;
 
 import java.util.*;
 import javax.swing.*;
-
-import util.Hash;
+import util.*;
+import util.hash.HashTriArx;
 
 /**
  * Contains tracks
@@ -38,6 +38,11 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 	 * The name, if it is named
 	 */
 	protected String name;
+	
+	/**
+	 * Hash key for <i>hashCode()</i>
+	 */
+	public static final long HK_HC = HashTriArx.getKey("TrackLayerCompound.hashCode");
 	
 	public TrackLayerCompound(TLCParent parent){
 		initTransient(parent);
@@ -105,7 +110,9 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 	}
 	
 	public int hashCode(){
-		return Hash.ofobj(tracks);
+		HashTriArx hash = new HashTriArx(HK_HC);
+		hash.absorbObj(tracks);
+		return hash.squeezeInt();
 	}
 	
 	public String getName(){

@@ -84,6 +84,17 @@ public interface Track extends Serializable {
 	 * @return a random looking name
 	 */
 	public static String defaultName(String type,Track obj){
+		return defaultNameAny(type,obj);
+	}
+	
+	/**
+	 * Generic type id name which can handle non-track objects
+	 * 
+	 * @param type type name
+	 * @param obj object
+	 * @return a random looking name
+	 */
+	public static String defaultNameAny(String type,Object obj){
 		int id = System.identityHashCode(obj);//Needs more scrambling to look random?
 		String idstr = Integer.toString((id&Integer.MAX_VALUE)%1000000);
 		StringBuilder sb = new StringBuilder();

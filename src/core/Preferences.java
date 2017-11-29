@@ -2,6 +2,7 @@ package core;
 
 import java.io.Serializable;
 import java.util.*;
+import java.io.*;
 import util.*;
 
 /**
@@ -108,20 +109,21 @@ public class Preferences implements Serializable {
 	 */
 	protected HashMap<String,Sub<?,?>> subprefs;
 	
-	{
-		/*
-		 * May be deserialized from an older version with less preferences,
-		 * so the gaps need to be filled in
-		 */
-		extendDefaults();
-	}
-	
 	/**
 	 * Initialize with factory settings
 	 */
 	public Preferences(){
 		subprefs = new HashMap<>();
 		restoreDefaults();
+	}
+	
+	private void writeObject(ObjectOutputStream out) throws IOException{
+		out.defaultWriteObject();
+	}
+	
+	private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException{
+		in.defaultReadObject();
+		extendDefaults();//May be deserialized from an older version
 	}
 	
 	/**

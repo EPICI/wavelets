@@ -72,6 +72,11 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	protected transient Factory<Voice> voiceFactory;
 	
 	/**
+	 * The name of this instance, made public for easy access
+	 */
+	public String name;
+	
+	/**
 	 * Standard constructor where everything is specified
 	 * 
 	 * @param length length in measures
@@ -90,6 +95,24 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	}
 	
 	//TODO everything
+	
+	/**
+	 * Get the name of this instance. Will never return null.
+	 * 
+	 * @return
+	 */
+	public String getName(){
+		return name==null?getDefaultName():name;
+	}
+	
+	/**
+	 * Returns a generated name.
+	 * 
+	 * @return
+	 */
+	public String getDefaultName(){
+		return Track.defaultNameAny("Pattern", this);
+	}
 	
 	@Override
 	public void destroy() {

@@ -3,6 +3,7 @@ package core;
 import java.util.Arrays;
 
 import util.*;
+import util.hash.HashTriArx;
 import util.math.*;
 
 /**
@@ -38,6 +39,15 @@ public class Samples implements Curve {
 	 * Hash of spectrum data, when it's different the samples gets updated to match
 	 */
 	protected transient int spectrumHash = 0;
+	
+	/**
+	 * Hash key for <i>sampleHash()</i>
+	 */
+	public static final long HK_AH = HashTriArx.getKey("Samples.sampleHash");
+	/**
+	 * Hash key for <i>spectrumHash()</i>
+	 */
+	public static final long HK_PH = HashTriArx.getKey("Samples.spectrumHash");
 	
 	/**
 	 * Clean constructor
@@ -156,14 +166,20 @@ public class Samples implements Curve {
 	 * @return hash for sample data
 	 */
 	public int sampleHash(){
-		return Hash.lazy(sampleData);
+		HashTriArx hash = new HashTriArx(HK_AH);
+		hash.absorbSkip(sampleData);
+		return hash.squeezeInt();
 	}
 	
 	/**
 	 * @return hash for spectrum data
 	 */
 	public int spectrumHash(){
-		return Hash.of(Hash.llazy(spectrumReal),Hash.llazy(spectrumImag));
+		HashTriArx hash = new HashTriArx(HK_PH);
+		hash.absorbSkip(spectrumReal);
+		//hash.absorbSkip(spectrumImag);
+		// No need to hash the imaginary, since any changes will also affect the real
+		return hash.squeezeInt();
 	}
 	
 	/**
