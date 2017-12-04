@@ -20,4 +20,8 @@ public interface Destructable {
 	 * objects
 	 */
 	public void destroySelf();
+	/**
+	 * @return true if destroyed by either method or otherwise
+	 */
+	public boolean isDestroyed();
 }

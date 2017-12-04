@@ -29,6 +29,11 @@ public class PlayerDoubleBuffer implements Player {
 	public int bufferSize;
 	
 	/**
+	 * Destroyed yet?
+	 */
+	protected transient boolean destroyed = false;
+	
+	/**
 	 * The other thread which works in conjunction with this one
 	 * to provide audio
 	 * 
@@ -81,13 +86,18 @@ public class PlayerDoubleBuffer implements Player {
 	@Override
 	public void destroy() {
 		// TODO Auto-generated method stub
-
+		destroyed = true;
 	}
 
 	@Override
 	public void destroySelf() {
 		// TODO Auto-generated method stub
-
+		destroyed = true;
+	}
+	
+	@Override
+	public boolean isDestroyed(){
+		return destroyed;
 	}
 
 	@Override

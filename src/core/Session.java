@@ -73,6 +73,11 @@ public class Session {
 	protected ColorScheme colors;
 	
 	/**
+	 * Preferences/settings
+	 */
+	protected Preferences preferences;
+	
+	/**
 	 * Pointer to the console or whatever was originally stdout
 	 */
 	protected PrintStream console;
@@ -185,6 +190,15 @@ public class Session {
 	 */
 	public ColorScheme getColors(){
 		return colors;
+	}
+	
+	/**
+	 * Get the current preferences
+	 * 
+	 * @return the current preferences
+	 */
+	public Preferences getPreferences(){
+		return preferences;
 	}
 	
 	/**

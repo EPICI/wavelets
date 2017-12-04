@@ -1,5 +1,7 @@
 package util;
 
+import java.util.Objects;
+
 import util.hash.*;
 
 /**
@@ -42,7 +44,7 @@ public class Any {
 		/**
 		 * Hash key for <i>hashCode()</i>
 		 */
-		public static final long HK_HC = HashTriArx.getKey("Any.O2.hashCode");
+		public static final long HK_HC = QuickKeyGen.next64();
 		
 		/**
 		 * Standard constructor
@@ -70,7 +72,7 @@ public class Any {
 			if(o==null)return false;
 			if(!(o instanceof O2<?,?>))return false;
 			O2<?,?> other = (O2<?,?>) o;
-			return a.equals(other.a) && b.equals(other.b);
+			return Objects.equals(a, other.a) && Objects.equals(b, other.b);
 		}
 	}
 	
@@ -97,7 +99,7 @@ public class Any {
 		/**
 		 * Hash key for <i>hashCode()</i>
 		 */
-		public static final long HK_HC = HashTriArx.getKey("Any.Keyed.hashCode");
+		public static final long HK_HC = QuickKeyGen.next64();
 		
 		/**
 		 * Standard constructor
@@ -125,7 +127,7 @@ public class Any {
 			if(o==null)return false;
 			if(!(o instanceof Keyed<?,?>))return false;
 			Keyed<?,?> other = (Keyed<?,?>) o;
-			return key.equals(other.key);
+			return Objects.equals(key, other.key);
 		}
 	}
 	
@@ -156,7 +158,7 @@ public class Any {
 		/**
 		 * Hash key for <i>hashCode()</i>
 		 */
-		public static final long HK_HC = HashTriArx.getKey("Any.O3.hashCode");
+		public static final long HK_HC = QuickKeyGen.next64();
 		
 		/**
 		 * Standard constructor
@@ -186,7 +188,7 @@ public class Any {
 			if(o==null)return false;
 			if(!(o instanceof O3<?,?,?>))return false;
 			O3<?,?,?> other = (O3<?,?,?>) o;
-			return a.equals(other.a) && b.equals(other.b) && c.equals(other.c);
+			return Objects.equals(a, other.a) && Objects.equals(b, other.b) && Objects.equals(c, other.c);
 		}
 	}
 }

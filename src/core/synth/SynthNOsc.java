@@ -32,6 +32,11 @@ public class SynthNOsc implements Synthesizer {
 	protected transient Composition parentComposition;
 	
 	/**
+	 * Destroyed yet?
+	 */
+	protected transient boolean destroyed = false;
+	
+	/**
 	 * Default constructor
 	 */
 	public SynthNOsc(Composition parent){
@@ -47,11 +52,18 @@ public class SynthNOsc implements Synthesizer {
 	@Override
 	public void destroy() {
 		oscillators.clear();
+		destroyed = true;
 	}
 
 	@Override
 	public void destroySelf() {
 		oscillators.clear();
+		destroyed = true;
+	}
+	
+	@Override
+	public boolean isDestroyed(){
+		return destroyed;
 	}
 
 	@Override
@@ -484,6 +496,11 @@ public class SynthNOsc implements Synthesizer {
 			public double delay;
 			
 			/**
+			 * Destroyed yet?
+			 */
+			protected transient boolean destroyed = false;
+			
+			/**
 			 * Fill in fields automatically
 			 * 
 			 * @param pitch pitch as semitones from A4 (440Hz)
@@ -504,11 +521,18 @@ public class SynthNOsc implements Synthesizer {
 			@Override
 			public void destroy() {
 				step = 3;
+				destroyed = true;
 			}
 
 			@Override
 			public void destroySelf() {
 				step = 3;
+				destroyed = true;
+			}
+			
+			@Override
+			public boolean isDestroyed(){
+				return destroyed;
 			}
 
 			@Override

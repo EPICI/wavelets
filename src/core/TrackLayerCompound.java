@@ -4,6 +4,7 @@ import java.util.*;
 import javax.swing.*;
 import util.*;
 import util.hash.HashTriArx;
+import util.hash.QuickKeyGen;
 
 /**
  * Contains tracks
@@ -42,7 +43,7 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 	/**
 	 * Hash key for <i>hashCode()</i>
 	 */
-	public static final long HK_HC = HashTriArx.getKey("TrackLayerCompound.hashCode");
+	public static final long HK_HC = QuickKeyGen.next64();
 	
 	public TrackLayerCompound(TLCParent parent){
 		initTransient(parent);

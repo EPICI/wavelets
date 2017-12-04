@@ -1,6 +1,6 @@
 package util.hash;
 
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * A hash designed to outperform the others while
@@ -129,22 +129,6 @@ public class HashTriArx extends AbstractHash {
 		 */
 		x*=0xbb67ae8584caa753L;
 		return ((x>>>60)^x)*0xbb67ae8584caa753L;
-	}
-	
-	/**
-	 * Get a key from a string
-	 * 
-	 * @param source string to derive key from
-	 * @return 64 bits of random looking key
-	 */
-	public static long getKey(String source){
-		int length = source.length();
-		byte[] bytes = source.getBytes(Charset.forName("utf-8"));
-		HashTriArx hash = new HashTriArx();
-		hash.absorb(length);
-		hash.absorb(bytes);
-		hash.iabsorb(hash.isqueeze());// makes similar state not similar
-		return hash.isqueeze();
 	}
 
 }

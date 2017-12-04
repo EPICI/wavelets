@@ -38,7 +38,7 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	/**
 	 * Hash key for <i>hashCode()</i>
 	 */
-	public static final long HK_HC = HashTriArx.getKey("TrackLayerSimple.hashCode");
+	public static final long HK_HC = QuickKeyGen.next64();
 	
 	/**
 	 * 

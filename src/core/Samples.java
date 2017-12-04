@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import util.*;
 import util.hash.HashTriArx;
+import util.hash.QuickKeyGen;
 import util.math.*;
 
 /**
@@ -43,11 +44,11 @@ public class Samples implements Curve {
 	/**
 	 * Hash key for <i>sampleHash()</i>
 	 */
-	public static final long HK_AH = HashTriArx.getKey("Samples.sampleHash");
+	public static final long HK_AH = QuickKeyGen.next64();
 	/**
 	 * Hash key for <i>spectrumHash()</i>
 	 */
-	public static final long HK_PH = HashTriArx.getKey("Samples.spectrumHash");
+	public static final long HK_PH = QuickKeyGen.next64();
 	
 	/**
 	 * Clean constructor

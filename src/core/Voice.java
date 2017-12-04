@@ -44,6 +44,11 @@ public interface Voice extends Destructable {
 	public static class Combined implements Voice{
 			
 		public Voice[] voices;
+		
+		/**
+		 * Destroyed yet?
+		 */
+		protected transient boolean destroyed = false;
 
 		public Combined(Voice... gvoices){
 			voices=gvoices;
@@ -54,11 +59,18 @@ public interface Voice extends Destructable {
 			for(Voice voice:voices)
 				voice.destroy();
 			voices = null;
+			destroyed = true;
 		}
 
 		@Override
 		public void destroySelf() {
 			voices = null;
+			destroyed = true;
+		}
+		
+		@Override
+		public boolean isDestroyed(){
+			return destroyed;
 		}
 
 		@Override

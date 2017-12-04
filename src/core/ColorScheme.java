@@ -119,7 +119,7 @@ public class ColorScheme implements Serializable{
 	/**
 	 * Hash key for <i>hashCode()</i>
 	 */
-	public static final long HK_HC = HashTriArx.getKey("ColorScheme.hashCode");
+	public static final long HK_HC = QuickKeyGen.next64();
 	
 	/**
 	 * Copy from the given theme

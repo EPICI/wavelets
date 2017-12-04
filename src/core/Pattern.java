@@ -77,6 +77,11 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	public String name;
 	
 	/**
+	 * Destroyed yet?
+	 */
+	protected transient boolean destroyed = false;
+	
+	/**
 	 * Standard constructor where everything is specified
 	 * 
 	 * @param length length in measures
@@ -118,11 +123,17 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	public void destroy() {
 		clips.clear();
 		synthesizer=null;
+		destroyed = true;
 	}
 
 	@Override
 	public void destroySelf() {
-		
+		destroyed = true;
+	}
+	
+	@Override
+	public boolean isDestroyed(){
+		return destroyed;
 	}
 
 	@Override

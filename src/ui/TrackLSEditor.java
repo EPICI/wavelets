@@ -4,6 +4,8 @@ import core.*;
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.Mouse.Button;
 import org.apache.pivot.wtk.Mouse.ScrollType;
+
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
@@ -177,6 +179,44 @@ public class TrackLSEditor extends Window implements Bindable {
 		 */
 		public int buttonx;
 		
+		/**
+		 * Selection as offsets for each pattern
+		 * <br>
+		 * Please use the getter method for safety
+		 * <br>
+		 * Null if unset
+		 */
+		protected IdentityHashMap<Pattern,BitSet> selection;
+		
+		/**
+		 * Get the selection, never returns null
+		 * <br>
+		 * Format: suppose a pair (k,v) exists, then let u be the
+		 * index of a set bit in v, then an instance of pattern k
+		 * at offset u measures exists in the selection
+		 * <br>
+		 * If you're still confused, look at {@link TrackLayerSimple}
+		 * or the source here and how this data is handled
+		 * 
+		 * @param cleanup flag to iterate through and remove dead patterns
+		 * @param clear flag to reset and return an empty selection
+		 * @return the selection
+		 */
+		public IdentityHashMap<Pattern,BitSet> getSelection(boolean cleanup,boolean clear){
+			if(clear||selection==null){
+				selection = new IdentityHashMap<>();
+			}
+			IdentityHashMap<Pattern,BitSet> r = selection;
+			if(cleanup){
+				Iterator<Pattern> iter = r.keySet().iterator();
+				while(iter.hasNext()){
+					Pattern p = iter.next();
+					if(p.isDestroyed())iter.remove();
+				}
+			}
+			return r;
+		}
+		
 		public LinkedEditorPaneSkin(){
 			anchorx=0;
 			anchory=0;
@@ -186,6 +226,11 @@ public class TrackLSEditor extends Window implements Bindable {
 			 * No need to add listeners, since Pivot takes care of that
 			 * for us as long as we implement the methods here
 			 */
+		}
+		
+		public boolean allowPatternConvert(){
+			LinkedEditorPane editor = (LinkedEditorPane)getComponent();
+			return Preferences.getBooleanSafe(editor.parent.session,Preferences.INDEX_TLS_ALLOW_PATTERN_CONVERT);
 		}
 		
 		@Override
@@ -287,21 +332,21 @@ public class TrackLSEditor extends Window implements Bindable {
 		
 		@Override
 		public void paint(Graphics2D graphics){
-			// --- Get preferences ---
+			// --- Fetch some data ---
+			LinkedEditorPane editor = (LinkedEditorPane) getComponent();
+			Session session = editor.parent.session;
+			TrackLayerSimple tls = editor.view;
+			int width = getWidth(), height = getHeight();
 			/*
-			 * TODO fetch from preferences when available
 			 * Determines resolution of gradient:
 			 * Call this x, a range of 2^x pixels is a solid tone
 			 * 0 is individual pixels (highest resolution)
 			 * 30 makes everything the same tone (lowest resolution), 31 would cause overflow
 			 */
-			int gradientShift = 30, gradientShiftInc = 1<<gradientShift, gradientShiftMask = gradientShiftInc-1, gradientShiftMaskInv = ~gradientShiftMask;
+			int gradientShift = (int)Preferences.getLongSafe(session, Preferences.INDEX_TLS_PATTERN_BAR_GRADIENT_SHIFT), gradientShiftInc = 1<<gradientShift, gradientShiftMask = gradientShiftInc-1, gradientShiftMaskInv = ~gradientShiftMask;
 			double imageScale = 0.5d;
 			// --- Pre-draw ---
-			LinkedEditorPane editor = (LinkedEditorPane) getComponent();
-			TrackLayerSimple tls = editor.view;
 			IdentityHashMap<Pattern,BitSet> patterns = tls.patterns;
-			int width = getWidth(), height = getHeight();
 			double anchorx = this.anchorx, anchory = this.anchory, scalex = this.scalex, scaley = this.scaley;// Cache
 			Color bgCol, textCol, lineCol, buttonCol, errorCol, derrorCol;
 			ColorScheme colors = editor.parent.session.getColors();
@@ -374,7 +419,16 @@ public class TrackLSEditor extends Window implements Bindable {
 			int xref = -((int)((anchorx-dxref)*scalex));//First x for gradient, cannot be positive
 			int xrange = ((ewidth-xref-1)>>gradientShift)+1;
 			for(i=pfirst;i<plast;i++){
-				Graphics2D dgraphics = (Graphics2D) graphics.create(0, (int)((i-anchory)*scaley), ewidth, (int)scaley);
+				// Graphics for region
+				int iheight = (int)scaley;
+				Graphics2D dgraphics = (Graphics2D) graphics.create(0, (int)((i-anchory)*scaley), ewidth, iheight);
+				// Separator lines
+				dgraphics.setColor(lineCol);
+				dgraphics.fillRect(0,0,ewidth,1);
+				for(int j=ifirst;j<ilast;j++){
+					dgraphics.fillRect((int)((j-anchorx)*scalex), 0, 1, iheight);
+				}
+				// Fetch data
 				Pattern pk = patternk[i];
 				BitSet pv = patternv[i];
 				int pl = pk.length, pd = pk.divisions, ipf = ifirst-pl, pmin = 0, pmax = 0;

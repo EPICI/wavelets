@@ -21,17 +21,35 @@ public class Preferences implements Serializable {
 	 */
 	public static final HashMap<String,Sub<?,?>> SUB_DEFAULTS = new HashMap<>();
 	
+	/*
+	 * Indexes for various built-in settings
+	 * 
+	 * Order reflects the order in which they were added,
+	 * which roughly reflects the order they were needed,
+	 * which roughly reflects the order in which the consuming code was created
+	 * 
+	 * Order doesn't have any other significance!
+	 */
+	
+	// Booleans (boolean)
+	public static final int INDEX_TLS_ALLOW_PATTERN_CONVERT = 0;
+	
+	// Ints (long)
+	public static final int INDEX_TLS_PATTERN_BAR_GRADIENT_SHIFT = 0;
+	
+	// Floats (double)
+	
 	/**
 	 * Boolean defaults
 	 */
 	private static final boolean[] BOOLEAN_DEFAULTS = {
-			
+			false,
 	};
 	/**
 	 * Integer defaults
 	 */
 	private static final long[] INT_DEFAULTS = {
-			
+			30,
 	};
 	/**
 	 * Float defaults
@@ -174,6 +192,48 @@ public class Preferences implements Serializable {
 	 */
 	public double[] getDoubles(){
 		return floats;
+	}
+	
+	/**
+	 * Get boolean for {@link Session}'s preferences, null-safe
+	 * 
+	 * @param session session to fetch preferences for
+	 * @param index index of value to fetch
+	 * @return value in preferences, or default if null given
+	 */
+	public static boolean getBooleanSafe(Session session,int index){
+		if(session==null)return getDefaultBoolean(index);
+		Preferences pref = session.preferences;
+		if(pref==null)return getDefaultBoolean(index);
+		return pref.booleans.get(index);
+	}
+	
+	/**
+	 * Get boolean for {@link Session}'s preferences, null-safe
+	 * 
+	 * @param session session to fetch preferences for
+	 * @param index index of value to fetch
+	 * @return value in preferences, or default if null given
+	 */
+	public static long getLongSafe(Session session,int index){
+		if(session==null)return getDefaultInt(index);
+		Preferences pref = session.preferences;
+		if(pref==null)return getDefaultInt(index);
+		return pref.ints[index];
+	}
+	
+	/**
+	 * Get boolean for {@link Session}'s preferences, null-safe
+	 * 
+	 * @param session session to fetch preferences for
+	 * @param index index of value to fetch
+	 * @return value in preferences, or default if null given
+	 */
+	public static double getDoubleSafe(Session session,int index){
+		if(session==null)return getDefaultFloat(index);
+		Preferences pref = session.preferences;
+		if(pref==null)return getDefaultFloat(index);
+		return pref.floats[index];
 	}
 	
 	/**

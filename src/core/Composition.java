@@ -38,6 +38,11 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	public transient Session currentSession;
 	
 	/**
+	 * Destroyed yet?
+	 */
+	protected transient boolean destroyed = false;
+	
+	/**
 	 * Default constructor, creates a default composition
 	 * 
 	 * @param session {@link Session} object
@@ -70,13 +75,18 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	@Override
 	public void destroy() {
 		// TODO Auto-generated method stub
-		
+		destroyed = true;
 	}
 
 	@Override
 	public void destroySelf() {
 		// TODO Auto-generated method stub
-		
+		destroyed = true;
+	}
+	
+	@Override
+	public boolean isDestroyed(){
+		return destroyed;
 	}
 
 	@Override
