@@ -21,6 +21,7 @@ import org.apache.pivot.wtk.content.ButtonData;
 import org.apache.pivot.wtk.skin.*;
 import org.apache.pivot.wtk.skin.terra.TerraTheme;
 
+import util.Bits;
 import util.ui.*;
 
 /**
@@ -159,6 +160,14 @@ public class TrackLSEditor extends Window implements Bindable {
 		 */
 		public int originMousey;
 		/**
+		 * <i>originMousex</i> mapped to world x when dragging began
+		 */
+		public double originWorldx;
+		/**
+		 * <i>originMousey</i> mapped to world y when dragging began
+		 */
+		public double originWorldy;
+		/**
 		 * The mouse x, where it was last seen
 		 */
 		public int lastMousex;
@@ -204,7 +213,7 @@ public class TrackLSEditor extends Window implements Bindable {
 		 */
 		public IdentityHashMap<Pattern,BitSet> getSelection(boolean cleanup,boolean clear){
 			if(clear||selection==null){
-				selection = new IdentityHashMap<>();
+				return selection = new IdentityHashMap<>();
 			}
 			IdentityHashMap<Pattern,BitSet> r = selection;
 			if(cleanup){
@@ -228,24 +237,127 @@ public class TrackLSEditor extends Window implements Bindable {
 			 */
 		}
 		
+		/**
+		 * It is possible to drag patterns across rows, which would
+		 * change the types of patterns by turning all instances from
+		 * the source pattern type to the destination pattern type,
+		 * should we allow it?
+		 * 
+		 * @return
+		 */
 		public boolean allowPatternConvert(){
 			LinkedEditorPane editor = (LinkedEditorPane)getComponent();
 			return Preferences.getBooleanSafe(editor.parent.session,Preferences.INDEX_TLS_ALLOW_PATTERN_CONVERT);
 		}
 		
+		/**
+		 * It is possible to drag patterns on top of other patterns,
+		 * and since we can't have overlaps, the duplicate is effectively
+		 * destroyed and not recoverable, should we allow it?
+		 * 
+		 * @return
+		 */
+		public boolean allowPatternMerge(){
+			LinkedEditorPane editor = (LinkedEditorPane)getComponent();
+			return Preferences.getBooleanSafe(editor.parent.session,Preferences.INDEX_TLS_ALLOW_PATTERN_MERGE);
+		}
+		
+		/**
+		 * Try to move, return true if successful, false if failed (in which case
+		 * nothing happens)
+		 * <ul>
+		 * <li>If dx and dy are both 0, rejects</li>
+		 * <li>If dy is not 0 and pattern converting is disabled, rejects</li>
+		 * <li>If patterns would be moved out of bounds, rejects</li>
+		 * <li>If the moved selection overlaps unselected and merging is disabled, rejects</li>
+		 * </ul>
+		 * It's all in one function for convenience (not very efficient)
+		 * 
+		 * @param dx how many right
+		 * @param dy how many down
+		 * @param doMove whether to actually move if possible, or only test
+		 * @return if it's allowed
+		 */
+		public boolean tryMove(int dx,int dy,boolean doMove){
+			if(dx==0&&dy==0||dy!=0&&!allowPatternConvert())return false;
+			LinkedEditorPane editor = (LinkedEditorPane)getComponent();
+			TrackLayerSimple tls = editor.view;
+			IdentityHashMap<Pattern,BitSet> selection = getSelection(true,false),
+					patterns = tls.patterns;
+			int n = patterns.size();
+			Pattern[] pk = new Pattern[n];// Cache all pattern instances
+			BitSet[] pv = new BitSet[n];
+			BitSet[] ps = new BitSet[n];// Cache selection as well
+			IdentityHashMap<Pattern,Integer> index = new IdentityHashMap<>();
+			int i=0;
+			for(Pattern p:patterns.keySet()){// Iteration order matters here
+				pk[i]=p;
+				BitSet s=pv[i]=(BitSet)patterns.get(p).clone();// Work with a copy
+				index.put(p, i);
+				BitSet b=ps[i]=selection.get(p);
+				if(b!=null){
+					int j=i+dy;
+					if(j<0||j>=n||b.nextSetBit(0)+dx<0)return false;
+					s.andNot(b);
+				}
+				i++;
+			}
+			boolean apm=allowPatternMerge();
+			// Check first for no mutate requirement
+			for(Pattern p:selection.keySet()){// Iteration order doesn't matter
+				i=index.get(p);
+				BitSet ips = Bits.shiftLeft(ps[i], dx);
+				BitSet ipv = pv[i+dy];
+				if(!apm&&ipv.intersects(ips))return false;
+				ipv.or(ips);
+			}
+			if(doMove){
+				for(Pattern p:selection.keySet()){
+					i=index.get(p);
+					patterns.put(pk[i+dy], pv[i+dy]);// It was copied before
+				}
+			}
+			return true;
+		}
+		
 		@Override
 		public boolean mouseMove(Component component, int x, int y) {
+			// Tracking data
+			int lastMousex = this.lastMousex, lastMousey = this.lastMousey;
+			this.lastMousex = x;
+			this.lastMousey = y;
 			mouseDragged = true;
-			if(mouseDown==3){
-				// Middle mouse held -> drag to scroll
-				uanchorx += (x-lastMousex)/scalex;
-				uanchory += (y-lastMousey)/scaley;
-				anchorx = Math.max(0, uanchorx);
-				anchory = Math.max(0, uanchory);
+			int mouseDown = this.mouseDown;
+			// Skip if mouse not held
+			if(mouseDown!=0){
+				// --- Fetch some data ---
+				LinkedEditorPane editor = (LinkedEditorPane) getComponent();
+				//Session session = editor.parent.session;
+				//TrackLayerSimple tls = editor.view;
+				int width = getWidth(), height = getHeight();
+				// Local variables are faster + inversion
+				//IdentityHashMap<Pattern,BitSet> patterns = tls.patterns;
+				double anchorx = this.anchorx, anchory = this.anchory,
+						scalex = this.scalex, scaley = this.scaley,
+						iscalex = 1d/scalex, iscaley = 1d/scaley;
+				// Get bounds
+				int swidth = editor.parent.sidebarWidth, ewidth = width-swidth;// Width remaining after sidebar
+				int[] swidths = sidebarColumnWidths(swidth);
+				int swidtha = swidths[0], swidthb = swidths[1];
+				// Handle the event
+				if(mouseDown==1){
+					// Left mouse held -> drag to move
+				}else if(mouseDown==2){
+					// Right mouse held -> drag to select
+				}else if(mouseDown==3){
+					// Middle mouse held -> drag to scroll
+					uanchorx += (x-lastMousex)/scalex;
+					uanchory += (y-lastMousey)/scaley;
+					anchorx = Math.max(0, uanchorx);
+					anchory = Math.max(0, uanchory);
+				}
+				// TODO Auto-generated method stub
 			}
-			lastMousex = x;
-			lastMousey = y;
-			// TODO Auto-generated method stub
 			return true;// Consume the event
 		}
 
@@ -283,10 +395,13 @@ public class TrackLSEditor extends Window implements Bindable {
 				mouseDown = 4;
 				break;
 			}
+			double iscalex = 1d/scalex, iscaley = 1d/scaley;
 			uanchorx = anchorx;
 			uanchory = anchory;
 			originMousex = x;
 			originMousey = y;
+			originWorldx = x*iscalex+anchorx;
+			originWorldy = y*iscaley+anchory;
 			lastMousex = x;
 			lastMousey = y;
 			mouseDragged = false;
@@ -296,6 +411,123 @@ public class TrackLSEditor extends Window implements Bindable {
 
 		@Override
 		public boolean mouseUp(Component component, Button button, int x, int y) {
+			// --- Fetch some data ---
+			LinkedEditorPane editor = (LinkedEditorPane) getComponent();
+			Session session = editor.parent.session;
+			TrackLayerSimple tls = editor.view;
+			int width = getWidth(), height = getHeight();
+			// Local variables are faster + inversion
+			IdentityHashMap<Pattern,BitSet> patterns = tls.patterns;
+			int n = patterns.size();
+			Pattern[] pk = new Pattern[n];
+			BitSet[] pv = new BitSet[n];
+			int i=0;
+			for(Pattern p:patterns.keySet()){
+				pk[i]=p;
+				pv[i]=patterns.get(p);
+				i++;
+			}
+			double anchorx = this.anchorx, anchory = this.anchory,
+					scalex = this.scalex, scaley = this.scaley,
+					iscalex = 1d/scalex, iscaley = 1d/scaley;
+			boolean mouseDragged = this.mouseDragged;
+			// Get bounds
+			int swidth = editor.parent.sidebarWidth, ewidth = width-swidth;// Width remaining after sidebar
+			int[] swidths = sidebarColumnWidths(swidth);
+			int swidtha = swidths[0], swidthb = swidths[1];
+			double wx = x*iscalex+anchorx, wy = y*iscaley+anchory;
+			int iwx = (int)wx, iwy = (int)wy;
+			double owx = originWorldx, owy = originWorldy;
+			int iowx = (int)owx, iowy = (int)owy;
+			boolean yextend = iwy>=n;
+			// Handle the event
+			if(mouseDown==1){
+				// Left click/drag
+				boolean la = x<swidth, lb = originMousex<swidth;
+				// Note: mouse not dragged implies la=lb
+				if(mouseDragged){
+					if(!(la|lb)){// Left drag -> move patterns
+						if(shiftHeld){// Invert selection
+							IdentityHashMap<Pattern,BitSet> selection = getSelection(true,false);
+							int xmin=iowx,xmax=iwx,ymin=iowy,ymax=iwy;
+							if(xmin>xmax){
+								int t=xmin;
+								xmin=xmax;
+								xmax=t;
+							}
+							if(ymin>ymax){
+								int t=ymin;
+								ymin=ymax;
+								ymax=t;
+							}
+							ymax=Math.min(ymax, n-1);// Can't go past last row
+							for(i=ymin;i<=ymax;i++){
+								BitSet b = new BitSet();
+								b.flip(xmin, xmax);// Invert
+								selection.put(pk[i], b);
+							}
+						}else{
+							if(iowy>=n||!pv[iowy].get(iowx)){// Set selection
+								IdentityHashMap<Pattern,BitSet> selection = getSelection(false,true);// Clear selection first
+								int xmin=iowx,xmax=iwx,ymin=iowy,ymax=iwy;
+								if(xmin>xmax){
+									int t=xmin;
+									xmin=xmax;
+									xmax=t;
+								}
+								if(ymin>ymax){
+									int t=ymin;
+									ymin=ymax;
+									ymax=t;
+								}
+								ymax=Math.min(ymax, n-1);// Can't go past last row
+								for(i=ymin;i<=ymax;i++){
+									BitSet b = new BitSet();
+									b.set(xmin, xmax);// Set
+									selection.put(pk[i], b);
+								}
+							}else{// Move whatever is selected
+								double dx = wx-originWorldx,   dy = wy-originWorldy;
+								int    idx=(int)Math.round(dx),idy=(int)Math.round(dy);
+								tryMove(idx,idy,true);// Move if possible
+							}
+						}
+					}// Leave nested to allow for easier addition of future behaviours
+				}else{
+					if(la){// Left click -> press button
+						if(yextend){// Past last row, special
+							if(x<swidtha){// Add new
+								// TODO also pattern editor
+							}else{// Move here
+								// TODO use clipboard
+							}
+						}else{// In pattern row
+							if(x<swidtha){// Delete
+								patterns.remove(pk[iwy]);
+							}else{// Edit
+								// TODO pattern editor
+							}
+						}
+					}else if(!yextend){
+						if(shiftHeld){// Invert selection
+							IdentityHashMap<Pattern,BitSet> selection = getSelection(true,false);
+							Pattern p = pk[iwy];
+							BitSet b = selection.get(p);
+							if(b==null)selection.put(p, b=new BitSet());
+							b.flip(iwx);
+						}else{// Quick toggle pattern
+							pv[iwy].flip(iwx);
+						}
+					}// Leave nested to allow for easier addition of future behaviours
+				}
+			}else if(mouseDown==2){
+				// Right click/drag
+				// click -> open context menu
+				// drag -> select
+			}else if(mouseDown==3){
+				// Middle click/drag -> nothing yet
+			}
+			// Signal the mouse not being pressed anymore
 			mouseDown = 0;
 			// TODO Auto-generated method stub
 			return true;// Consume the event
@@ -387,7 +619,8 @@ public class TrackLSEditor extends Window implements Bindable {
 			double speed = comp.baseSpeed;
 			// --- Draw ---
 			// Draw buttons
-			int swidtha = swidth>>2, swidthb = swidth-swidtha;
+			int[] swidths = sidebarColumnWidths(swidth);
+			int swidtha = swidths[0], swidthb = swidths[1];
 			for(i=pfirst;i<plast;i++){
 				int x1,y1,x2,y2;
 				x1 = 0;
@@ -507,5 +740,23 @@ public class TrackLSEditor extends Window implements Bindable {
 				Draw.drawTextImage(dgraphics, 0, 0, 0, 0, pk.getName(), null, null, ColorScheme.brighten(sigs[0], -0.3f), null, 0d, 0d, 0d, 0);
 			}
 		}
+	}
+	
+	/**
+	 * Widths of the columns for the sidebar buttons
+	 * <br>
+	 * Will sum to <i>swidth</i>
+	 * <br>
+	 * May be 0 if <i>swidth</i> is small, but never negative
+	 * <br>
+	 * Behaviour for negative <i>swidth</i> is unspecified
+	 * (it should never happen anyway)
+	 * 
+	 * @param swidth total width of the sidebar
+	 * @return widths of each column
+	 */
+	public static int[] sidebarColumnWidths(int swidth){
+		int swidtha = swidth>>2;
+		return new int[]{swidtha,swidth-swidtha};
 	}
 }

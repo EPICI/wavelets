@@ -1,5 +1,7 @@
 package util;
 
+import java.util.*;
+
 /**
  * Utility class containing all bit twiddling hacks and the like
  * <br>
@@ -209,11 +211,62 @@ public final class Bits {
 	}
 	
 	/**
+	 * Shift a bitset left (negative=right) by a certain amount,
+	 * treating it as a little endian integer
+	 * <br>
+	 * Since we can't do it without copying anyway, this will always
+	 * return a different object
+	 * <br>
+	 * Returns null if b is null
+	 * 
+	 * @param b bitset to shift
+	 * @param n left shift amount
+	 * @return shifted bitset
+	 */
+	public static BitSet shiftLeft(BitSet b,int n){
+		if(b==null)return null;
+		if(n==0)return (BitSet)b.clone();
+		long[] a = b.toLongArray();
+		int l = a.length;
+		if(n>0){// Left shift, mul by 2^n
+			int x=n>>>6,y=n&63,z=64-y;
+			if(y==0){// No fractional words
+				long[] r = new long[l+x];
+				System.arraycopy(a, 0, r, x, l);
+				return BitSet.valueOf(r);
+			}
+			long[] r = new long[l+x+1];
+			r[x]=a[0]<<y;
+			for(int i=1;i<l;i++){
+				r[i+x]=a[i-1]>>>z|a[i]<<y;
+			}
+			r[l+x]=a[l-1]>>>z;
+			return BitSet.valueOf(r);
+		}else{// Right shift, floordiv by 2^n
+			n=-n;
+			int x=n>>>6,y=n&63,z=64-y;
+			if(x>=l)return new BitSet();// All shifted out
+			if(y==0){// No fractional words
+				long[] r = new long[l-x];
+				System.arraycopy(a, x, r, 0, l-x);
+				return BitSet.valueOf(r);
+			}
+			long[] r = new long[l-x];
+			r[l-x-1]=a[l-1]>>>y;
+			for(int i=l-2;i>=x;i--){
+				r[i-x]=a[i]>>>y|a[i+1]<<z;
+			}
+			return BitSet.valueOf(r);
+		}
+	}
+	
+	/**
 	 * Main method, used only for testing
 	 * 
 	 * @param args ignored
 	 */
 	public static void main(String[] args){
+		Random random = new Random();
 		//Log base 2 sanity tests
 		System.out.println("--- Binary logarithm ---");
 		System.out.println("log2(1024)="+binLog(1024)+" (expected 10)");
@@ -248,5 +301,22 @@ public final class Bits {
 		System.out.println("abs(2147483647)="+abs(2147483647));
 		System.out.println("abs(-2147483647)="+abs(-2147483647));
 		System.out.println("abs(-2147483648)="+abs(-2147483648));
+		//BitSet manipulation sanity tests
+		System.out.println("--- BitSet ---");
+		BitSet bsa = new BitSet();
+		bsa.set(100);
+		for(int i=101;i<300;i++)bsa.set(i,random.nextBoolean());
+		BitSet bsb = (BitSet) bsa.clone();
+		bsa = shiftLeft(bsa,64);
+		System.out.println("BitSet shift test 1: "+(!bsa.equals(bsb)?"pass":"fail"));
+		bsa = shiftLeft(bsa,-5);
+		bsa = shiftLeft(bsa,100);
+		bsa = shiftLeft(bsa,-128);
+		bsa = shiftLeft(bsa,-31);
+		System.out.println("BitSet shift test 2: "+(bsa.equals(bsb)?"pass":"fail"));
+		bsb.clear(100);
+		bsa = shiftLeft(bsa,-101);
+		bsa = shiftLeft(bsa,101);
+		System.out.println("BitSet shift test 3: "+(bsa.equals(bsb)?"pass":"fail"));
 	}
 }

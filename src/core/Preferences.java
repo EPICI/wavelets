@@ -33,6 +33,7 @@ public class Preferences implements Serializable {
 	
 	// Booleans (boolean)
 	public static final int INDEX_TLS_ALLOW_PATTERN_CONVERT = 0;
+	public static final int INDEX_TLS_ALLOW_PATTERN_MERGE = 0;
 	
 	// Ints (long)
 	public static final int INDEX_TLS_PATTERN_BAR_GRADIENT_SHIFT = 0;
@@ -43,6 +44,7 @@ public class Preferences implements Serializable {
 	 * Boolean defaults
 	 */
 	private static final boolean[] BOOLEAN_DEFAULTS = {
+			false,
 			false,
 	};
 	/**
