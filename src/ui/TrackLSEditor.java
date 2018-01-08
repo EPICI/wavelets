@@ -36,6 +36,10 @@ public class TrackLSEditor extends Window implements Bindable {
 	 * Extra space to leave above and below for a pattern, in semitones
 	 */
 	public static final int PITCH_MARGIN = 4;
+	/**
+	 * The area fill for selected instances
+	 */
+	public static final Color SELECTED_FILL = new Color(255,255,255,64);
 
 	/**
 	 * The current/linked session
@@ -440,58 +444,16 @@ public class TrackLSEditor extends Window implements Bindable {
 			double owx = originWorldx, owy = originWorldy;
 			int iowx = (int)owx, iowy = (int)owy;
 			boolean yextend = iwy>=n;
+			boolean la = x<swidth, lb = originMousex<swidth;
 			// Handle the event
 			if(mouseDown==1){
 				// Left click/drag
-				boolean la = x<swidth, lb = originMousex<swidth;
 				// Note: mouse not dragged implies la=lb
 				if(mouseDragged){
 					if(!(la|lb)){// Left drag -> move patterns
-						if(shiftHeld){// Invert selection
-							IdentityHashMap<Pattern,BitSet> selection = getSelection(true,false);
-							int xmin=iowx,xmax=iwx,ymin=iowy,ymax=iwy;
-							if(xmin>xmax){
-								int t=xmin;
-								xmin=xmax;
-								xmax=t;
-							}
-							if(ymin>ymax){
-								int t=ymin;
-								ymin=ymax;
-								ymax=t;
-							}
-							ymax=Math.min(ymax, n-1);// Can't go past last row
-							for(i=ymin;i<=ymax;i++){
-								BitSet b = new BitSet();
-								b.flip(xmin, xmax);// Invert
-								selection.put(pk[i], b);
-							}
-						}else{
-							if(iowy>=n||!pv[iowy].get(iowx)){// Set selection
-								IdentityHashMap<Pattern,BitSet> selection = getSelection(false,true);// Clear selection first
-								int xmin=iowx,xmax=iwx,ymin=iowy,ymax=iwy;
-								if(xmin>xmax){
-									int t=xmin;
-									xmin=xmax;
-									xmax=t;
-								}
-								if(ymin>ymax){
-									int t=ymin;
-									ymin=ymax;
-									ymax=t;
-								}
-								ymax=Math.min(ymax, n-1);// Can't go past last row
-								for(i=ymin;i<=ymax;i++){
-									BitSet b = new BitSet();
-									b.set(xmin, xmax);// Set
-									selection.put(pk[i], b);
-								}
-							}else{// Move whatever is selected
-								double dx = wx-originWorldx,   dy = wy-originWorldy;
-								int    idx=(int)Math.round(dx),idy=(int)Math.round(dy);
-								tryMove(idx,idy,true);// Move if possible
-							}
-						}
+						double dx = wx-originWorldx,   dy = wy-originWorldy;
+						int    idx=(int)Math.round(dx),idy=(int)Math.round(dy);
+						tryMove(idx,idy,true);// Move if possible
 					}// Leave nested to allow for easier addition of future behaviours
 				}else{
 					if(la){// Left click -> press button
@@ -499,7 +461,15 @@ public class TrackLSEditor extends Window implements Bindable {
 							if(x<swidtha){// Add new
 								// TODO also pattern editor
 							}else{// Move here
-								// TODO use clipboard
+								if(session!=null){
+									Object clip = session.clipBoard;
+									if(clip!=null){
+										if(clip instanceof Pattern){
+											Pattern pclip = (Pattern)clip;
+											if(!patterns.containsKey(pclip))patterns.put(pclip, new BitSet());
+										}// Leave nested to allow for easier addition of future behaviours
+									}
+								}
 							}
 						}else{// In pattern row
 							if(x<swidtha){// Delete
@@ -509,27 +479,51 @@ public class TrackLSEditor extends Window implements Bindable {
 							}
 						}
 					}else if(!yextend){
-						if(shiftHeld){// Invert selection
-							IdentityHashMap<Pattern,BitSet> selection = getSelection(true,false);
-							Pattern p = pk[iwy];
-							BitSet b = selection.get(p);
-							if(b==null)selection.put(p, b=new BitSet());
-							b.flip(iwx);
-						}else{// Quick toggle pattern
-							pv[iwy].flip(iwx);
-						}
+						// Quick toggle pattern
+						pv[iwy].flip(iwx);
 					}// Leave nested to allow for easier addition of future behaviours
 				}
 			}else if(mouseDown==2){
 				// Right click/drag
-				// click -> open context menu
-				// drag -> select
+				if(mouseDragged){// drag -> select
+					if(!(la|lb)){
+						// shift = invert, not shift = set
+						IdentityHashMap<Pattern,BitSet> selection = getSelection(true,!shiftHeld);
+						int xmin=iowx,xmax=iwx,ymin=iowy,ymax=iwy;
+						if(xmin>xmax){
+							int t=xmin;
+							xmin=xmax;
+							xmax=t;
+						}
+						if(ymin>ymax){
+							int t=ymin;
+							ymin=ymax;
+							ymax=t;
+						}
+						ymax=Math.min(ymax, n-1);// Can't go past last row
+						for(i=ymin;i<=ymax;i++){
+							BitSet b = selection.get(pk[i]);
+							if(b==null){
+								b = new BitSet();
+								selection.put(pk[i], b);
+							}
+							b.flip(xmin, xmax);// Invert
+							b.and(pv[i]);// Can't select if it doesn't exist
+						}
+					}// Leave nested to allow for easier addition of future behaviours
+				}else{// click -> open context menu
+					
+				}
 			}else if(mouseDown==3){
-				// Middle click/drag -> nothing yet
+				// Middle click/drag
+				if(mouseDragged){// drag -> scroll
+					
+				}// Leave nested to allow for easier addition of future behaviours
 			}
 			// Signal the mouse not being pressed anymore
 			mouseDown = 0;
-			// TODO Auto-generated method stub
+			// May need repainting
+			editor.repaint();
 			return true;// Consume the event
 		}
 		
@@ -579,6 +573,7 @@ public class TrackLSEditor extends Window implements Bindable {
 			double imageScale = 0.5d;
 			// --- Pre-draw ---
 			IdentityHashMap<Pattern,BitSet> patterns = tls.patterns;
+			IdentityHashMap<Pattern,BitSet> selection = getSelection(false,false);
 			double anchorx = this.anchorx, anchory = this.anchory, scalex = this.scalex, scaley = this.scaley;// Cache
 			Color bgCol, textCol, lineCol, buttonCol, errorCol, derrorCol;
 			ColorScheme colors = editor.parent.session.getColors();
@@ -601,10 +596,13 @@ public class TrackLSEditor extends Window implements Bindable {
 			int patternCount = patterns.size();
 			Pattern[] patternk = new Pattern[patternCount];
 			BitSet[] patternv = new BitSet[patternCount];
+			BitSet[] selectv = new BitSet[patternCount];
 			int i=0;
 			for(Pattern k:patterns.keySet()){
 				patternk[i]=k;
 				patternv[i]=patterns.get(k);
+				BitSet b = selection.get(k);
+				if(b!=null)selectv[i]=b;
 				i++;
 			}
 			// Get bounds
@@ -664,6 +662,7 @@ public class TrackLSEditor extends Window implements Bindable {
 				// Fetch data
 				Pattern pk = patternk[i];
 				BitSet pv = patternv[i];
+				BitSet sv = selectv[i];
 				int pl = pk.length, pd = pk.divisions, ipf = ifirst-pl, pmin = 0, pmax = 0;
 				ArrayList<int[]> pclips = pk.clips;
 				Synthesizer synth = pk.getSynthesizer();
@@ -707,6 +706,16 @@ public class TrackLSEditor extends Window implements Bindable {
 					if(delay>ipf)break;
 				}
 				while(delay<ilast&&iter.hasNext()){
+					// If selected, fill
+					boolean selected = sv!=null&&sv.get(delay);
+					if(selected){
+						graphics.setColor(SELECTED_FILL);
+						int x1 = (int)Math.round(anchorx+scalex*delay);
+						int x2 = (int)Math.round(anchorx+scalex*(delay+1));
+						int y1 = (int)Math.round(anchory+scaley*i);
+						int y2 = (int)Math.round(anchory+scaley*(i+1));
+						graphics.fillRect(x1,y2,x2-x1,y2-y1);
+					}
 					// Draw one
 					double xoffset = (delay-anchorx)*scalex;
 					for(int[] clip:pclips){
