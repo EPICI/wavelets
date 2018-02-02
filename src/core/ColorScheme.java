@@ -315,4 +315,18 @@ public class ColorScheme implements Serializable{
 		return result;
 	}
 	
+	/**
+	 * Convenience method to copy RGB of a color and change
+	 * just the alpha value. Even though it's not a lot of code,
+	 * it's less confusing to use than the methods or constructors
+	 * provided by {@link Color}. So this is provided.
+	 * 
+	 * @param color original color, RGB will be used
+	 * @param alpha alpha of new color
+	 * @return color using old RGB and new alpha
+	 */
+	public static Color setAlpha(Color color,int alpha){
+		return new Color(color.getRGB()|(alpha<<24),true);
+	}
+	
 }

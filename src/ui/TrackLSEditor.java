@@ -37,9 +37,21 @@ public class TrackLSEditor extends Window implements Bindable {
 	 */
 	public static final int PITCH_MARGIN = 4;
 	/**
-	 * The area fill for selected instances
+	 * Smallest possible value for x or y scale
 	 */
-	public static final Color SELECTED_FILL = new Color(255,255,255,64);
+	public static final double SCALE_MIN = 4;
+	/**
+	 * Largest possible value for x or y scale
+	 */
+	public static final double SCALE_MAX = 1<<13;
+	/**
+	 * Width of select/highlight border
+	 */
+	public static final int SHL_BORDER_WIDTH = 2;
+	/**
+	 * Minimum width and height to show that border
+	 */
+	public static final int SHL_BORDER_THRESHOLD = SHL_BORDER_WIDTH*5;
 
 	/**
 	 * The current/linked session
@@ -53,10 +65,6 @@ public class TrackLSEditor extends Window implements Bindable {
 	 * Width of the floating sidebar in pixels
 	 */
 	public int sidebarWidth;
-	/**
-	 * Font size for text
-	 */
-	public int textSize;
 	
 	public TrackLSEditor(){
 		super();
@@ -156,6 +164,14 @@ public class TrackLSEditor extends Window implements Bindable {
 		 */
 		public boolean shiftHeld;
 		/**
+		 * Is the control key down?
+		 */
+		public boolean controlHeld;
+		/**
+		 * Is the alt key down?
+		 */
+		public boolean altHeld;
+		/**
 		 * The mouse x where dragging began
 		 */
 		public int originMousex;
@@ -179,18 +195,6 @@ public class TrackLSEditor extends Window implements Bindable {
 		 * The mouse y, where it was last seen
 		 */
 		public int lastMousey;
-		/**
-		 * Y-index (nonnegative) if a button is being pressed, otherwise -1
-		 * <br>
-		 * Ex. the third button from the top would be 2
-		 */
-		public int buttony;
-		/**
-		 * X-index (nonnegative) if a button is being pressed, otherwise -1
-		 * <br>
-		 * Ex. the fourth button from the left would be 3
-		 */
-		public int buttonx;
 		
 		/**
 		 * Selection as offsets for each pattern
@@ -324,6 +328,37 @@ public class TrackLSEditor extends Window implements Bindable {
 			return true;
 		}
 		
+		/**
+		 * Get 2-tuple of x index, y index of button being pressed
+		 * <br>
+		 * So the 4th from the top and 7th from the left would be (6,3)
+		 * <br>
+		 * If no button is pressed, returns null
+		 * 
+		 * @param ignore if true, will ignore the current click/drag mouse state
+		 * @return
+		 */
+		public int[] buttonxy(boolean ignore){
+			if(ignore&&(mouseDown!=1||mouseDragged))return null;
+			LinkedEditorPane editor = (LinkedEditorPane) getComponent();
+			TrackLayerSimple tls = editor.view;
+			int mousex = lastMousex, mousey = lastMousey;
+			double anchorx = this.anchorx, anchory = this.anchory,
+					scalex = this.scalex, scaley = this.scaley,
+					iscalex = 1d/scalex, iscaley = 1d/scaley;
+			int swidth = editor.parent.sidebarWidth;// Width remaining after sidebar
+			int[] swidths = sidebarColumnWidths(swidth);
+			int swidthn = swidths.length;
+			int ry=Math.min((int)(mousey*iscaley+anchory),tls.patterns.size());
+			int rx=0;
+			while(rx<swidthn&&swidths[rx]<mousex){
+				mousex-=swidths[rx];
+				rx++;
+			}
+			if(rx==swidthn)return null;
+			return new int[]{rx,ry};
+		}
+		
 		@Override
 		public boolean mouseMove(Component component, int x, int y) {
 			// Tracking data
@@ -351,8 +386,10 @@ public class TrackLSEditor extends Window implements Bindable {
 				// Handle the event
 				if(mouseDown==1){
 					// Left mouse held -> drag to move
+					// TODO for a later date: preview selection
 				}else if(mouseDown==2){
 					// Right mouse held -> drag to select
+					// TODO for a later date: context menu
 				}else if(mouseDown==3){
 					// Middle mouse held -> drag to scroll
 					uanchorx += (x-lastMousex)/scalex;
@@ -360,7 +397,8 @@ public class TrackLSEditor extends Window implements Bindable {
 					anchorx = Math.max(0, uanchorx);
 					anchory = Math.max(0, uanchory);
 				}
-				// TODO Auto-generated method stub
+				// may need repainting
+				editor.repaint();
 			}
 			return true;// Consume the event
 		}
@@ -516,9 +554,7 @@ public class TrackLSEditor extends Window implements Bindable {
 				}
 			}else if(mouseDown==3){
 				// Middle click/drag
-				if(mouseDragged){// drag -> scroll
-					
-				}// Leave nested to allow for easier addition of future behaviours
+				// scroll is already handled in mouseMove so we don't need to do anything here
 			}
 			// Signal the mouse not being pressed anymore
 			mouseDown = 0;
@@ -535,13 +571,60 @@ public class TrackLSEditor extends Window implements Bindable {
 		
 		@Override
 		public boolean keyPressed(Component component, int keyCode, Keyboard.KeyLocation keyLocation) {
-			if(keyCode==KeyEvent.VK_SHIFT)shiftHeld = true;
+			switch(keyCode){
+			case KeyEvent.VK_SHIFT:{
+				shiftHeld = true;
+				break;
+			}
+			case KeyEvent.VK_CONTROL:{
+				controlHeld = true;
+				break;
+			}
+			case KeyEvent.VK_ALT:{
+				altHeld = true;
+				break;
+			}
+			}
 			return true;// Consume the event
 		}
 
 		@Override
 		public boolean keyReleased(Component component, int keyCode, Keyboard.KeyLocation keyLocation) {
-			if(keyCode==KeyEvent.VK_SHIFT)shiftHeld = false;
+			switch(keyCode){
+			case KeyEvent.VK_SHIFT:{
+				shiftHeld = false;
+				break;
+			}
+			case KeyEvent.VK_CONTROL:{
+				controlHeld = false;
+				break;
+			}
+			case KeyEvent.VK_ALT:{
+				altHeld = false;
+				break;
+			}
+			case KeyEvent.VK_C:{
+				if(controlHeld){// Ctrl + C -> copy
+					// TODO see what's selected and copy it
+				}
+				break;
+			}
+			case KeyEvent.VK_V:{
+				if(controlHeld){// Ctrl + V -> paste
+					LinkedEditorPane editor = (LinkedEditorPane) getComponent();
+					Session session = editor.parent.session;
+					TrackLayerSimple tls = editor.view;
+					Object clipBoard = session.clipBoard;
+					if(clipBoard instanceof Pattern){
+						Pattern pclip = (Pattern)clipBoard;
+						if(!tls.patterns.containsKey(pclip)){
+							tls.patterns.put(pclip, new BitSet());
+						}
+					}
+				}
+				break;
+			}
+			}
 			return true;// Consume the event
 		}
 
@@ -575,7 +658,7 @@ public class TrackLSEditor extends Window implements Bindable {
 			IdentityHashMap<Pattern,BitSet> patterns = tls.patterns;
 			IdentityHashMap<Pattern,BitSet> selection = getSelection(false,false);
 			double anchorx = this.anchorx, anchory = this.anchory, scalex = this.scalex, scaley = this.scaley;// Cache
-			Color bgCol, textCol, lineCol, buttonCol, errorCol, derrorCol;
+			Color bgCol, textCol, lineCol, buttonCol, errorCol, derrorCol, selectCol, aselectCol;
 			ColorScheme colors = editor.parent.session.getColors();
 			if(colors==null){
 				TerraTheme theme = (TerraTheme)Theme.getTheme();
@@ -583,15 +666,18 @@ public class TrackLSEditor extends Window implements Bindable {
 				textCol = theme.getBaseColor(0);
 				lineCol = theme.getBaseColor(2);
 				buttonCol = theme.getBaseColor(3);
+				selectCol = theme.getBaseColor(5);
 				errorCol = theme.getBaseColor(7);
 			}else{
 				bgCol = colors.background;
 				textCol = colors.text;
 				lineCol = colors.line;
 				buttonCol = colors.gradient;
+				selectCol = colors.selected;
 				errorCol = colors.error;
 			}
 			derrorCol = ColorScheme.adjustHsb(errorCol, 0f, -0.5f, 0f);
+			aselectCol = ColorScheme.setAlpha(selectCol, 30);
 			// Cache rows
 			int patternCount = patterns.size();
 			Pattern[] patternk = new Pattern[patternCount];
@@ -602,7 +688,7 @@ public class TrackLSEditor extends Window implements Bindable {
 				patternk[i]=k;
 				patternv[i]=patterns.get(k);
 				BitSet b = selection.get(k);
-				if(b!=null)selectv[i]=b;
+				selectv[i]=b==null?new BitSet():b;// Null safety
 				i++;
 			}
 			// Get bounds
@@ -615,20 +701,24 @@ public class TrackLSEditor extends Window implements Bindable {
 			double iscalex = 1d/scalex, iscaley = 1d/scaley;
 			Composition comp = editor.parent.session.composition;
 			double speed = comp.baseSpeed;
+			boolean useShlBorder = scalex>=SHL_BORDER_THRESHOLD && scaley>=SHL_BORDER_THRESHOLD;
 			// --- Draw ---
 			// Draw buttons
 			int[] swidths = sidebarColumnWidths(swidth);
 			int swidtha = swidths[0], swidthb = swidths[1];
+			int[] buttonxy = buttonxy(false);
+			int buttonx = buttonxy==null?-1:buttonxy[0];
+			int buttony = buttonxy==null?-1:buttonxy[1];
 			for(i=pfirst;i<plast;i++){
 				int x1,y1,x2,y2;
 				x1 = 0;
 				y1 = (int)((i-anchory)*scaley);
 				x2 = swidtha;
-				y2 = (int)scaley;// TODO use buttonx and buttony instead to determine if pressed
-				Draw.drawButton(graphics, x1, y1, x2, y2, "Delete", null, null, lineCol, derrorCol, mouseDown==1&&!mouseDragged&&lastMousex>x1&&lastMousex<x1+x2&&lastMousey>y1&&lastMousey<y1+y2, textCol, null, 0.5d, 0.5d, imageScale, 0);
+				y2 = (int)scaley;
+				Draw.drawButton(graphics, x1, y1, x2, y2, "Delete", null, null, lineCol, derrorCol, buttony==i&&buttonx==0, textCol, null, 0.5d, 0.5d, imageScale, 0);
 				x1 = swidtha;
 				x2 = swidthb;
-				Draw.drawButton(graphics, x1, y1, x2, y2, "Edit", null, null, lineCol, buttonCol, mouseDown==1&&!mouseDragged&&lastMousex>x1&&lastMousex<x1+x2&&lastMousey>y1&&lastMousey<y1+y2, textCol, null, 0.5d, 0.5d, imageScale, 0);
+				Draw.drawButton(graphics, x1, y1, x2, y2, "Edit", null, null, lineCol, buttonCol, buttony==i&&buttonx==1, textCol, null, 0.5d, 0.5d, imageScale, 0);
 			}
 			if(pextend){
 				int x1,y1,x2,y2;
@@ -636,10 +726,10 @@ public class TrackLSEditor extends Window implements Bindable {
 				y1 = (int)((plast-anchory)*scaley);
 				x2 = swidtha;
 				y2 = height-y1;
-				Draw.drawButton(graphics, x1, y1, x2, y2, "Add new", null, null, lineCol, buttonCol, mouseDown==1&&!mouseDragged&&lastMousex>x1&&lastMousex<x1+x2&&lastMousey>y1&&lastMousey<y1+y2, textCol, null, 0.5d, 0.5d, imageScale, 0);
+				Draw.drawButton(graphics, x1, y1, x2, y2, "Add new", null, null, lineCol, buttonCol, buttony==patternCount&&buttonx==0, textCol, null, 0.5d, 0.5d, imageScale, 0);
 				x1 = swidtha;
 				x2 = swidthb;
-				Draw.drawButton(graphics, x1, y1, x2, y2, "Move here", null, null, lineCol, buttonCol, mouseDown==1&&!mouseDragged&&lastMousex>x1&&lastMousex<x1+x2&&lastMousey>y1&&lastMousey<y1+y2, textCol, null, 0.5d, 0.5d, imageScale, 0);
+				Draw.drawButton(graphics, x1, y1, x2, y2, "Move here", null, null, lineCol, buttonCol, buttony==patternCount&&buttonx==0, textCol, null, 0.5d, 0.5d, imageScale, 0);
 			}
 			// Draw patterns
 			graphics = (Graphics2D) graphics.create(swidth,0,ewidth,height);
@@ -698,24 +788,7 @@ public class TrackLSEditor extends Window implements Bindable {
 					graphics.fillRect(0, y1, width, y2-y1);
 				}
 				double ixmult = scalex/pd;
-				PrimitiveIterator.OfInt iter = pv.stream().iterator();
-				int delay=Integer.MAX_VALUE;
-				while(iter.hasNext()){
-					// Skip until it's in the range
-					delay = iter.nextInt();
-					if(delay>ipf)break;
-				}
-				while(delay<ilast&&iter.hasNext()){
-					// If selected, fill
-					boolean selected = sv!=null&&sv.get(delay);
-					if(selected){
-						graphics.setColor(SELECTED_FILL);
-						int x1 = (int)Math.round(anchorx+scalex*delay);
-						int x2 = (int)Math.round(anchorx+scalex*(delay+1));
-						int y1 = (int)Math.round(anchory+scaley*i);
-						int y2 = (int)Math.round(anchory+scaley*(i+1));
-						graphics.fillRect(x1,y2,x2-x1,y2-y1);
-					}
+				for(int delay=ipf+1;delay>=0&&delay<ilast;delay = pv.nextSetBit(delay+1)){
 					// Draw one
 					double xoffset = (delay-anchorx)*scalex;
 					for(int[] clip:pclips){
@@ -743,8 +816,37 @@ public class TrackLSEditor extends Window implements Bindable {
 							dgraphics.fillRect(from+xref, iy, to-from, iclipHeight);
 						}
 					}
-					// Finally, fetch next
-					delay = iter.nextInt();
+				}
+				// Selection overlay must be on top
+				for(int delay=ipf+1;delay>=0&&delay<ilast;delay = pv.nextSetBit(delay+1)){
+					// If selected, fill
+					boolean selected = sv.get(delay);
+					if(selected){
+						graphics.setColor(aselectCol);
+						int x1 = (int)Math.round(anchorx+scalex*delay);
+						int x2 = (int)Math.round(anchorx+scalex*(delay+1));
+						int y1 = (int)Math.round(anchory+scaley*i);
+						int y2 = (int)Math.round(anchory+scaley*(i+1));
+						int dx = x2-x1;
+						int dy = y2-y1;
+						graphics.fillRect(x1,y2,dx,dy);
+						if(useShlBorder){// Also draw border
+							graphics.setColor(selectCol);
+							graphics.setStroke(new BasicStroke(SHL_BORDER_WIDTH));
+							if(i==0||!selectv[i-1].get(delay)){// Top border
+								graphics.drawLine(x1, y1, x2, y1);
+							}
+							if(i==patternCount-1||!selectv[i+1].get(delay)){// Bottom border
+								graphics.drawLine(x1, y2, x2, y2);
+							}
+							if(delay==0||!sv.get(delay-1)){// Left border
+								graphics.drawLine(x1, y1, x1, y2);
+							}
+							if(!pv.get(delay+1)){// Right border
+								graphics.drawLine(x2, y1, x2, y2);
+							}
+						}
+					}
 				}
 				Draw.drawTextImage(dgraphics, 0, 0, 0, 0, pk.getName(), null, null, ColorScheme.brighten(sigs[0], -0.3f), null, 0d, 0d, 0d, 0);
 			}

@@ -1,0 +1,6 @@
+<components:PatternEditor title="Pattern Editor" maximized="true"
+	xmlns:bxml="http://pivot.apache.org/bxml"
+	xmlns:components="ui"
+	xmlns="org.apache.pivot.wtk">
+	<TabPane bxml:id="tabPane" closeable="true"/>
+</components:PatternEditor>
