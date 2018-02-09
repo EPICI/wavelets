@@ -1,15 +1,16 @@
 package ui;
 
 import java.net.URL;
-import java.util.ArrayList;
-import javax.swing.JInternalFrame;
+import java.util.*;
+import javax.swing.*;
 import org.apache.pivot.beans.*;
 import org.apache.pivot.collections.Map;
 import org.apache.pivot.util.Resources;
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.content.ButtonData;
 import core.*;
-import util.ui.PivotSwingUtils;
+import util.*;
+import util.ui.*;
 
 /**
  * Editor UI for {@link TrackLayerCompound}
@@ -174,15 +175,80 @@ public class TrackLCEditor extends Window implements Bindable {
 							}
 						}
 					}
-					ArrayList<Track> target = view.tracks;
-					for(int i=moved.size()-1;i>=0;i--){
-						target.add(moved.get(i));
+					if(moved.size()>0){// If there's nothing to move, don't bother
+						ArrayList<Track> target = view.tracks;
+						for(int i=moved.size()-1;i>=0;i--){
+							Track itrack = moved.get(i);
+							itrack.setParent(view);// Update the parent
+							target.add(itrack);
+						}
+						parent.remakeAll();
 					}
-					parent.remakeAll();
 				}
 				
 			});
-			//TODO listeners + add new track + add existing track
+			deselectAll.getButtonPressListeners().add(new ButtonPressListener(){
+
+				@Override
+				public void buttonPressed(org.apache.pivot.wtk.Button button) {
+					TabPane.TabSequence tabs = parent.tabPane.getTabs();
+					for(int i=tabs.getLength()-1;i>=0;i--){
+						Component component = tabs.get(i);
+						if(component instanceof LinkedTablePane){
+							LinkedTablePane ltp = (LinkedTablePane) component;
+							RowSequence rows = ltp.getRows();
+							for(int j=rows.getLength()-1;j>=EXTRA_ROWS;j--){
+								TablePane.Row row = rows.get(j);
+								if(row instanceof LinkedTableRow){
+									LinkedTableRow lrow = (LinkedTableRow) row;
+									lrow.select.setState(Button.State.UNSELECTED);
+								}
+							}
+						}
+					}
+				}
+				
+			});
+			addNew.getButtonPressListeners().add(new ButtonPressListener(){
+				
+				@Override
+				public void buttonPressed(org.apache.pivot.wtk.Button button) {
+					String typeSelected = Objects.toString(typeSelector.getSelectedItem());
+					// Use toString() to force string so we can use switch
+					switch(typeSelected){
+					case "Layered Track":{
+						TrackLayerCompound tlc = new TrackLayerCompound(view);
+						tlc.initTransient(view);
+						view.tracks.add(tlc);
+						addTrack(tlc);
+						break;
+					}
+					case "Pattern Track":{
+						TrackLayerSimple tls = new TrackLayerSimple(view);
+						tls.initTransient(view);
+						view.tracks.add(tls);
+						addTrack(tls);
+						break;
+					}
+					}
+				}
+				
+			});
+			//TODO add existing track by pasting on move here button
+		}
+		
+		/**
+		 * Update with a single added track
+		 * <br>
+		 * Inefficient for bulk add operations, so use only for singles
+		 */
+		public void addTrack(Track track){
+			BXMLSerializer serializer = new BXMLSerializer();
+			LinkedTableRow row = PivotSwingUtils.loadBxml(TrackLCEditor.class, "trackLCEditorTableRow.bxml", serializer);
+			row.parent = this;
+			row.view = track;
+			row.init();
+			getRows().add(row);
 		}
 	}
 	
@@ -237,13 +303,24 @@ public class TrackLCEditor extends Window implements Bindable {
 		 * Initialize, called after setting fields
 		 */
 		public void init(){
+			// java won't let us access outside class
+			final LinkedTableRow self = this;
 			viewComponent=view.getViewComponent();
 			fill.add(viewComponent);
 			viewComponent.getComponentMouseButtonListeners().add(new ComponentMouseButtonListener(){
 
 				@Override
 				public boolean mouseClick(Component component, Mouse.Button button, int x, int y, int count){
-					parent.parent.session.openUI(view);
+					switch(button){
+					case LEFT:{// Open the UI for that track
+						parent.parent.session.openUI(view);
+						break;
+					}
+					case RIGHT:{// Select or deselect it
+						PivotSwingUtils.invertToggle(select);
+						break;
+					}
+					}
 					return true;
 				}
 
@@ -260,7 +337,43 @@ public class TrackLCEditor extends Window implements Bindable {
 				}
 				
 			});
-			//TODO listeners for buttons + track view click listener
+			remove.getButtonPressListeners().add(new ButtonPressListener(){
+				
+				@Override
+				public void buttonPressed(org.apache.pivot.wtk.Button button) {
+					// if it works, it counts
+					parent.view.tracks.remove(view);
+					parent.getRows().remove(self);
+				}
+				
+			});
+			moveUp.getButtonPressListeners().add(new ButtonPressListener(){
+				
+				@Override
+				public void buttonPressed(org.apache.pivot.wtk.Button button) {
+					TablePane.RowSequence rows = parent.getRows();
+					int index = rows.indexOf(self);
+					// Can't move past first row, so check
+					if(index>LinkedTablePane.EXTRA_ROWS){
+						PivotSwingUtils.swap(rows, index, index-1);
+					}
+				}
+				
+			});
+			moveDown.getButtonPressListeners().add(new ButtonPressListener(){
+				
+				@Override
+				public void buttonPressed(org.apache.pivot.wtk.Button button) {
+					TablePane.RowSequence rows = parent.getRows();
+					int total = rows.getLength();
+					int index = rows.indexOf(self);
+					// Can't move past last row, so check
+					if(index>LinkedTablePane.EXTRA_ROWS&&index<total-1){
+						PivotSwingUtils.swap(rows, index, index+1);
+					}
+				}
+				
+			});
 		}
 	}
 

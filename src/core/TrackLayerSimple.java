@@ -114,6 +114,14 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 		return parentTLC.parentComposition();
 	}
 	
+	public boolean setParent(Object newParent){
+		if(newParent instanceof TrackLayerCompound){
+			parentTLC = (TrackLayerCompound)newParent;
+			return true;
+		}
+		return false;
+	}
+	
 	/**
 	 * Adds a voice
 	 * 

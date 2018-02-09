@@ -44,6 +44,13 @@ public interface Track extends Serializable {
 	public Composition parentComposition();
 	
 	/**
+	 * Attempt to change the parent, return true on success
+	 * 
+	 * @param newParent requested new parent
+	 */
+	public boolean setParent(Object newParent);
+	
+	/**
 	 * Request UI with metadata
 	 * <br>
 	 * If the returned value is an instance of {@link JInternalFrame}

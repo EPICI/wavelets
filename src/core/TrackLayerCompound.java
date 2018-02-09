@@ -97,6 +97,22 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 		}
 		return parentTLC.parentComposition();
 	}
+	
+	public boolean setParent(Object newParent){
+		if(newParent instanceof TrackLayerCompound){
+			parentIsComposition = false;
+			parentComposition = null;
+			parentTLC = (TrackLayerCompound) newParent;
+			return true;
+		}
+		if(newParent instanceof Composition){
+			parentIsComposition = true;
+			parentComposition = (Composition) newParent;
+			parentTLC = null;
+			return true;
+		}
+		return false;
+	}
 
 	@Override
 	public MetaComponent<JInternalFrame> getUI() {

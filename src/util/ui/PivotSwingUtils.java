@@ -4,6 +4,8 @@ import org.apache.pivot.serialization.SerializationException;
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.skin.terra.*;
 import org.apache.pivot.beans.*;
+import org.apache.pivot.collections.*;
+
 import java.io.IOException;
 import javax.swing.*;
 
@@ -169,5 +171,60 @@ public class PivotSwingUtils {
 		}catch(Exception e){
 			return defaultValue;
 		}
+	}
+	
+	/**
+	 * If a toggle button, inverts the state
+	 * <br>
+	 * Presses if unpressed, unpresses if pressed
+	 * 
+	 * @param button
+	 */
+	public static void invertToggle(PushButton button){
+		if(button!=null&&button.isToggleButton()){
+			switch(button.getState()){
+			case SELECTED:{
+				button.setState(Button.State.UNSELECTED);
+				break;
+			}
+			case UNSELECTED:{
+				button.setState(Button.State.SELECTED);
+				break;
+			}
+			}
+		}
+	}
+	
+	/**
+	 * Attempt to swap two items in a sequence
+	 * <br>
+	 * Will not throw exceptions in normal conditions,
+	 * instead returns false if it would fail, and doesn't
+	 * modify the sequence
+	 * <br>
+	 * If a=b and the swap is possible, the swap is skipped
+	 * and true is returned
+	 * <br>
+	 * If an exception is thrown, may be partway through the swap
+	 * 
+	 * @param seq sequence to swap in
+	 * @param a index of first item
+	 * @param b index of second item
+	 * @return if they were swapped
+	 */
+	public static <T> boolean swap(Sequence<T> seq,int a,int b){
+		if(seq!=null){
+			if(a<0||b<0)return false;
+			int n = seq.getLength();
+			if(a>=n||b>=n)return false;
+			if(a!=b){
+				T ia = seq.get(a);
+				T ib = seq.get(b);
+				seq.update(a, ib);
+				seq.update(b, ia);
+			}
+			return true;
+		}
+		return false;
 	}
 }

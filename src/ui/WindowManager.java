@@ -77,6 +77,8 @@ public class WindowManager extends Window implements Bindable {
 					case NAME_TRACKLCEDITOR:{
 						if(!windows.containsKey(NAME_TRACKLCEDITOR)){
 							TrackLCEditor trackLCEditor = PivotSwingUtils.loadBxml(TrackLCEditor.class, "trackLCEditor.bxml");
+							trackLCEditor.session=session;
+							trackLCEditor.init();
 							JInternalFrame wrapped = PivotSwingUtils.wrapPivotWindow(trackLCEditor);
 							addWindow(NAME_TRACKLCEDITOR,wrapped);
 							openWindow(NAME_TRACKLCEDITOR);
