@@ -21,7 +21,7 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 	/**
 	 * All contained tracks
 	 */
-	public ArrayList<Track> tracks;
+	public ArrayList<Track> tracks = new ArrayList<>();
 	/**
 	 * If this is the root {@link TrackLayerCompound}, the parent composition
 	 */

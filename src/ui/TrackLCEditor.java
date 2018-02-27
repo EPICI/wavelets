@@ -1,5 +1,6 @@
 package ui;
 
+import java.awt.event.*;
 import java.net.URL;
 import java.util.*;
 import javax.swing.*;
@@ -7,6 +8,7 @@ import org.apache.pivot.beans.*;
 import org.apache.pivot.collections.Map;
 import org.apache.pivot.util.Resources;
 import org.apache.pivot.wtk.*;
+import org.apache.pivot.wtk.Keyboard.KeyLocation;
 import org.apache.pivot.wtk.content.ButtonData;
 import core.*;
 import util.*;
@@ -68,7 +70,8 @@ public class TrackLCEditor extends Window implements Bindable {
 	 * @param track the track to add the UI for
 	 */
 	public void addTLC(TrackLayerCompound track){
-		for(Component component:tabPane){
+		TabPane.TabSequence tabs = tabPane.getTabs();
+		for(Component component:tabs){
 			if(component instanceof LinkedTablePane){
 				LinkedTablePane ltp = (LinkedTablePane) component;
 				if(ltp.view==track)return;
@@ -79,10 +82,12 @@ public class TrackLCEditor extends Window implements Bindable {
 	
 	private void addNewTLC(TrackLayerCompound track){
 		try{
-			LinkedTablePane linked = PivotSwingUtils.loadBxml(TrackLCEditor.class, "trackLCEditorTable.bxml");
+			TabPane.TabSequence tabs = tabPane.getTabs();
+			LinkedTablePane linked = PivotSwingUtils.loadBxml(LinkedTablePane.class, "trackLCEditorTable.bxml");
 			linked.parent = this;
 			linked.view = track;
 			linked.init();
+			tabs.add(linked);
 		}catch(NullPointerException exception){
 			exception.printStackTrace();
 		}
@@ -124,6 +129,10 @@ public class TrackLCEditor extends Window implements Bindable {
 		 * List of known types to select from
 		 */
 		public ListButton typeSelector;
+		/**
+		 * Which keys are pressed for the move here button
+		 */
+		public BitSet moveHereKeys = new BitSet();
 		
 		@Override
 		public void initialize(Map<String, Object> namespace, URL location, Resources resources) {
@@ -231,6 +240,60 @@ public class TrackLCEditor extends Window implements Bindable {
 						break;
 					}
 					}
+				}
+				
+			});
+			moveHere.getComponentMouseListeners().add(new ComponentMouseListener(){
+
+				@Override
+				public boolean mouseMove(Component component, int x, int y) {
+					return false;
+				}
+
+				@Override
+				public void mouseOut(Component component) {
+					moveHereKeys.clear();// Forget which keys are pressed, for safety
+				}
+
+				@Override
+				public void mouseOver(Component component) {
+				}
+				
+			});
+			moveHere.getComponentKeyListeners().add(new ComponentKeyListener(){
+
+				@Override
+				public boolean keyPressed(Component component, int keyCode, KeyLocation keyLocation) {
+					moveHereKeys.set(keyCode);
+					return false;
+				}
+
+				@Override
+				public boolean keyReleased(Component component, int keyCode, KeyLocation keyLocation) {
+					moveHereKeys.clear(keyCode);
+					switch(keyCode){
+					case KeyEvent.VK_V:{
+						if(moveHereKeys.get(KeyEvent.VK_CONTROL)){
+							Session session = parent.session;
+							Object clipBoard = session.clipBoard;
+							if(clipBoard instanceof Track){
+								Track tclip = (Track)clipBoard;
+								if(!view.tracks.contains(tclip)){
+									view.tracks.add(tclip);
+									addTrack(tclip);
+								}
+							}
+						}
+						break;
+					}
+					}
+					return false;
+				}
+
+				@Override
+				public boolean keyTyped(Component component, char character) {
+					// TODO Auto-generated method stub
+					return false;
 				}
 				
 			});

@@ -1,7 +1,6 @@
 package ui;
 
-import java.awt.Graphics2D;
-
+import java.awt.*;
 import org.apache.pivot.wtk.*;
 import core.*;
 import util.*;

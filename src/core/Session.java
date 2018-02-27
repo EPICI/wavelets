@@ -1,5 +1,6 @@
 package core;
 
+import java.awt.event.WindowEvent;
 import java.io.*;
 
 import util.*;
@@ -112,6 +113,44 @@ public class Session {
 		PivotSwingUtils.showFrameDefault(windowManagerFrame);
 		desktopPane.setVisible(true);
 		mainFrame.setSize(1280, 720);
+		mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		mainFrame.addWindowListener(new java.awt.event.WindowListener(){
+
+			@Override
+			public void windowOpened(WindowEvent e) {
+			}
+
+			@Override
+			public void windowClosing(WindowEvent e) {
+				// When you click the close button
+				// TODO ask to save changes
+				mainFrame.dispose();
+				// exit
+				System.exit(0);
+			}
+
+			@Override
+			public void windowClosed(WindowEvent e) {
+			}
+
+			@Override
+			public void windowIconified(WindowEvent e) {
+			}
+
+			@Override
+			public void windowDeiconified(WindowEvent e) {
+			}
+
+			@Override
+			public void windowActivated(WindowEvent e) {
+			}
+
+			@Override
+			public void windowDeactivated(WindowEvent e) {
+			}
+			
+		});
+		mainFrame.setResizable(true);
 		mainFrame.setVisible(true);
 		//TODO
 	}

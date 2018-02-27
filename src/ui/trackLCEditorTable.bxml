@@ -1,9 +1,10 @@
 <components:TrackLCEditor.LinkedTablePane
 	xmlns:bxml="http://pivot.apache.org/bxml"
+	xmlns:content="org.apache.pivot.wtk.content"
 	xmlns:components="ui"
 	xmlns="org.apache.pivot.wtk">
 	<TabPane.tabData>
-		<content:ButtonData bxml:id="tabName">
+		<content:ButtonData bxml:id="tabName"/>
 	</TabPane.tabData>
 	<columns>
 		<TablePane.Column width="-1"/>

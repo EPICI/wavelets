@@ -106,6 +106,7 @@ public class PivotSwingUtils {
 		Display display = displayHost.getDisplay();
 		ApplicationContext.getDisplays().add(display);
 		pivotWindow.open(display);
+		result.setResizable(true);
 		return result;
 	}
 	

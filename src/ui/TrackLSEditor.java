@@ -160,17 +160,9 @@ public class TrackLSEditor extends Window implements Bindable {
 		 */
 		public boolean mouseDragged;
 		/**
-		 * Is the shift key down?
+		 * Which keys are held down?
 		 */
-		public boolean shiftHeld;
-		/**
-		 * Is the control key down?
-		 */
-		public boolean controlHeld;
-		/**
-		 * Is the alt key down?
-		 */
-		public boolean altHeld;
+		public BitSet keys = new BitSet();
 		/**
 		 * The mouse x where dragging began
 		 */
@@ -204,6 +196,24 @@ public class TrackLSEditor extends Window implements Bindable {
 		 * Null if unset
 		 */
 		protected IdentityHashMap<Pattern,BitSet> selection;
+		
+		/**
+		 * Is the shift key held down?
+		 * 
+		 * @return
+		 */
+		public boolean shiftHeld(){
+			return keys.get(KeyEvent.VK_SHIFT);
+		}
+		
+		/**
+		 * Is the control key held down?
+		 * 
+		 * @return
+		 */
+		public boolean controlHeld(){
+			return keys.get(KeyEvent.VK_CONTROL);
+		}
 		
 		/**
 		 * Get the selection, never returns null
@@ -405,8 +415,7 @@ public class TrackLSEditor extends Window implements Bindable {
 
 		@Override
 		public void mouseOut(Component component) {
-			// TODO Auto-generated method stub
-			
+			keys.clear();// Forget which keys are pressed, for safety
 		}
 
 		@Override
@@ -526,7 +535,7 @@ public class TrackLSEditor extends Window implements Bindable {
 				if(mouseDragged){// drag -> select
 					if(!(la|lb)){
 						// shift = invert, not shift = set
-						IdentityHashMap<Pattern,BitSet> selection = getSelection(true,!shiftHeld);
+						IdentityHashMap<Pattern,BitSet> selection = getSelection(true,!shiftHeld());
 						int xmin=iowx,xmax=iwx,ymin=iowy,ymax=iwy;
 						if(xmin>xmax){
 							int t=xmin;
@@ -571,46 +580,22 @@ public class TrackLSEditor extends Window implements Bindable {
 		
 		@Override
 		public boolean keyPressed(Component component, int keyCode, Keyboard.KeyLocation keyLocation) {
-			switch(keyCode){
-			case KeyEvent.VK_SHIFT:{
-				shiftHeld = true;
-				break;
-			}
-			case KeyEvent.VK_CONTROL:{
-				controlHeld = true;
-				break;
-			}
-			case KeyEvent.VK_ALT:{
-				altHeld = true;
-				break;
-			}
-			}
+			keys.set(keyCode);
 			return true;// Consume the event
 		}
 
 		@Override
 		public boolean keyReleased(Component component, int keyCode, Keyboard.KeyLocation keyLocation) {
+			keys.clear(keyCode);
 			switch(keyCode){
-			case KeyEvent.VK_SHIFT:{
-				shiftHeld = false;
-				break;
-			}
-			case KeyEvent.VK_CONTROL:{
-				controlHeld = false;
-				break;
-			}
-			case KeyEvent.VK_ALT:{
-				altHeld = false;
-				break;
-			}
 			case KeyEvent.VK_C:{
-				if(controlHeld){// Ctrl + C -> copy
+				if(controlHeld()){// Ctrl + C -> copy
 					// TODO see what's selected and copy it
 				}
 				break;
 			}
 			case KeyEvent.VK_V:{
-				if(controlHeld){// Ctrl + V -> paste
+				if(controlHeld()){// Ctrl + V -> paste
 					LinkedEditorPane editor = (LinkedEditorPane) getComponent();
 					Session session = editor.parent.session;
 					TrackLayerSimple tls = editor.view;
