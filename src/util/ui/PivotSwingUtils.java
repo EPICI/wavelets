@@ -219,10 +219,16 @@ public class PivotSwingUtils {
 			int n = seq.getLength();
 			if(a>=n||b>=n)return false;
 			if(a!=b){
+				if(a>b){int t=a;a=b;b=t;}// Ensure a<b
 				T ia = seq.get(a);
 				T ib = seq.get(b);
-				seq.update(a, ib);
-				seq.update(b, ia);
+				// doesn't support these methods so we need to remove and add instead
+				//seq.update(a, ib);
+				//seq.update(b, ia);
+				seq.remove(b,1);
+				seq.remove(a,1);
+				seq.insert(ib, a);
+				seq.insert(ia, b);
 			}
 			return true;
 		}

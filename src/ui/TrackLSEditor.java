@@ -643,7 +643,7 @@ public class TrackLSEditor extends Window implements Bindable {
 			IdentityHashMap<Pattern,BitSet> patterns = tls.patterns;
 			IdentityHashMap<Pattern,BitSet> selection = getSelection(false,false);
 			double anchorx = this.anchorx, anchory = this.anchory, scalex = this.scalex, scaley = this.scaley;// Cache
-			Color bgCol, textCol, lineCol, buttonCol, errorCol, derrorCol, selectCol, aselectCol;
+			Color bgCol, textCol, lineCol, buttonCol, buttonColLight, errorCol, derrorCol, selectCol, aselectCol;
 			ColorScheme colors = editor.parent.session.getColors();
 			if(colors==null){
 				TerraTheme theme = (TerraTheme)Theme.getTheme();
@@ -663,6 +663,7 @@ public class TrackLSEditor extends Window implements Bindable {
 			}
 			derrorCol = ColorScheme.adjustHsb(errorCol, 0f, -0.5f, 0f);
 			aselectCol = ColorScheme.setAlpha(selectCol, 30);
+			buttonColLight = ColorScheme.brighten(buttonCol, 0.1f);
 			// Cache rows
 			int patternCount = patterns.size();
 			Pattern[] patternk = new Pattern[patternCount];
@@ -767,10 +768,10 @@ public class TrackLSEditor extends Window implements Bindable {
 					ys[i] = iy;
 				}
 				// Octave indicators (each doubling is one gradient repetition)
-				for(int j=12*Math.floorDiv(pmax, 12);j>pmin;j-=12){
-					int y1 = (int)Math.round(clipHeight*(pmax-j)), y2 = (int)Math.round(clipHeight*(pmax-j+12));// Recalculate because it can be out of bounds
-					graphics.setPaint(new GradientPaint(0,y1,ColorScheme.brighten(buttonCol, 0.1f),0,y2, buttonCol));
-					graphics.fillRect(0, y1, width, y2-y1);
+				for(int j=12*Math.floorDiv(pmin, 12);j<pmax;j+=12){
+					int y1 = (int)Math.round(clipHeight*(pmax-j)), y2 = (int)Math.round(clipHeight*(pmax-j-12));// Recalculate because it can be out of bounds
+					graphics.setPaint(new GradientPaint(0,y1,buttonColLight,0,y2, buttonCol));
+					graphics.fillRect(0, y2, width, y1-y2);
 				}
 				double ixmult = scalex/pd;
 				for(int delay=ipf+1;delay>=0&&delay<ilast;delay = pv.nextSetBit(delay+1)){

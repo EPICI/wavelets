@@ -184,16 +184,10 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 				ys[i] = iy;
 			}
 			// Octave indicators (each doubling is one gradient repetition)
-			for(int i=12*Math.floorDiv(maxPitch, 12);i>minPitch;i-=12){
-				int y1 = (int)Math.round(clipHeight*(maxPitch-i)), y2 = (int)Math.round(clipHeight*(maxPitch-i+12));// Recalculate because it can be out of bounds
+			for(int i=12*Math.floorDiv(minPitch, 12);i<maxPitch;i+=12){
+				int y1 = (int)Math.round(clipHeight*(maxPitch-i)), y2 = (int)Math.round(clipHeight*(maxPitch-i-12));// Recalculate because it can be out of bounds
 				graphics.setPaint(new GradientPaint(0,y1,bg,0,y2,bgdark));
-				graphics.fillRect(0, y1, width, y2-y1);
-			}
-			// Octave indicators (each doubling is one gradient repetition)
-			for(int i=12*Math.floorDiv(maxPitch, 12);i>minPitch;i-=12){
-				int y1 = (int)Math.round(clipHeight*(maxPitch-i)), y2 = (int)Math.round(clipHeight*(maxPitch-i+12));// Recalculate because it can be out of bounds
-				graphics.setPaint(new GradientPaint(0,y1,bg,0,y2,bgdark));
-				graphics.fillRect(0, y1, width, y2-y1);
+				graphics.fillRect(0, y2, width, y1-y2);
 			}
 			// Draw bars
 			for(Pattern pattern:patterns.keySet()){
@@ -246,10 +240,10 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 				ys[i] = iy;
 			}
 			// Octave indicators (each doubling is one gradient repetition)
-			for(int i=12*Math.floorDiv(maxPitch, 12);i>minPitch;i-=12){
-				int y1 = (int)Math.round(clipHeight*(maxPitch-i)), y2 = (int)Math.round(clipHeight*(maxPitch-i+12));// Recalculate because it can be out of bounds
+			for(int i=12*Math.floorDiv(minPitch, 12);i<maxPitch;i+=12){
+				int y1 = (int)Math.round(clipHeight*(maxPitch-i)), y2 = (int)Math.round(clipHeight*(maxPitch-i-12));// Recalculate because it can be out of bounds
 				graphics.setPaint(new GradientPaint(0,y1,bg,0,y2,bgdark));
-				graphics.fillRect(0, y1, width, y2-y1);
+				graphics.fillRect(0, y2, width, y1-y2);
 			}
 			// Draw bars
 			for(Pattern pattern:patterns.keySet()){
@@ -268,7 +262,7 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 			}
 		}
 		if(highlighted){
-			graphics.setColor(new Color(0x22ffffff));
+			graphics.setColor(new Color(0xff,0xff,0xff,0x99));
 			graphics.fillRect(0, 0, width, height);
 		}
 	}
