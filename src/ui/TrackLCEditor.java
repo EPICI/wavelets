@@ -369,7 +369,7 @@ public class TrackLCEditor extends Window implements Bindable {
 			// java won't let us access outside class
 			final LinkedTableRow self = this;
 			viewComponent=view.getViewComponent();
-			fill.add(viewComponent);
+			add(viewComponent);
 			viewComponent.getComponentMouseButtonListeners().add(new ComponentMouseButtonListener(){
 
 				@Override

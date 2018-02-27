@@ -33,6 +33,7 @@ public class TrackLSPreview extends Track.ViewComponent {
 	
 	public TrackLSPreview(TrackLayerSimple track){
 		target = track;
+		installSkin(TrackLSPreview.class);
 	}
 	
 	@Override
