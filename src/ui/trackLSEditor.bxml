@@ -3,4 +3,4 @@
 	xmlns:components="ui"
 	xmlns="org.apache.pivot.wtk">
 	<TabPane bxml:id="tabPane" closeable="true"/>
-</components:TrackLCEditor>
+</components:TrackLSEditor>

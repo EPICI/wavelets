@@ -10,17 +10,12 @@ import org.apache.pivot.util.Resources;
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.Action;
 import org.apache.pivot.wtk.Button.DataRenderer;
-
 import core.*;
-
 import org.apache.pivot.wtk.ButtonGroup;
-
 import javax.swing.*;
 import javax.swing.event.InternalFrameEvent;
 import javax.swing.event.InternalFrameListener;
-
 import java.util.HashMap;
-
 import util.*;
 import util.ui.PivotSwingUtils;
 
@@ -180,7 +175,7 @@ public class WindowManager extends Window implements Bindable {
 		LinkedTablePane linked = windows.get(name);
 		if(linked==null)return false;
 		JInternalFrame frame = linked.frame;
-		return PivotSwingUtils.showFrameDefault(frame);
+		return PivotSwingUtils.showFrame(frame,nextFrameLocation(),nextFrameDimensions());
 	}
 	
 	/**
@@ -202,6 +197,52 @@ public class WindowManager extends Window implements Bindable {
 		}
 		list.remove(linked);
 		windows.remove(name);
+	}
+	
+	/**
+	 * Where should the next frame be opened at?
+	 * 
+	 * @return
+	 */
+	public int[] nextFrameLocation(){
+		java.awt.Point topLeft = session.windowManagerFrame.getLocation();
+		for(LinkedTablePane ltp:windows.values()){
+			JInternalFrame frame = ltp.frame;
+			if(!frame.isVisible())continue;
+			topLeft = frame.getLocation();
+			break;
+		}
+		return nextFrameLocationOffset(topLeft.x,topLeft.y);
+	}
+	
+	/**
+	 * Given the location of this frame, offset it to get a
+	 * potential next frame location
+	 * 
+	 * @param x
+	 * @param y
+	 * @return
+	 */
+	protected int[] nextFrameLocationOffset(int x,int y){
+		final double MULTIPLIER = 0.25;
+		final double XFRACTION = 0.01;
+		final double YFRACTION = 0.05;
+		java.awt.Dimension dim = session.desktopPane.getSize();
+		int width = dim.width;
+		int height = dim.height;
+		return new int[]{(int)((x+width*XFRACTION)%(width*MULTIPLIER)),
+				(int)((y+height*YFRACTION)%(height*MULTIPLIER))};
+	}
+	
+	/**
+	 * What size should the next frame be?
+	 * 
+	 * @return
+	 */
+	public int[] nextFrameDimensions(){
+		final double MULTIPLIER = 0.75;
+		java.awt.Dimension dim = session.desktopPane.getSize();
+		return new int[]{(int)(dim.width*MULTIPLIER),(int)(dim.height*MULTIPLIER)};
 	}
 	
 	/**
@@ -256,10 +297,7 @@ public class WindowManager extends Window implements Bindable {
 
 				@Override
 				public void buttonPressed(Button button) {
-					JInternalFrame frame = self.frame;
-					frame.setVisible(true);
-					frame.toFront();
-					frame.requestFocusInWindow();
+					parent.openWindow(self.name);
 				}
 				
 			});

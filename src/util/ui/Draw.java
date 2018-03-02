@@ -134,7 +134,7 @@ public class Draw {
 				font=font.deriveFont((float)(scale*font.getSize()));
 				double dlineHeight = lineHeight*scale;
 				double dtextHeight = textHeight*scale;
-				double yoffset = fontMetrics.getAscent()*scale+dtextHeight*yalign;
+				double yoffset = y+fontMetrics.getAscent()*scale+(height-dtextHeight)*yalign;
 				graphics.setColor(textFill);
 				graphics.setFont(font);
 				for(int i=0;i<textCount;i++){

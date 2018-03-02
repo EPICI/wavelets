@@ -292,7 +292,6 @@ public class TrackLCEditor extends Window implements Bindable {
 
 				@Override
 				public boolean keyTyped(Component component, char character) {
-					// TODO Auto-generated method stub
 					return false;
 				}
 				
@@ -389,13 +388,11 @@ public class TrackLCEditor extends Window implements Bindable {
 
 				@Override
 				public boolean mouseDown(Component component, Mouse.Button button, int x, int y){
-					// TODO Auto-generated method stub
 					return true;
 				}
 
 				@Override
 				public boolean mouseUp(Component component, Mouse.Button button, int x, int y){
-					// TODO Auto-generated method stub
 					return true;
 				}
 				

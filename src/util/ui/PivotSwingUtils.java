@@ -81,9 +81,20 @@ public class PivotSwingUtils {
 	 * @return true if successful
 	 */
 	public static boolean showFrameDefault(JInternalFrame frame){
+		return showFrame(frame,new int[]{60,60},new int[]{960,540});
+	}
+	/**
+	 * Pops open the frame at the specified location, if it exists
+	 * 
+	 * @param frame the {@link JInternalFrame} to show
+	 * @param topLeft coordinate that the top left corner of the window should be at
+	 * @param dimensions width and height for the window
+	 * @return true if successful
+	 */
+	public static boolean showFrame(JInternalFrame frame,int[] topLeft,int[] dimensions){
 		if(frame==null)return false;
-		frame.setLocation(60, 60);
-		frame.setSize(1280, 720);
+		frame.setLocation(topLeft[0], topLeft[1]);
+		frame.setSize(dimensions[0], dimensions[1]);
 		frame.setVisible(true);
 		frame.toFront();
 		frame.requestFocusInWindow();

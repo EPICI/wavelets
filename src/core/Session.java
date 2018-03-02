@@ -167,7 +167,9 @@ public class Session {
 		MetaComponent<? extends JComponent> meta = track.getUI();
 		JComponent component = meta.component;
 		if(component instanceof JInternalFrame){
-			windowManager.addWindow(meta.group,(JInternalFrame)component);
+			String name = meta.group;
+			windowManager.addWindow(name,(JInternalFrame)component);
+			windowManager.openWindow(name);
 		}else{
 			//TODO
 		}

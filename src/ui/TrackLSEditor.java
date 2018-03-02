@@ -4,7 +4,6 @@ import core.*;
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.Mouse.Button;
 import org.apache.pivot.wtk.Mouse.ScrollType;
-
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.GradientPaint;
@@ -66,6 +65,15 @@ public class TrackLSEditor extends Window implements Bindable {
 	 */
 	public int sidebarWidth;
 	
+	/**
+	 * Convenience method to create a new one from outside
+	 * 
+	 * @return
+	 */
+	public static TrackLSEditor createNew(){
+		return PivotSwingUtils.loadBxml(TrackLSEditor.class, "trackLSEditor.bxml");
+	}
+	
 	public TrackLSEditor(){
 		super();
 		sidebarWidth = 200;
@@ -74,6 +82,35 @@ public class TrackLSEditor extends Window implements Bindable {
 	@Override
 	public void initialize(Map<String, Object> namespace, URL location, Resources resources) {
 		tabPane = (TabPane) namespace.get("tabPane");
+	}
+	
+	/**
+	 * Add UI for a {@link TrackLayerSimple} if it isn't already present
+	 * 
+	 * @param track the track to add the UI for
+	 */
+	public void addTLS(TrackLayerSimple track){
+		TabPane.TabSequence tabs = tabPane.getTabs();
+		for(Component component:tabs){
+			if(component instanceof LinkedEditorPane){
+				LinkedEditorPane ltp = (LinkedEditorPane) component;
+				if(ltp.view==track)return;
+			}
+		}
+		addNewTLS(track);
+	}
+	
+	private void addNewTLS(TrackLayerSimple track){
+		try{
+			TabPane.TabSequence tabs = tabPane.getTabs();
+			LinkedEditorPane linked = PivotSwingUtils.loadBxml(LinkedEditorPane.class, "trackLSEditorPane.bxml");
+			linked.parent = this;
+			linked.view = track;
+			linked.init();
+			tabs.add(linked);
+		}catch(NullPointerException exception){
+			exception.printStackTrace();
+		}
 	}
 
 	/**
@@ -105,6 +142,7 @@ public class TrackLSEditor extends Window implements Bindable {
 		@Override
 		public void initialize(Map<String, Object> namespace, URL location, Resources resources) {
 			tabName = (ButtonData) namespace.get("tabName");
+			installSkin(LinkedEditorPane.class);
 		}
 		
 		/**
@@ -349,10 +387,11 @@ public class TrackLSEditor extends Window implements Bindable {
 		 * @return
 		 */
 		public int[] buttonxy(boolean ignore){
-			if(ignore&&(mouseDown!=1||mouseDragged))return null;
+			if(!ignore&&(mouseDown!=1||mouseDragged))return null;
 			LinkedEditorPane editor = (LinkedEditorPane) getComponent();
 			TrackLayerSimple tls = editor.view;
 			int mousex = lastMousex, mousey = lastMousey;
+			if(mousex<0||mousey<0)return null;// Out of bounds signals mouse not over editor
 			double anchorx = this.anchorx, anchory = this.anchory,
 					scalex = this.scalex, scaley = this.scaley,
 					iscalex = 1d/scalex, iscaley = 1d/scaley;
@@ -377,20 +416,16 @@ public class TrackLSEditor extends Window implements Bindable {
 			this.lastMousey = y;
 			mouseDragged = true;
 			int mouseDown = this.mouseDown;
+			LinkedEditorPane editor = (LinkedEditorPane) getComponent();
+			int width = getWidth(), height = getHeight();
+			int swidth = editor.parent.sidebarWidth, ewidth = width-swidth;// Width remaining after sidebar
 			// Skip if mouse not held
 			if(mouseDown!=0){
 				// --- Fetch some data ---
-				LinkedEditorPane editor = (LinkedEditorPane) getComponent();
-				//Session session = editor.parent.session;
-				//TrackLayerSimple tls = editor.view;
-				int width = getWidth(), height = getHeight();
-				// Local variables are faster + inversion
-				//IdentityHashMap<Pattern,BitSet> patterns = tls.patterns;
 				double anchorx = this.anchorx, anchory = this.anchory,
 						scalex = this.scalex, scaley = this.scaley,
 						iscalex = 1d/scalex, iscaley = 1d/scaley;
 				// Get bounds
-				int swidth = editor.parent.sidebarWidth, ewidth = width-swidth;// Width remaining after sidebar
 				int[] swidths = sidebarColumnWidths(swidth);
 				int swidtha = swidths[0], swidthb = swidths[1];
 				// Handle the event
@@ -409,24 +444,28 @@ public class TrackLSEditor extends Window implements Bindable {
 				}
 				// may need repainting
 				editor.repaint();
+			}else if(x<swidth||lastMousex<swidth){
+				// Buttons may need redrawing
+				editor.repaint();
 			}
 			return true;// Consume the event
 		}
 
 		@Override
 		public void mouseOut(Component component) {
+			LinkedEditorPane editor = (LinkedEditorPane) getComponent();
 			keys.clear();// Forget which keys are pressed, for safety
+			lastMousex = -1;
+			lastMousey = -1;
+			editor.repaint();// May need repainting
 		}
 
 		@Override
 		public void mouseOver(Component component) {
-			// TODO Auto-generated method stub
-			
 		}
 		
 		@Override
 		public boolean mouseClick(Component component, Button button, int x, int y, int count) {
-			// TODO Auto-generated method stub
 			return true;// Consume the event
 		}
 
@@ -446,6 +485,7 @@ public class TrackLSEditor extends Window implements Bindable {
 				mouseDown = 4;
 				break;
 			}
+			LinkedEditorPane editor = (LinkedEditorPane) getComponent();
 			double iscalex = 1d/scalex, iscaley = 1d/scaley;
 			uanchorx = anchorx;
 			uanchory = anchory;
@@ -456,7 +496,7 @@ public class TrackLSEditor extends Window implements Bindable {
 			lastMousex = x;
 			lastMousey = y;
 			mouseDragged = false;
-			// TODO Auto-generated method stub
+			editor.repaint();// May need repainting
 			return true;// Consume the event
 		}
 
@@ -574,7 +614,6 @@ public class TrackLSEditor extends Window implements Bindable {
 		
 		@Override
 		public boolean mouseWheel(Component component, ScrollType scrollType, int scrollAmount, int wheelRotation, int x, int y) {
-			// TODO Auto-generated method stub
 			return true;// Consume the event
 		}
 		
@@ -615,7 +654,6 @@ public class TrackLSEditor extends Window implements Bindable {
 
 		@Override
 		public boolean keyTyped(Component component, char character) {
-			// TODO Auto-generated method stub
 			return true;// Consume the event
 		}
 
@@ -715,7 +753,7 @@ public class TrackLSEditor extends Window implements Bindable {
 				Draw.drawButton(graphics, x1, y1, x2, y2, "Add new", null, null, lineCol, buttonCol, buttony==patternCount&&buttonx==0, textCol, null, 0.5d, 0.5d, imageScale, 0);
 				x1 = swidtha;
 				x2 = swidthb;
-				Draw.drawButton(graphics, x1, y1, x2, y2, "Move here", null, null, lineCol, buttonCol, buttony==patternCount&&buttonx==0, textCol, null, 0.5d, 0.5d, imageScale, 0);
+				Draw.drawButton(graphics, x1, y1, x2, y2, "Move here", null, null, lineCol, buttonCol, buttony==patternCount&&buttonx==1, textCol, null, 0.5d, 0.5d, imageScale, 0);
 			}
 			// Draw patterns
 			graphics = (Graphics2D) graphics.create(swidth,0,ewidth,height);

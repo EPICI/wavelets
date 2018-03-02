@@ -4,6 +4,7 @@ import java.util.*;
 import javax.swing.*;
 import org.python.core.*;
 import util.jython.*;
+import util.ui.PivotSwingUtils;
 import util.*;
 import util.hash.*;
 import ui.*;
@@ -240,10 +241,19 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 		return new double[]{min*rate,max*rate};
 	}
 
+	public static TrackLSEditor editor;
+	public static MetaComponent<JInternalFrame> meta;
 	@Override
 	public MetaComponent<JInternalFrame> getUI() {
-		// TODO Auto-generated method stub
-		return null;
+		if(meta==null||meta.component.isClosed()){
+			Session session = parentComposition().currentSession;
+			editor = TrackLSEditor.createNew();
+			editor.session = session;
+			JInternalFrame wrapped = PivotSwingUtils.wrapPivotWindow(editor);
+			meta = new MetaComponent<>("Default Pattern Track Editor","Pattern Track Editor",wrapped);
+		}
+		editor.addTLS(this);
+		return meta;
 	}
 
 	@Override
