@@ -4,6 +4,7 @@ import java.awt.*;
 import java.awt.image.*;
 
 import core.ColorScheme;
+import util.math.Floats;
 
 import java.awt.geom.*;
 
@@ -238,6 +239,203 @@ public class Draw {
 			subb[i]=(byte)(tintb*i/255);
 		}
 		return new LookupOp(new ByteLookupTable(0,new byte[][]{subr,subg,subb}),null);
+	}
+	
+	/**
+	 * Utility class containing methods for approximating
+	 * circles and arcs with cubic bezier curves (4 control points)
+	 * <br>
+	 * The 2 outer control points are the endpoints, and the 2
+	 * inner control points are from a ray tangent to the circle
+	 * coming from their respective parent endpoints
+	 * <br>
+	 * The distance along that ray is computed as
+	 * <i>4/3 tan(angle/4)</i>
+	 * using the angle of the arc, or
+	 * <i>4/3 tan(pi/2n)</i>
+	 * if the arc is 1/n of a circle
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static class BezierArc{
+		
+		// Disallow invoking constructor
+		private BezierArc(){}
+		
+		/**
+		 * The magic number used in the formula, 4/3
+		 */
+		public static final double DISTANCE_CONSTANT = 4d/3;
+		/**
+		 * Distance for 1/2 of a circle
+		 */
+		public static final double HALF_DISTANCE = innerDistanceFraction(2);
+		/**
+		 * Distance for 1/4 of a circle
+		 */
+		public static final double QUARTER_DISTANCE = innerDistanceFraction(4);
+		/**
+		 * The longest a segment can be before it is automatically subdivided
+		 */
+		public static final double MAX_SEGMENT_ANGLE = Math.PI*0.5+Floats.D_EPSILON;
+		/**
+		 * Reciprocal of the segment angle limit before subdivision
+		 */
+		public static final double IMAX_SEGMENT_ANGLE = 1d/MAX_SEGMENT_ANGLE;
+		
+		/**
+		 * Distance to the inner control points,
+		 * given the angle of the arc
+		 * 
+		 * @param angle
+		 * @return
+		 */
+		public static double innerDistanceAngle(double angle){
+			return DISTANCE_CONSTANT*Math.tan(angle*0.25);
+		}
+		
+		/**
+		 * Distance to the inner control points,
+		 * given that the arc is 1/n of a circle
+		 * 
+		 * @param n
+		 * @return
+		 */
+		public static double innerDistanceFraction(double n){
+			return DISTANCE_CONSTANT*Math.tan(Math.PI*0.5/n);
+		}
+		
+		/**
+		 * With a circle centered at
+		 * <i>(cx,cy)</i>
+		 * and with radius vector
+		 * <i>(rx,ry)</i>
+		 * add n quarter circles clockwise onto <i>path</i>.
+		 * <br>
+		 * If n is negative, goes -n counterclockwise instead
+		 * <br>
+		 * Does not automatically add the first point
+		 * <br>
+		 * Normally this would go counterclockwise, but in graphics
+		 * +y is down instead of up, so it's clockwise instead
+		 * 
+		 * @param path path to append to
+		 * @param cx x of center
+		 * @param cy y of center
+		 * @param rx x of radius
+		 * @param ry y of radius
+		 * @param n clockwise quarters
+		 */
+		public static void quarters(Path2D.Double path,double cx,double cy,double rx,double ry,int n){
+			if(n>0){
+				if(n>4)n=4;
+				for(int i=0;i<n;i++){
+					double nrx = -ry, nry = rx;
+					path.curveTo(
+							cx+rx-ry*QUARTER_DISTANCE,
+							cy+ry+rx*QUARTER_DISTANCE,
+							cx+nrx+nry*QUARTER_DISTANCE,
+							cy+nry-nrx*QUARTER_DISTANCE,
+							cx+nrx,
+							cy+nry);
+					rx = nrx;ry = nry;
+				}
+			}else if(n<0){
+				n=-n;
+				if(n>4)n=4;
+				for(int i=0;i<n;i++){
+					double nrx = ry, nry = -rx;
+					path.curveTo(
+							cx+rx-ry*QUARTER_DISTANCE,
+							cy+ry+rx*QUARTER_DISTANCE,
+							cx+nrx+nry*QUARTER_DISTANCE,
+							cy+nry-nrx*QUARTER_DISTANCE,
+							cx+nrx,
+							cy+nry);
+					rx = nrx;ry = nry;
+				}
+			}
+		}
+		
+		/**
+		 * With a circle centered at
+		 * <i>(cx,cy)</i>
+		 * and with radius
+		 * <i>r</i>
+		 * add an arc with clockwise angle
+		 * <i>arcAngle</i>
+		 * starting from clockwise angle
+		 * <i>startAngle</i>
+		 * using
+		 * <i>segments</i>
+		 * smaller bezier curves added onto <i>path</i>.
+		 * <br>
+		 * If 0 or negative <i>segments</i>, automatically calculates how many are needed
+		 * for a decent approximation, and will use at least <i>-segments</i>
+		 * <br>
+		 * If <i>transform</i> is provided, will pass relative-to-center coordinates
+		 * to it before adding the center and finally giving it to <i>path</i>
+		 * <br>
+		 * Does not automatically add the first point
+		 * <br>
+		 * Normally this would go counterclockwise, but in graphics
+		 * +y is down instead of up, so it's clockwise instead
+		 * 
+		 * @param path
+		 * @param transform
+		 * @param cx
+		 * @param cy
+		 * @param r
+		 * @param startAngle
+		 * @param arcAngle
+		 * @param segments
+		 */
+		public static void arc(Path2D.Double path,AffineTransform transform,double cx,double cy,double r,double startAngle,double arcAngle,int segments){
+			// Null becomes identity
+			if(transform==null)transform = new AffineTransform();
+			// Limit to full circle
+			arcAngle = Floats.median(-Math.PI*2, arcAngle, Math.PI*2);
+			// Automatically calculate needed segments
+			if(segments<=0){
+				segments = Math.max(-segments, (int)Math.ceil(Math.abs(arcAngle)*IMAX_SEGMENT_ANGLE));
+			}
+			// Needed constants
+			final double segAngle = arcAngle/segments;
+			final double distance = innerDistanceAngle(segAngle);
+			final double ca = Math.cos(segAngle), sa = Math.sin(segAngle);
+			// Inner points + end, before and after transform
+			final double[] pre = new double[6];
+			final double[] post = new double[6];
+			double nrx = pre[4] = r*Math.cos(startAngle);
+			double nry = pre[5] = r*Math.sin(startAngle);
+			// Start, before transform
+			double rx,ry;
+			for(int i=0;i<segments;i++){
+				// The end becomes the start
+				rx = nrx;
+				ry = nry;
+				// Rotation to get the next end
+				pre[4] = nrx = rx*ca - ry*sa;
+				pre[5] = nry = ry*ca + rx*sa;
+				// Compute inner points
+				pre[0] = rx-ry*distance;
+				pre[1] = ry+rx*distance;
+				pre[2] = nrx+nry*distance;
+				pre[3] = nry-nrx*distance;
+				// Transform
+				transform.transform(pre, 0, post, 0, 6);
+				// Add the segment
+				path.curveTo(
+						cx+post[0],
+						cy+post[1],
+						cx+post[2],
+						cy+post[3],
+						cx+post[4],
+						cy+post[5]);
+			}
+		}
+		
 	}
 	
 }

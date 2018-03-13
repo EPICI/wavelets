@@ -283,6 +283,10 @@ public class ColorScheme implements Serializable{
 	
 	/**
 	 * Taken from {@link TerraTheme}. Brightens or darkens a color <i>linearly</i>.
+	 * <br>
+	 * Note that {@link TerraTheme} uses <i>+0.1</i> for the next lighter color
+	 * and <i>-0.1</i> for the next darker color, so to be consistent with
+	 * the rest of pivot, those increments should be used.
 	 * 
 	 * @param color original color
 	 * @param adjustment value between -1 and 1, 0 has no effect

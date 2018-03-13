@@ -626,6 +626,8 @@ public class TrackLSEditor extends Window implements Bindable {
 		@Override
 		public boolean keyReleased(Component component, int keyCode, Keyboard.KeyLocation keyLocation) {
 			keys.clear(keyCode);
+			boolean modified = false;
+			LinkedEditorPane editor = (LinkedEditorPane) getComponent();
 			switch(keyCode){
 			case KeyEvent.VK_C:{
 				if(controlHeld()){// Ctrl + C -> copy
@@ -635,7 +637,6 @@ public class TrackLSEditor extends Window implements Bindable {
 			}
 			case KeyEvent.VK_V:{
 				if(controlHeld()){// Ctrl + V -> paste
-					LinkedEditorPane editor = (LinkedEditorPane) getComponent();
 					Session session = editor.parent.session;
 					TrackLayerSimple tls = editor.view;
 					Object clipBoard = session.clipBoard;
@@ -643,11 +644,15 @@ public class TrackLSEditor extends Window implements Bindable {
 						Pattern pclip = (Pattern)clipBoard;
 						if(!tls.patterns.containsKey(pclip)){
 							tls.patterns.put(pclip, new BitSet());
+							modified = true;
 						}
 					}
 				}
 				break;
 			}
+			}
+			if(modified){// This flag tracks whether any changes were made
+				editor.repaint();
 			}
 			return true;// Consume the event
 		}
@@ -682,23 +687,13 @@ public class TrackLSEditor extends Window implements Bindable {
 			IdentityHashMap<Pattern,BitSet> selection = getSelection(false,false);
 			double anchorx = this.anchorx, anchory = this.anchory, scalex = this.scalex, scaley = this.scaley;// Cache
 			Color bgCol, textCol, lineCol, buttonCol, buttonColLight, errorCol, derrorCol, selectCol, aselectCol;
-			ColorScheme colors = editor.parent.session.getColors();
-			if(colors==null){
-				TerraTheme theme = (TerraTheme)Theme.getTheme();
-				bgCol = theme.getBaseColor(1);
-				textCol = theme.getBaseColor(0);
-				lineCol = theme.getBaseColor(2);
-				buttonCol = theme.getBaseColor(3);
-				selectCol = theme.getBaseColor(5);
-				errorCol = theme.getBaseColor(7);
-			}else{
-				bgCol = colors.background;
-				textCol = colors.text;
-				lineCol = colors.line;
-				buttonCol = colors.gradient;
-				selectCol = colors.selected;
-				errorCol = colors.error;
-			}
+			ColorScheme colors = Session.getColors(editor.parent.session);
+			bgCol = colors.background;
+			textCol = colors.text;
+			lineCol = colors.line;
+			buttonCol = colors.gradient;
+			selectCol = colors.selected;
+			errorCol = colors.error;
 			derrorCol = ColorScheme.adjustHsb(errorCol, 0f, -0.5f, 0f);
 			aselectCol = ColorScheme.setAlpha(selectCol, 30);
 			buttonColLight = ColorScheme.brighten(buttonCol, 0.1f);

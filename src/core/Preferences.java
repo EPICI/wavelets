@@ -33,7 +33,7 @@ public class Preferences implements Serializable {
 	
 	// Booleans (boolean)
 	public static final int INDEX_TLS_ALLOW_PATTERN_CONVERT = 0;
-	public static final int INDEX_TLS_ALLOW_PATTERN_MERGE = 0;
+	public static final int INDEX_TLS_ALLOW_PATTERN_MERGE = 1;
 	
 	// Ints (long)
 	public static final int INDEX_TLS_PATTERN_BAR_GRADIENT_SHIFT = 0;

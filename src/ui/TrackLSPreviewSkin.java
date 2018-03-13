@@ -25,15 +25,11 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 	 * Extra space to leave above and below, in semitones
 	 */
 	public static final int PITCH_MARGIN = 4;
-
-	/**
-	 * Active color scheme. If null, defaults to theme colors.
-	 */
-	public ColorScheme colors;
 	
 	public transient Preferences preferences;
 	protected transient TrackLayerSimple tls;
 	protected transient Composition comp;
+	protected transient Session session;
 	protected transient int width, height;
 	protected transient double[] gbounds, lbounds;
 	protected transient boolean highlighted = false;
@@ -80,6 +76,7 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 		tls = target.target;
 		lbounds = tls.getTimeBounds();
 		comp = tls.parentComposition();
+		session = comp.currentSession;
 		gbounds = comp.tracks.getTimeBounds();
 		double diffs = gbounds[1]-gbounds[0];
 		return width = (int) (diffs/comp.baseSpeed*target.pixelsPerMeasure);
@@ -120,12 +117,8 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 		double baseSpeed = comp.baseSpeed;
 		double xadd = -gbounds[0]/baseSpeed, xmult = width*baseSpeed/(gbounds[1]-gbounds[0]);
 		Color bg;
-		if(colors==null){
-			TerraTheme theme = (TerraTheme) Theme.getTheme();
-			bg = theme.getBaseColor(1);
-		}else{
-			bg = colors.background;
-		}
+		ColorScheme colors = Session.getColors(session);
+		bg = colors.background;
 		Color bgdark = TerraTheme.darken(bg);
 		IdentityHashMap<Pattern,BitSet> patterns = tls.patterns;
 		int minPitch = 0, maxPitch = 0;

@@ -1,7 +1,7 @@
 package util.math;
 
 /**
- * Some generic floating point utilities
+ * Some generic floating point utilities and float constants
  * 
  * @author EPICI
  * @version 1.0
@@ -32,6 +32,12 @@ public final class Floats {
 	 * Float has 24 mantissa bits, 2^-24 is around 6.0x10^-8, so 10^-6 is a safe value to use
 	 */
 	public static final float F_EPSILON = 1e-6f;
+	
+	/**
+	 * <i>log(2)</i>, useful for going between
+	 * base <i>e</i> and base <i>2</i>
+	 */
+	public static final double LOG2 = StrictMath.log(2);
 	
 	/**
 	 * Checks if two values are absolutely or relatively near,
@@ -104,7 +110,7 @@ public final class Floats {
 	 * More versatile than specific variations like constrain
 	 * <br>
 	 * If the ordering is somewhat predictable (ex. with constants)
-	 * aim for a<b<c
+	 * aim for a&lt;b&lt;c
 	 * 
 	 * @param a
 	 * @param b
@@ -122,7 +128,7 @@ public final class Floats {
 	 * More versatile than specific variations like constrain
 	 * <br>
 	 * If the ordering is somewhat predictable (ex. with constants)
-	 * aim for a<b<c
+	 * aim for a&lt;b&lt;c
 	 * 
 	 * @param a
 	 * @param b

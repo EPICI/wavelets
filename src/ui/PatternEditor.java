@@ -74,13 +74,58 @@ public class PatternEditor extends Window implements Bindable {
 		 */
 		public Pattern view;
 		/**
+		 * The main part of the pattern editor,
+		 * a custom type
+		 */
+		public LinkedEditorInnerPane editorInnerPane;
+		/**
 		 * The tab name
 		 */
 		public ButtonData tabName;
+		/**
+		 * The table pane that wraps the whole thing
+		 */
+		public TablePane outerTablePane;
+		/**
+		 * The top menu
+		 */
+		public MenuBar menuBar;
+		/**
+		 * The table pane that wraps the whole thing except for the menu
+		 */
+		public TablePane innerTablePane;
+		/**
+		 * Pattern properties scroll pane wrapping a table pane
+		 */
+		public ScrollPane patternScrollPane;
+		/**
+		 * Pattern properties table pane, each row is an editable property
+		 */
+		public TablePane patternTablePane;
+		/**
+		 * Clip properties scroll pane wrapping a table pane
+		 */
+		public ScrollPane clipScrollPane;
+		/**
+		 * Clip properties table pane, each row is an editable property
+		 * <br>
+		 * It uses 2 columns: left corresponds to editing the specific
+		 * selected clip(s), right corresponds to editing the template
+		 * that defines the left's behaviour
+		 */
+		public TablePane clipTablePane;
 		
 		@Override
 		public void initialize(Map<String, Object> namespace, URL location, Resources resources) {
 			tabName = (ButtonData) namespace.get("tabName");
+			editorInnerPane = (LinkedEditorInnerPane) namespace.get("editorInnerPane");
+			outerTablePane = (TablePane) namespace.get("outerTablePane");
+			menuBar = (MenuBar) namespace.get("menuBar");
+			innerTablePane = (TablePane) namespace.get("innerTablePane");
+			patternScrollPane = (ScrollPane) namespace.get("patternScrollPane");
+			patternTablePane = (TablePane) namespace.get("patternTablePane");
+			clipScrollPane = (ScrollPane) namespace.get("clipScrollPane");
+			clipTablePane = (TablePane) namespace.get("clipTablePane");
 		}
 		
 		/**
@@ -92,14 +137,33 @@ public class PatternEditor extends Window implements Bindable {
 		
 	}
 	
+	public static class LinkedEditorInnerPane extends Component implements Bindable{
+		
+		/**
+		 * The pane that contains this
+		 */
+		public LinkedEditorPane parent;
+		
+		@Override
+		public void initialize(Map<String, Object> namespace, URL location, Resources resources) {
+		}
+		
+		/**
+		 * Initialize, called after setting fields
+		 */
+		public void init(){
+		}
+		
+	}
+	
 	/**
-	 * Skin for the {@link LinkedEditorPane}. By convention, it provides the UI
+	 * Skin for the {@link LinkedEditorInnerPane}. By convention, it provides the UI
 	 * and handles the rendering.
 	 * 
 	 * @author EPICI
 	 * @version 1.0
 	 */
-	public static class LinkedEditorPaneSkin extends ContainerSkin{
+	public static class LinkedEditorInnerPaneSkin extends ContainerSkin{
 		
 		@Override
 		public void layout() {

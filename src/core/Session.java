@@ -102,7 +102,8 @@ public class Session {
 		theme.set(CircularSlider.class, CircularSliderSkin.class);
 		theme.set(TrackLSPreview.class, TrackLSPreviewSkin.class);
 		theme.set(TrackLSEditor.LinkedEditorPane.class, TrackLSEditor.LinkedEditorPaneSkin.class);
-		theme.set(PatternEditor.LinkedEditorPane.class, PatternEditor.LinkedEditorPaneSkin.class);
+		theme.set(PatternEditor.LinkedEditorInnerPane.class, PatternEditor.LinkedEditorInnerPaneSkin.class);
+		theme.set(DoubleInput.DoubleSlider.class, DoubleInput.DoubleSliderSkin.class);
 		windowManager = PivotSwingUtils.loadBxml(WindowManager.class, "windowManager.bxml");
 		windowManager.session = this;
 		windowManagerFrame = PivotSwingUtils.wrapPivotWindow(windowManager);
@@ -232,6 +233,21 @@ public class Session {
 	 */
 	public ColorScheme getColors(){
 		return colors;
+	}
+	
+	/**
+	 * Get the current color scheme used in a session
+	 * <br>
+	 * If the session or its colors are null, return default colors,
+	 * so this will never fail or return null
+	 * 
+	 * @param session
+	 * @return
+	 */
+	public static ColorScheme getColors(Session session){
+		ColorScheme result;
+		if(session==null||(result=session.getColors())==null)return ColorScheme.getPivotColors();
+		return result;
 	}
 	
 	/**
