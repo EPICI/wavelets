@@ -7,7 +7,6 @@ import util.Expressions;
 import util.hash.*;
 import util.math.Floats;
 import util.ui.Draw;
-
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -19,7 +18,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
-
+import org.apache.pivot.util.*;
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.Keyboard.KeyLocation;
 import org.apache.pivot.wtk.skin.*;
@@ -71,6 +70,10 @@ public class DoubleInput extends FillPane {
 	 * The text view's combined listener
 	 */
 	public TextInputListener textListener;
+	/**
+	 * The data change listeners
+	 */
+	public ListenerList<DataListener> dataListeners;
 	
 	/**
 	 * Default constructor
@@ -109,6 +112,7 @@ public class DoubleInput extends FillPane {
 		if(update){
 			try{
 				value = parse(text.getText());
+				valueChanged(true);
 			}catch(Exception e){
 				e.printStackTrace();
 			}
@@ -128,6 +132,18 @@ public class DoubleInput extends FillPane {
 		text.setText(Double.toString(value));
 		text.selectAll();
 		repaint();
+	}
+	
+	/**
+	 * Notify the data listeners
+	 * 
+	 * @param commit whether the change is pending (false)
+	 * or committed/permanent (true)
+	 */
+	public void valueChanged(boolean commit){
+		for(DataListener listener:dataListeners){
+			listener.updated(this, commit);
+		}
 	}
 	
 	/**
@@ -206,6 +222,32 @@ public class DoubleInput extends FillPane {
 	        	parent.toSliderView(true);
 	        }
 	    }
+		
+	}
+	
+	/**
+	 * Listener specific to {@link DoubleInput}, fires when
+	 * the value is updated
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static interface DataListener{
+		
+		/**
+		 * Given the component alone, it is possible to get
+		 * all other necessary information easily except for
+		 * whether the change is pending or committed, so
+		 * that is provided as the other argument
+		 * <br>
+		 * This can also fire if there is no change, but a previous
+		 * pending change was committed
+		 * 
+		 * @param component component whose value changed
+		 * @param commit whether the change is pending (false)
+		 * or committed/permanent (true)
+		 */
+		public void updated(DoubleInput component,boolean commit);
 		
 	}
 	
@@ -862,6 +904,8 @@ public class DoubleInput extends FillPane {
 	    	if(mouseDown==1){
 	    		if(mouseDragged){// Dragged -> change value
 	    			// changing value already done by mouseMove
+	    			// need to notify listeners
+	    			sliderParent.valueChanged(true);
 	    	    	slider.repaint();
 	    		}else{// Clicked -> switch view
 	    			// no data to change
@@ -883,6 +927,7 @@ public class DoubleInput extends FillPane {
 		    	double shift = getShift()*sliderParent.stepScale;
 		    	double newValue = sliderParent.validator.step(slider.value, shift);
 		    	sliderParent.value = newValue;
+		    	sliderParent.valueChanged(false);
 		    	slider.repaint();
 	    	}
 	        return false;

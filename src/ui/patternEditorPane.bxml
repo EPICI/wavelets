@@ -29,9 +29,20 @@
 								<TablePane.Column width="1*"/>
 							</columns>
 							<TablePane.Row>
-								<Label text="Properties"/>
+								<Separator heading="Properties"/>
 							</TablePane.Row>
-							<!-- title, synth picker, divisions -->
+							<TablePane.Row>
+								<Label text="Synthesizer"/>
+							</TablePane.Row>
+							<TablePane.Row>
+								<PushButton bxml:id="synthButton"/>
+							</TablePane.Row>
+							<TablePane.Row>
+								<Label text="Divisions"/>
+							</TablePane.Row>
+							<TablePane.Row>
+								<TablePane.Filler/>
+							</TablePane.Row>
 						</TablePane>
 					</ScrollPane>
 					<components:PatternEditor.LinkedEditorInnerPane bxml:id="editorInnerPane"/>
@@ -42,8 +53,28 @@
 								<TablePane.Column width="1*"/>
 							</columns>
 							<TablePane.Row>
-								<Label text="Properties"/>
-								<Label text="Template"/>
+								<Separator heading="Properties"/>
+								<Separator heading="Template"/>
+							</TablePane.Row>
+							<TablePane.Row>
+								<Label text="Start"/>
+								<ListButton bxml:id="templateSelector/>
+							</TablePane.Row>
+							<TablePane.Row>
+								<TablePane.Filler/>
+								<PushButton bxml:id="templateRename" buttonData="Rename"/>
+							</TablePane.Row>
+							<TablePane.Row>
+								<Label text="Length"/>
+								<PushButton bxml:id="templateCopy" buttonData="Copy"/>
+							</TablePane.Row>
+							<TablePane.Row>
+								<TablePane.Filler/>
+								<PushButton bxml:id="templateNew" buttonData="Create New"/>
+							</TablePane.Row>
+							<TablePane.Row>
+								<TablePane.Filler/>
+								<PushButton bxml:id="templateParamNew" buttonData="Add Parameter"/>
 							</TablePane.Row>
 							<!-- title, (start, duration)/(profile selector) -->
 						</TablePane>

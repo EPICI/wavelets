@@ -19,6 +19,12 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	public int divisions;
 	/**
 	 * Basically, number of measures
+	 * <br>
+	 * Computed as if the start was at 0, even if
+	 * it actually starts later
+	 * <br>
+	 * The true length is a rational, and this is the ceiling
+	 * of that rational
 	 */
 	public transient int length;
 	/**
@@ -99,6 +105,39 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 		initTransient(composition);
 	}
 	
+	/**
+	 * Method to update the divisions and propagate necessary changes
+	 * <br>
+	 * Except for internal use, this is the
+	 * preferred way to set the divisions
+	 * 
+	 * @param newDivisions
+	 */
+	public void setDivisions(int newDivisions){
+		if(newDivisions<1)throw new IllegalArgumentException("divisions ("+newDivisions+") must be positive");
+		int oldDivisions = divisions;
+		if(oldDivisions==newDivisions)return;
+		divisions = newDivisions;
+		remakeLength();
+	}
+	
+	/**
+	 * Recalculate the field <i>length</i> based on current data.
+	 * <br>
+	 * Since it isn't done automatically but rather by this method,
+	 * we can do lazy updating. Also, there are some times when
+	 * we intentionally do not update it even if it might be incorrect.
+	 */
+	public void remakeLength(){
+		length = 0;
+		for(int[] clip:clips){
+			// Offset because floor division
+			length=Math.max(length, (clip[0]+clip[1]-1)/divisions);
+		}
+		// Finally add 1 to make it ceiling
+		length += 1;
+	}
+	
 	//TODO everything
 	
 	/**
@@ -138,10 +177,7 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 
 	@Override
 	public void initTransient(Composition parent) {
-		length = 0;
-		for(int[] clip:clips){
-			length=Math.max(length, (clip[0]+clip[1])/divisions);
-		}
+		remakeLength();
 		//TODO load synthesizer
 		setDefaultVoiceFactory();
 	}
