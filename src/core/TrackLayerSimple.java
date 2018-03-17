@@ -67,13 +67,20 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 					if(start<=current.endPos&&end>=current.startPos){
 						double invDivisions = 1d/pattern.divisions;
 						ArrayList<double[]> toSendList = new ArrayList<double[]>();
-						for(int[] clip:pattern.clips){
-							double clipStart = composition.measuresToSeconds(delay+clip[0]*invDivisions);
-							double clipEnd = composition.measuresToSeconds(delay+(clip[0]+clip[1])*invDivisions);
-							double clipLength = clipEnd-clipStart;
+						for(Clip clip:pattern.clips){
+							double clipStart = composition.measuresToSeconds(delay+clip.delay*invDivisions);
+							double clipEnd = composition.measuresToSeconds(delay+(clip.delay+clip.length)*invDivisions);
 							if(clipStart<=current.endPos&&clipEnd>=current.startPos){
-								double voiceDelay = clipStart-current.startPos;
-								toSendList.add(new double[]{voiceDelay,clipLength,clip[2]});
+								int nproperties = clip.countProperties();
+								double[] clipData = new double[nproperties+4];
+								clipData[0] = clipStart-current.startPos;
+								clipData[1] = clipEnd-current.startPos;
+								clipData[2] = clip.pitch;
+								clipData[3] = clip.volume;
+								for(int i=0;i<nproperties;i++){
+									clipData[i+4] = clip.getProperty(i);
+								}
+								toSendList.add(clipData);
 							}
 						}
 						int numToSend = toSendList.size();

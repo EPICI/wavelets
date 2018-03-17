@@ -28,15 +28,9 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	 */
 	public transient int length;
 	/**
-	 * Contains int arrays with length 3 containing:
-	 * <ol>
-	 * <li>Delay, which will be multiplied later</li>
-	 * <li>Length, which will be multiplied later</li>
-	 * <li>Pitch as semitones from A4 for convenience</li>
-	 * <li>More optional parameters...</li>
-	 * </ol>
+	 * Contains clip objects
 	 */
-	public final ArrayList<int[]> clips;
+	public final ArrayList<Clip> clips;
 	
 	/** 
 	 * Int encoding:
@@ -130,9 +124,9 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	 */
 	public void remakeLength(){
 		length = 0;
-		for(int[] clip:clips){
+		for(Clip clip:clips){
 			// Offset because floor division
-			length=Math.max(length, (clip[0]+clip[1]-1)/divisions);
+			length=Math.max(length, (clip.delay+clip.length-1)/divisions);
 		}
 		// Finally add 1 to make it ceiling
 		length += 1;

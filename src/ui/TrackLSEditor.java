@@ -772,7 +772,7 @@ public class TrackLSEditor extends Window implements Bindable {
 				BitSet pv = patternv[i];
 				BitSet sv = selectv[i];
 				int pl = pk.length, pd = pk.divisions, ipf = ifirst-pl, pmin = 0, pmax = 0;
-				ArrayList<int[]> pclips = pk.clips;
+				ArrayList<Clip> pclips = pk.clips;
 				Synthesizer synth = pk.getSynthesizer();
 				Color[] sigs = synthSigs.get(synth);
 				if(sigs==null){
@@ -783,8 +783,8 @@ public class TrackLSEditor extends Window implements Bindable {
 						sigs[j] = synth.getColorSignature(t);
 					}
 				}
-				for(int[] clip:pclips){
-					int pitch = clip[2];
+				for(Clip clip:pclips){
+					int pitch = clip.pitch;
 					if(pitch<pmin)pmin=pitch;
 					if(pitch>pmax)pmax=pitch;
 				}
@@ -809,10 +809,10 @@ public class TrackLSEditor extends Window implements Bindable {
 				for(int delay=ipf+1;delay>=0&&delay<ilast;delay = pv.nextSetBit(delay+1)){
 					// Draw one
 					double xoffset = (delay-anchorx)*scalex;
-					for(int[] clip:pclips){
-						int from = (int)Math.round(xoffset+clip[0]*ixmult)-xref;
-						int to = from + (int)Math.ceil(clip[1]*ixmult)-xref;
-						int iy = ys[clip[2]-pmin];
+					for(Clip clip:pclips){
+						int from = (int)Math.round(xoffset+clip.delay*ixmult)-xref;
+						int to = from + (int)Math.ceil(clip.length*ixmult)-xref;
+						int iy = ys[clip.pitch-pmin];
 						int nf = (from&gradientShiftMaskInv)+gradientShiftInc;
 						int nt = (to-1)&gradientShiftMaskInv;
 						Color col;

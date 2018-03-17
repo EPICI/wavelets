@@ -43,6 +43,8 @@ public final class Floats {
 	 * Checks if two values are absolutely or relatively near,
 	 * uses default double epsilon value
 	 * <br>
+	 * Computed as <i>|a-b|&le;max(epsilon,epsilon&middot;max(|a|,|b|))</i>
+	 * <br>
 	 * Use this instead of equality check
 	 * 
 	 * @param a the first value
@@ -56,11 +58,9 @@ public final class Floats {
 	 * Checks if two values are absolutely or relatively near,
 	 * uses given double epsilon value
 	 * <br>
-	 * Use this instead of equality check
+	 * Computed as <i>|a-b|&le;max(epsilon,epsilon&middot;max(|a|,|b|))</i>
 	 * <br>
-	 * Edge case: smaller of (a,b) in magnitude multiplied by
-	 * 1+epsilon is the larger, in that case negative will be
-	 * true and positive will be false
+	 * Use this instead of equality check
 	 * 
 	 * @param a the first value
 	 * @param b the second value
@@ -68,12 +68,18 @@ public final class Floats {
 	 * @return true if they are absolutely or relatively close
 	 */
 	public static boolean isNear(double a,double b,double epsilon){
-		double eps1 = epsilon+1;
-		return Math.abs(a-b)<epsilon || !((a*eps1>b)^(b*eps1>a));// Symmetric and simple!
+		return Math.abs(a-b)
+				<=Math.max(epsilon, epsilon
+						*Math.max(
+								Math.abs(a),
+								Math.abs(b)
+								));
 	}
 	/**
 	 * Checks if two values are absolutely or relatively near,
 	 * uses default float epsilon value
+	 * <br>
+	 * Computed as <i>|a-b|&le;max(epsilon,epsilon&middot;max(|a|,|b|))</i>
 	 * <br>
 	 * Use this instead of equality check
 	 * 
@@ -88,11 +94,9 @@ public final class Floats {
 	 * Checks if two values are absolutely or relatively near,
 	 * uses given float epsilon value
 	 * <br>
-	 * Use this instead of equality check
+	 * Computed as <i>|a-b|&le;max(epsilon,epsilon&middot;max(|a|,|b|))</i>
 	 * <br>
-	 * Edge case: smaller of (a,b) in magnitude multiplied by
-	 * 1+epsilon is the larger, in that case negative will be
-	 * true and positive will be false
+	 * Use this instead of equality check
 	 * 
 	 * @param a the first value
 	 * @param b the second value
@@ -100,8 +104,12 @@ public final class Floats {
 	 * @return true if they are absolutely or relatively close
 	 */
 	public static boolean isNear(float a,float b,float epsilon){
-		float eps1 = epsilon+1;
-		return Math.abs(a-b)<epsilon || !((a*eps1>b)^(b*eps1>a));
+		return Math.abs(a-b)
+				<=Math.max(epsilon, epsilon
+						*Math.max(
+								Math.abs(a),
+								Math.abs(b)
+								));
 	}
 	
 	/**

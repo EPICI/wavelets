@@ -19,7 +19,7 @@ import util.ds.*;
  */
 public class SynthNOsc implements Synthesizer {
 	
-	private static final double SEMITONE = Math.pow(2d, 1d/12d);
+	private static final double SEMITONE = StrictMath.pow(2d, 1d/12d);
 	
 	/**
 	 * Simple oscillators
@@ -73,7 +73,7 @@ public class SynthNOsc implements Synthesizer {
 		for(double[] clip:clips){
 			Voice[] oscvoices = new Voice[n];
 			for(int i=0;i<n;i++){
-				Osc.OscVoice added = losc[i].spawn(clip[2], clip[0], clip[0]+clip[1]);
+				Osc.OscVoice added = losc[i].spawn(clip[2], clip[0], clip[1], clip[3]);
 				added.delay = clip[0];
 				oscvoices[i]=added;
 			}
@@ -430,13 +430,26 @@ public class SynthNOsc implements Synthesizer {
 		/**
 		 * Allow spawning from outside
 		 * 
-		 * @param clip pitch as semitones from A4 (440Hz)
+		 * @param pitch pitch as semitones from A4 (440Hz)
 		 * @param start start time in seconds
 		 * @param end end time in seconds
 		 * @return a voice for this oscillator
 		 */
-		public OscVoice spawn(double clip,double start,double end){
-			return new Osc.OscVoice(clip,start,end);
+		public OscVoice spawn(double pitch,double start,double end){
+			return spawn(pitch,start,end,0);
+		}
+		
+		/**
+		 * Allow spawning from outside
+		 * 
+		 * @param pitch pitch as semitones from A4 (440Hz)
+		 * @param start start time in seconds
+		 * @param end end time in seconds
+		 * @param volume overall volume offset in B
+		 * @return a voice for this oscillator
+		 */
+		public OscVoice spawn(double pitch,double start,double end,double volume){
+			return new Osc.OscVoice(pitch,start,end,volume);
 		}
 		
 		/**
@@ -473,9 +486,13 @@ public class SynthNOsc implements Synthesizer {
 			 */
 			public double switched;
 			/**
-			 * Volume offset
+			 * Volume offset in B
 			 */
 			public double mult;
+			/**
+			 * Independent volume offset applied after in B
+			 */
+			public double multOver;
 			/**
 			 * Sample rate
 			 */
@@ -507,18 +524,32 @@ public class SynthNOsc implements Synthesizer {
 			 * 
 			 * @param pitch pitch as semitones from A4 (440Hz)
 			 * @param start start time in seconds
+			 * @param end end time in seconds
 			 */
 			public OscVoice(double pitch,double start,double end){
+				this(pitch,start,end,0);
+			}
+			
+			/**
+			 * Fill in fields automatically
+			 * 
+			 * @param pitch pitch as semitones from A4 (440Hz)
+			 * @param start start time in seconds
+			 * @param end end time in seconds
+			 * @param volume overall volume offset
+			 */
+			public OscVoice(double pitch,double start,double end,double volume){
 				note=end-start;
 				measure=(parentComposition.secondsToMeasures(end)
 						-parentComposition.secondsToMeasures(start))
 						/note;
 				sampleRate=parentComposition.currentSession.getSampleRate();
 				sampleLength=1d/sampleRate;
-				mult=getMinVolume(time);
 				time=0d;
 				phase=0d;
 				step=0;
+				mult=getMinVolume(time);
+				multOver=volume;
 				freq=440d*Math.pow(SEMITONE, pitch);
 			}
 

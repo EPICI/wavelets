@@ -142,15 +142,15 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 				while(iter.hasNext()){
 					int delay = iter.nextInt();
 					double xoffset = (delay+xadd)*xmult;
-					for(int[] clip:pattern.clips){
-						int from = (int)Math.round(xoffset+clip[0]*ixmult);
-						int to = from+(int)Math.ceil(clip[1]*xmult);
+					for(Clip clip:pattern.clips){
+						int from = (int)Math.round(xoffset+clip.delay*ixmult);
+						int to = from+(int)Math.ceil(clip.length*xmult);
 						xs.set(from,to);
 					}
 				}
 				int lminPitch = Integer.MAX_VALUE, lmaxPitch = Integer.MIN_VALUE;
-				for(int[] clip:pattern.clips){
-					int pitch = clip[2];
+				for(Clip clip:pattern.clips){
+					int pitch = clip.pitch;
 					if(pitch<lminPitch)lminPitch=pitch;
 					if(pitch>lmaxPitch)lmaxPitch=pitch;
 				}
@@ -194,10 +194,10 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 				while(iter.hasNext()){
 					int delay = iter.nextInt();
 					double xoffset = (delay+xadd)*xmult;
-					for(int[] clip:pattern.clips){
-						int from = (int)Math.round(xoffset+clip[0]*ixmult);
-						int to = from + (int)Math.ceil(clip[1]*ixmult);
-						int iy = ys[clip[2]-minPitch];
+					for(Clip clip:pattern.clips){
+						int from = (int)Math.round(xoffset+clip.delay*ixmult);
+						int to = from + (int)Math.ceil(clip.length*ixmult);
+						int iy = ys[clip.pitch-minPitch];
 						for(int x=from;x<to;x++){
 							Color col = sigs[x];
 							graphics.setColor(col);
@@ -217,8 +217,8 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 					synthSigs.put(synth, sig);
 				}
 				int lminPitch = Integer.MAX_VALUE, lmaxPitch = Integer.MIN_VALUE;
-				for(int[] clip:pattern.clips){
-					int pitch = clip[2];
+				for(Clip clip:pattern.clips){
+					int pitch = clip.pitch;
 					if(pitch<lminPitch)lminPitch=pitch;
 					if(pitch>lmaxPitch)lmaxPitch=pitch;
 				}
@@ -251,8 +251,8 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 				while(iter.hasNext()){
 					int delay = iter.nextInt();
 					double xoffset = (delay+xadd)*xmult;
-					for(int[] clip:pattern.clips){
-						graphics.fillRect((int)Math.round(xoffset+clip[0]*ixmult), ys[clip[2]-minPitch], (int)Math.ceil(clip[1]*xmult), iclipHeight);
+					for(Clip clip:pattern.clips){
+						graphics.fillRect((int)Math.round(xoffset+clip.delay*ixmult), ys[clip.pitch-minPitch], (int)Math.ceil(clip.length*xmult), iclipHeight);
 					}
 				}
 			}

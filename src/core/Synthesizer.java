@@ -20,13 +20,13 @@ public interface Synthesizer extends Destructable, TransientContainer<Compositio
 	/**
 	 * Use array of double arrays to indicate which clips need to be created
 	 * <br>
-	 * Inner double arrays are [delay,length,pitch]
+	 * Inner double arrays are [start,end,pitch,volume,other parameters]
 	 * <br>
 	 * The synthesizer should have the rest of the necessary data already
 	 * <br>
 	 * Should add voices to the target
 	 * 
-	 * @param clips a list of clips in [delay,length,pitch,other parameters] format
+	 * @param clips a list of clips in [start,end,pitch,other parameters] format
 	 * @param target the target {@link TrackLayerSimple} to add voices to
 	 * @param session current session, from which other data can be derived
 	 */
