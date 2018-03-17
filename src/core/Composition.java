@@ -23,6 +23,10 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	/**
 	 * Seconds per measure
 	 * <br>
+	 * For converting, it is recommended to use the
+	 * <i>measuresToSeconds</i> and <i>secondsToMeasures</i>
+	 * methods to avoid accessing this field directly
+	 * <br>
 	 * This will be replaced in the far future by a special time curve
 	 * (1/Hz bezier -> integral)
 	 * which maps time to measures (use inverse for other way)
@@ -70,6 +74,28 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 				}
 			}
 		}
+	}
+	
+	/**
+	 * After some number of measures have passed, how many
+	 * seconds in are we?
+	 * 
+	 * @param measures
+	 * @return
+	 */
+	public double measuresToSeconds(double measures){
+		return measures*baseSpeed;
+	}
+	
+	/**
+	 * After some number of seconds have passed, how many
+	 * measures in are we?
+	 * 
+	 * @param seconds
+	 * @return
+	 */
+	public double secondsToMeasures(double seconds){
+		return seconds/baseSpeed;
 	}
 	
 	@Override

@@ -719,7 +719,6 @@ public class TrackLSEditor extends Window implements Bindable {
 			int ifirst = (int)anchorx, ilast = 1+(int)cornerx;
 			double iscalex = 1d/scalex, iscaley = 1d/scaley;
 			Composition comp = editor.parent.session.composition;
-			double speed = comp.baseSpeed;
 			boolean useShlBorder = scalex>=SHL_BORDER_THRESHOLD && scaley>=SHL_BORDER_THRESHOLD;
 			// --- Draw ---
 			// Draw buttons
@@ -780,7 +779,7 @@ public class TrackLSEditor extends Window implements Bindable {
 					sigs = new Color[xrange];
 					synthSigs.put(synth, sigs);
 					for(int j=0;j<xrange;j++){
-						double t=((j<<gradientShift)*iscalex+dxref)*speed;
+						double t=comp.measuresToSeconds((j<<gradientShift)*iscalex+dxref);
 						sigs[j] = synth.getColorSignature(t);
 					}
 				}

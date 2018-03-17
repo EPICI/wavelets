@@ -14,19 +14,20 @@ public class MetaSamples extends Samples {
 	private static final long serialVersionUID = 1L;
 	
 	/**
-	 * Time to complete one measure in seconds
+	 * Composition has various other useful data and methods,
+	 * so include it
 	 */
-	public double speedMult = 1d;
+	public Composition composition;
 	/**
-	 * Current start position
+	 * Current start position as time
 	 */
 	public double startPos = 0d;
 	/**
-	 * Current end position
+	 * Current end position as time
 	 */
 	public double endPos = 1d;
 	/**
-	 * Current length
+	 * Current length as time
 	 */
 	public double length = 1d;
 	
@@ -130,7 +131,7 @@ public class MetaSamples extends Samples {
 	 */
 	public static MetaSamples blankSamplesFrom(MetaSamples original){
 		MetaSamples result = new MetaSamples(original);
-		result.speedMult=original.speedMult;
+		result.composition=original.composition;
 		result.startPos=original.startPos;
 		result.endPos=original.endPos;
 		result.length=original.length;

@@ -27,6 +27,10 @@ public class PlayerDoubleBuffer implements Player {
 	 * Buffer size
 	 */
 	public int bufferSize;
+	/**
+	 * The current time, if sound is playing
+	 */
+	public volatile double currentTime;
 	
 	/**
 	 * Destroyed yet?
@@ -85,13 +89,13 @@ public class PlayerDoubleBuffer implements Player {
 
 	@Override
 	public void destroy() {
-		// TODO Auto-generated method stub
+		stopPlay();
 		destroyed = true;
 	}
 
 	@Override
 	public void destroySelf() {
-		// TODO Auto-generated method stub
+		stopPlay();
 		destroyed = true;
 	}
 	
@@ -106,7 +110,7 @@ public class PlayerDoubleBuffer implements Player {
 		
 		//Sanity checks
 		double[] timeBounds = track.getTimeBounds();
-		if(timeBounds!=null&&timeBounds[0]!=Double.MAX_VALUE&&timeBounds[1]!=Double.MIN_VALUE){
+		if(timeBounds!=null&&timeBounds[0]<Double.MAX_VALUE&&timeBounds[1]>Double.MIN_VALUE){
 			if(timeBounds[1]>timeBounds[0]){
 				//Format object
 				AudioFormat audioFormat;
@@ -147,7 +151,7 @@ public class PlayerDoubleBuffer implements Player {
 						long timeout = (long)(secondLength*1000d)+1;
 						MetaSamples copySamples = MetaSamples.blankSamples(44100,bufferSize);
 						doubleBuffer[1] = copySamples.sampleData;
-						copySamples.speedMult = track.parentComposition().baseSpeed;
+						copySamples.composition = track.parentComposition();
 						copySamples.length = secondLength;
 						copySamples.endPos = timeBounds[0];
 						copySamples.pushToNext();
@@ -168,6 +172,7 @@ public class PlayerDoubleBuffer implements Player {
 								doubleBuffer[1]=tp.result.sampleData;
 								tp.start();
 								sourceDataLine.write(audioData, 0, bufferSize*2);
+								currentTime = copySamples.startPos;// Keep it updated
 							}
 							if(!loop){
 								break;
@@ -235,6 +240,7 @@ public class PlayerDoubleBuffer implements Player {
 				sourceDataLine.start();
 
 				while(cont){
+					// Due to sending all the data at once, we can't know the time
 					sourceDataLine.write(audioData, 0, sampleCount*2);
 					if(!loop){
 						break;
@@ -257,6 +263,16 @@ public class PlayerDoubleBuffer implements Player {
 		}
 	}
 
+	@Override
+	public double currentTime() {
+		return currentTime;
+	}
+	
+	@Override
+	public boolean isPlaying() {
+		return cont;
+	}
+	
 	@Override
 	public void stopPlay() {
 		cont=false;

@@ -84,6 +84,26 @@ public class Session {
 	protected PrintStream console;
 	
 	/**
+	 * Audio player
+	 */
+	protected PlayerDoubleBuffer player;
+	
+	/**
+	 * A special marker used as the time for when no audio
+	 * is playing, and the point from which audio starts playing
+	 * <br>
+	 * Always update this together with <i>timeCursorEnd</i>
+	 */
+	public double timeCursor;
+	/**
+	 * If there is a time range selection, this is the other end of it
+	 * <br>
+	 * If this is equal to <i>timeCursor</i> it is assumed that no range
+	 * is selected
+	 */
+	public double timeCursorEnd;
+	
+	/**
 	 * Default constructor, try to find preferences on its own
 	 */
 	public Session(){
@@ -153,7 +173,7 @@ public class Session {
 		});
 		mainFrame.setResizable(true);
 		mainFrame.setVisible(true);
-		//TODO
+		player = new PlayerDoubleBuffer(bufferSize);
 	}
 	
 	/**
@@ -172,7 +192,7 @@ public class Session {
 			windowManager.addWindow(name,(JInternalFrame)component);
 			windowManager.openWindow(name);
 		}else{
-			//TODO
+			// not supported yet
 		}
 	}
 	
@@ -183,6 +203,32 @@ public class Session {
 	public void newComposition(){
 		composition = new Composition(this);
 		filename = null;
+	}
+	
+	/**
+	 * Method to allow outside users to get the player
+	 * in order to play audio or do other things with it
+	 * 
+	 * @return
+	 */
+	public Player getPlayer(){
+		return player;
+	}
+	
+	/**
+	 * If the composition or a track is currently
+	 * being previewed, this gets the current time
+	 * in the composition, otherwise it returns
+	 * the location of the time cursor
+	 * 
+	 * @return
+	 */
+	public double getCurrentTime(){
+		if(player.isPlaying()){
+			return player.currentTime();
+		}else{
+			return timeCursor;
+		}
 	}
 	
 	/**

@@ -53,6 +53,8 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	
 	@Override
 	public void applyTo(MetaSamples current) {
+		Composition composition = current.composition;
+		Session session = composition.currentSession;
 		//Setup
 		if(!patterns.isEmpty()){
 			//Add new voices if necessary
@@ -60,15 +62,15 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 				PrimitiveIterator.OfInt iter = patterns.get(pattern).stream().iterator();
 				while(iter.hasNext()){
 					int delay = iter.nextInt();
-					double start = delay*current.speedMult;
-					double end = (delay+pattern.length)*current.speedMult;
+					double start = composition.measuresToSeconds(delay);
+					double end = composition.measuresToSeconds(delay+pattern.length);
 					if(start<=current.endPos&&end>=current.startPos){
-						double multiplier = current.speedMult/pattern.divisions;
+						double invDivisions = 1d/pattern.divisions;
 						ArrayList<double[]> toSendList = new ArrayList<double[]>();
 						for(int[] clip:pattern.clips){
-							double clipStart = clip[0]*multiplier+start;
-							double clipLength = clip[1]*multiplier;
-							double clipEnd = clipStart+clipLength;
+							double clipStart = composition.measuresToSeconds(delay+clip[0]*invDivisions);
+							double clipEnd = composition.measuresToSeconds(delay+(clip[0]+clip[1])*invDivisions);
+							double clipLength = clipEnd-clipStart;
 							if(clipStart<=current.endPos&&clipEnd>=current.startPos){
 								double voiceDelay = clipStart-current.startPos;
 								toSendList.add(new double[]{voiceDelay,clipLength,clip[2]});
@@ -78,7 +80,7 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 						if(numToSend>0){
 							double[][] toSend = toSendList.toArray(new double[numToSend][]);
 							pattern.synthesizer.setGlobals(current.vars);
-							pattern.synthesizer.spawnVoices(toSend, this, current.sampleRate);
+							pattern.synthesizer.spawnVoices(toSend, this, session);
 						}
 					}
 				}
@@ -228,6 +230,7 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	}
 	
 	public double[] getTimeBounds(){
+		Composition composition = parentComposition();
 		double min = Double.POSITIVE_INFINITY;
 		double max = Double.NEGATIVE_INFINITY;
 		for(Pattern pattern:patterns.keySet()){
@@ -237,8 +240,7 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 			if(first<min)min=first;
 			if(last>max)max=last;
 		}
-		double rate = 1d/parentComposition().baseSpeed;
-		return new double[]{min*rate,max*rate};
+		return new double[]{composition.measuresToSeconds(min),composition.measuresToSeconds(max)};
 	}
 
 	public static TrackLSEditor editor;

@@ -2,7 +2,6 @@ package ui;
 
 import java.util.*;
 import core.*;
-import ui.TrackLSEditor.LinkedEditorPane;
 import util.Expressions;
 import util.hash.*;
 import util.math.Floats;
@@ -20,7 +19,6 @@ import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
 import org.apache.pivot.util.*;
 import org.apache.pivot.wtk.*;
-import org.apache.pivot.wtk.Keyboard.KeyLocation;
 import org.apache.pivot.wtk.skin.*;
 
 /**

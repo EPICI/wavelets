@@ -219,6 +219,12 @@ public class PatternEditor extends Window implements Bindable {
 			tr = patternTablePane.getRows().get(INDEX_DIVISIONS_INPUT);
 			tr.update(0, divisionsInput);
 			
+			clipStartInput = new DoubleInput(
+					new DoubleInput.DoubleValidator.BoundedIntegerValidator(0,Integer.MAX_VALUE,0),
+					0, 0.1);
+			// TODO listener for this
+			tr = clipTablePane.getRows().get(INDEX_CLIP_START_INPUT);
+			tr.update(0, clipStartInput);
 			// TODO integer sliders for start, duration and update the rows
 			
 			// TODO template listeners

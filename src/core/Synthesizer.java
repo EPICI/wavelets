@@ -28,9 +28,9 @@ public interface Synthesizer extends Destructable, TransientContainer<Compositio
 	 * 
 	 * @param clips a list of clips in [delay,length,pitch,other parameters] format
 	 * @param target the target {@link TrackLayerSimple} to add voices to
-	 * @param sampleRate sample rate in Hz
+	 * @param session current session, from which other data can be derived
 	 */
-	public void spawnVoices(double[][] clips,TrackLayerSimple target,int sampleRate);
+	public void spawnVoices(double[][] clips,TrackLayerSimple target,Session session);
 	
 	/**
 	 * Create a single live voice with the specified pitch
@@ -40,10 +40,10 @@ public interface Synthesizer extends Destructable, TransientContainer<Compositio
 	 * Since only one is needed, direct return is fine
 	 * 
 	 * @param params the pitch, then any other parameters
-	 * @param sampleRate sample rate in Hz
+	 * @param session current session, from which other data can be derived
 	 * @return the newly created live voice
 	 */
-	public Voice spawnLiveVoice(int[] params,int sampleRate);
+	public Voice spawnLiveVoice(int[] params,Session session);
 	
 	/**
 	 * Request UI with metadata

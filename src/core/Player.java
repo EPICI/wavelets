@@ -22,6 +22,19 @@ public interface Player extends Destructable {
 	 */
 	public void playSamples(Samples samples,boolean loop);
 	/**
+	 * The current time for the player relative to the start
+	 * of the track/samples
+	 * 
+	 * @return
+	 */
+	public double currentTime();
+	/**
+	 * Is it currently playing?
+	 * 
+	 * @return
+	 */
+	public boolean isPlaying();
+	/**
 	 * Stop all audio playback
 	 */
 	public void stopPlay();

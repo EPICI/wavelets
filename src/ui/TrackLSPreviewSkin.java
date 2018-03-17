@@ -78,8 +78,9 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 		comp = tls.parentComposition();
 		session = comp.currentSession;
 		gbounds = comp.tracks.getTimeBounds();
-		double diffs = gbounds[1]-gbounds[0];
-		return width = (int) (diffs/comp.baseSpeed*target.pixelsPerMeasure);
+		double measureDiff = comp.secondsToMeasures(gbounds[1])
+				-comp.secondsToMeasures(gbounds[0]);
+		return width = (int) (measureDiff*target.pixelsPerMeasure);
 	}
 	
 	/**
@@ -114,8 +115,10 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 		TrackLayerSimple tls = target.target;
 		updateWidth();updateHeight();
 		int width = target.getWidth(), height = target.getHeight();
-		double baseSpeed = comp.baseSpeed;
-		double xadd = -gbounds[0]/baseSpeed, xmult = width*baseSpeed/(gbounds[1]-gbounds[0]);
+		double xadd = -comp.secondsToMeasures(gbounds[0]),
+				xmult = width/(
+						comp.secondsToMeasures(gbounds[1])
+						-comp.secondsToMeasures(gbounds[0]));
 		Color bg;
 		ColorScheme colors = Session.getColors(session);
 		bg = colors.background;

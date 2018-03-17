@@ -67,13 +67,13 @@ public class SynthNOsc implements Synthesizer {
 	}
 
 	@Override
-	public void spawnVoices(double[][] clips, TrackLayerSimple target, int sampleRate) {
+	public void spawnVoices(double[][] clips, TrackLayerSimple target, Session session) {
 		int n = oscillators.size();
 		Osc[] losc = oscillators.toArray(new Osc[n]);
 		for(double[] clip:clips){
 			Voice[] oscvoices = new Voice[n];
 			for(int i=0;i<n;i++){
-				Osc.OscVoice added = losc[i].spawn(clip[2], clip[1]);
+				Osc.OscVoice added = losc[i].spawn(clip[2], clip[0], clip[0]+clip[1]);
 				added.delay = clip[0];
 				oscvoices[i]=added;
 			}
@@ -82,12 +82,13 @@ public class SynthNOsc implements Synthesizer {
 	}
 
 	@Override
-	public Voice spawnLiveVoice(int[] params, int sampleRate) {
+	public Voice spawnLiveVoice(int[] params, Session session) {
+		double ctime = session.getCurrentTime();
 		int pitch = params[0];
 		int n = oscillators.size();
 		Voice[] all = new Voice[n];
 		for(int i=0;i<n;i++){
-			Osc.OscVoice added = oscillators.get(i).spawn(pitch, Floats.ID_TINY);
+			Osc.OscVoice added = oscillators.get(i).spawn(pitch, ctime, ctime+Floats.ID_TINY);
 			all[i] = added;
 			added.step = 1;
 		}
@@ -430,11 +431,12 @@ public class SynthNOsc implements Synthesizer {
 		 * Allow spawning from outside
 		 * 
 		 * @param clip pitch as semitones from A4 (440Hz)
-		 * @param notelen length of a note in seconds
+		 * @param start start time in seconds
+		 * @param end end time in seconds
 		 * @return a voice for this oscillator
 		 */
-		public OscVoice spawn(double clip,double notelen){
-			return new Osc.OscVoice(clip,notelen);
+		public OscVoice spawn(double clip,double start,double end){
+			return new Osc.OscVoice(clip,start,end);
 		}
 		
 		/**
@@ -483,7 +485,7 @@ public class SynthNOsc implements Synthesizer {
 			 */
 			public double sampleLength;
 			/**
-			 * Length of measure in seconds
+			 * Length of measure in seconds (average)
 			 */
 			public double measure;
 			/**
@@ -504,11 +506,13 @@ public class SynthNOsc implements Synthesizer {
 			 * Fill in fields automatically
 			 * 
 			 * @param pitch pitch as semitones from A4 (440Hz)
-			 * @param notelen length of a note in seconds
+			 * @param start start time in seconds
 			 */
-			public OscVoice(double pitch,double notelen){
-				note=notelen;
-				measure=parentComposition.baseSpeed;
+			public OscVoice(double pitch,double start,double end){
+				note=end-start;
+				measure=(parentComposition.secondsToMeasures(end)
+						-parentComposition.secondsToMeasures(start))
+						/note;
 				sampleRate=parentComposition.currentSession.getSampleRate();
 				sampleLength=1d/sampleRate;
 				mult=getMinVolume(time);
