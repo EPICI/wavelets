@@ -579,7 +579,7 @@ public class SynthNOsc implements Synthesizer {
 				double ldetune = getDetune(time), lvolume = getVolume(time), lattackConst = getAttackConst(time), lattackFrac = getAttackFrac(time), lholdConst = getHoldConst(time),
 						lholdFrac = getHoldFrac(time), ldecayConst = getDecayConst(time), ldecayFrac = getDecayFrac(time), lminVolume = getMinVolume(time);
 				double afreq = freq*Math.pow(SEMITONE, ldetune), aattack = -lminVolume/(sampleRate*(lattackConst*measure+lattackFrac*note)),
-						ahold = lholdConst*measure+lholdFrac*note, adecay = ldecayConst/measure+ldecayFrac/note, lvolmult = Math.pow(10d, lvolume);
+						ahold = lholdConst*measure+lholdFrac*note, adecay = ldecayConst/measure+ldecayFrac/note, lpreMult = Math.pow(10d, lvolume+multOver);
 				for(int i=0;step<3 && i<sampleCount;i++){
 					if(delay>Floats.D_TINY){
 						delay-=sampleLength;
@@ -608,7 +608,7 @@ public class SynthNOsc implements Synthesizer {
 					phase += sampleLength*afreq;
 					switch(step){
 					case 0:{
-						double vol = lvolmult*Math.pow(10d, mult+=aattack);
+						double vol = lpreMult*Math.pow(10d, mult+=aattack);
 						data[i] = wf*vol;
 						if(mult>=lvolume){
 							step=1;
@@ -618,14 +618,15 @@ public class SynthNOsc implements Synthesizer {
 						break;
 					}
 					case 1:{
-						data[i] = wf*lvolmult;
+						double vol = lpreMult;
+						data[i] = wf*vol;
 						if(time-switched>=ahold){//Not optimized away because the hold can change, and we like real time editing
 							step=2;
 						}
 						break;
 					}
 					case 2:{
-						double vol = lvolmult*Math.pow(10d, mult-=adecay);
+						double vol = lpreMult*Math.pow(10d, mult-=adecay);
 						data[i] = wf*vol;
 						if(mult<=lminVolume){
 							step=3;

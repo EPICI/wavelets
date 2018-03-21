@@ -1,12 +1,9 @@
 package ui;
 
 import core.*;
-import ui.TrackLSEditor.LinkedEditorPane;
-
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.Mouse.Button;
 import org.apache.pivot.wtk.Mouse.ScrollType;
-
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.GradientPaint;
@@ -22,7 +19,6 @@ import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.content.ButtonData;
 import org.apache.pivot.wtk.skin.*;
 import org.apache.pivot.wtk.skin.terra.TerraTheme;
-
 import util.Bits;
 import util.ui.*;
 
@@ -67,7 +63,7 @@ public class PatternEditor extends Window implements Bindable {
 		/**
 		 * Reserved rows at the top of the clip table
 		 */
-		public static final int CLIP_TABLE_EXTRA_ROWS_TOP = 5;
+		public static final int CLIP_TABLE_EXTRA_ROWS_TOP = 7;
 		/**
 		 * Reserved rows at the bottom of the clip table
 		 */
@@ -79,11 +75,15 @@ public class PatternEditor extends Window implements Bindable {
 		/**
 		 * Index of the row for the clip start input
 		 */
-		public static final int INDEX_CLIP_START_INPUT = 3;
+		public static final int INDEX_CLIP_START_INPUT = 2;
 		/**
 		 * Index of the row for the clip duration input
 		 */
-		public static final int INDEX_CLIP_DURATION_INPUT = 5;
+		public static final int INDEX_CLIP_DURATION_INPUT = 4;
+		/**
+		 * Index of the row for the clip volume input
+		 */
+		public static final int INDEX_CLIP_VOLUME_INPUT = 6;
 		/**
 		 * Index of the row for the template selector
 		 */
@@ -160,6 +160,10 @@ public class PatternEditor extends Window implements Bindable {
 		 */
 		public DoubleInput clipDurationInput;
 		/**
+		 * Input field for volume of a clip
+		 */
+		public DoubleInput clipVolumeInput;
+		/**
 		 * List to select a template to use
 		 */
 		public ListButton templateSelector;
@@ -189,7 +193,108 @@ public class PatternEditor extends Window implements Bindable {
 		 */
 		public PushButton templateParamNew;
 		
-		// TODO clip selection
+		/**
+		 * Selection with the original (same object) as keys
+		 * and a copy (different object) as values.
+		 * <br>
+		 * The original (key) is changed by operations.
+		 * <br>
+		 * When a change is confirmed, value data should be copied from
+		 * keys. Similary, when a change is cancelled, key data should be
+		 * copied from values.
+		 */
+		public IdentityHashMap<Clip,Clip> selection;
+		
+		/**
+		 * Get the selection, never returns null
+		 * <br>
+		 * Format: suppose a pair (k,v) exists, k is a reference to the same
+		 * object as in the {@link Pattern}, and v is a copy of that object.
+		 * If k does not match v, then an operation is pending. After the operation
+		 * is confirmed or cancelled, k will match v.
+		 * 
+		 * @param cleanup flag to iterate through and remove dead clips
+		 * @param clear flag to reset and return an empty selection
+		 * @return the selection
+		 */
+		public IdentityHashMap<Clip,Clip> getSelection(boolean cleanup,boolean clear){
+			if(clear||selection==null){
+				boolean update = selection!=null&&selection.size()>0;
+				selection = new IdentityHashMap<>();
+				if(update)selectionChanged();
+				return selection;
+			}
+			IdentityHashMap<Clip,Clip> r = selection;
+			if(cleanup){
+				// Identity hash set
+				Set<Clip> patternClips = Collections.newSetFromMap(new IdentityHashMap<>());
+				patternClips.addAll(view.clips);
+				r.keySet().retainAll(patternClips);
+			}
+			return r;
+		}
+		
+		/**
+		 * Either confirm or cancel pending changes. If confirm,
+		 * copy will copy from original. If cancel, original will
+		 * copy from copy. In both cases, original and copy will
+		 * match after this call.
+		 * 
+		 * @param confirm true to confirm, false to cancel
+		 */
+		public void finalizeSelection(boolean confirm){
+			IdentityHashMap<Clip,Clip> selection = getSelection(true,false);
+			for(java.util.Map.Entry<Clip, Clip> entry:selection.entrySet()){
+				Clip original = entry.getKey();
+				Clip copy = entry.getValue();
+				if(confirm){
+					copy.copyFrom(original);
+				}else{
+					original.copyFrom(copy);
+				}
+			}
+		}
+		
+		/**
+		 * Call this when something is selected or deselected,
+		 * will update data or interface as necessary.
+		 */
+		public void selectionChanged(){
+			// Avoid calling getSelection()
+			IdentityHashMap<Clip,Clip> selection = this.selection;
+			int nselected = selection.size();
+			boolean setenabled = nselected>0;
+			if(nselected==0){// Empty selection
+				clipStartInput.setValueNearest(0);
+				clipDurationInput.setValueNearest(1);
+				clipVolumeInput.setValueNearest(0);
+			}else if(nselected==1){// Single selection
+				Clip single = selection.keySet().iterator().next();
+				clipStartInput.setValueNearest(single.delay);
+				clipDurationInput.setValueNearest(single.length);
+				clipVolumeInput.setValueNearest(single.volume);
+			}else{// Multiple selection
+				int maxDelay = 0;
+				for(Clip clip:selection.keySet()){
+					maxDelay = Math.max(maxDelay, clip.delay);
+				}
+				clipStartInput.setValueNearest(maxDelay);
+			}
+			clipStartInput.valueChanged(true,false);
+			clipStartInput.toSliderView(false);
+			clipDurationInput.valueChanged(true,false);
+			clipDurationInput.toSliderView(false);
+			clipVolumeInput.valueChanged(true,false);
+			clipVolumeInput.toSliderView(false);
+			for(TablePane.Row tr:clipTablePane.getRows()){
+				// Only look at first column, which is clip
+				Component comp = tr.get(0);
+				// Inputs should be enabled/disabled
+				if(comp instanceof DoubleInput){
+					comp.setEnabled(setenabled);
+				}
+			}
+		}
 		
 		@Override
 		public void initialize(Map<String, Object> namespace, URL location, Resources resources) {
@@ -212,20 +317,33 @@ public class PatternEditor extends Window implements Bindable {
 			
 			divisionsInput = new DoubleInput(
 					new DoubleInput.DoubleValidator.SplitDoubleValidator(
-							new DoubleInput.DoubleValidator.BoundedIntegerValidator(1, Integer.MAX_VALUE, 4),
-							new DoubleInput.DoubleValidator.HyperStep(-Double.MAX_VALUE, Double.MAX_VALUE, 0, 2)),
+							new DoubleInput.DoubleValidator.BoundedIntegerValidator(1, 1e6, 4),
+							new DoubleInput.DoubleValidator.HyperbolicStep(-Double.MAX_VALUE, Double.MAX_VALUE, 0, 2)),
 					4, 0.05);
 			divisionsInput.dataListeners.add(new DivisionsInputListener(this));
 			tr = patternTablePane.getRows().get(INDEX_DIVISIONS_INPUT);
 			tr.update(0, divisionsInput);
 			
 			clipStartInput = new DoubleInput(
-					new DoubleInput.DoubleValidator.BoundedIntegerValidator(0,Integer.MAX_VALUE,0),
+					new DoubleInput.DoubleValidator.BoundedIntegerValidator(-1e6,1e6,0),
 					0, 0.1);
-			// TODO listener for this
+			clipStartInput.dataListeners.add(new ClipStartInputListener(this));
 			tr = clipTablePane.getRows().get(INDEX_CLIP_START_INPUT);
 			tr.update(0, clipStartInput);
-			// TODO integer sliders for start, duration and update the rows
+			
+			clipDurationInput = new DoubleInput(
+					new DoubleInput.DoubleValidator.HyperbolicStep(1e-6, 1e6, 1, 2),
+					1, 0.01);
+			clipDurationInput.dataListeners.add(new ClipDurationInputListener(this));
+			tr = clipTablePane.getRows().get(INDEX_CLIP_DURATION_INPUT);
+			tr.update(0, clipDurationInput);
+			
+			clipVolumeInput = new DoubleInput(
+					new DoubleInput.DoubleValidator.BoundedDoubleValidator(-10, 10, 0),
+					1, 0.01);
+			clipVolumeInput.dataListeners.add(new ClipVolumeInputListener(this));
+			tr = clipTablePane.getRows().get(INDEX_CLIP_VOLUME_INPUT);
+			tr.update(0, clipVolumeInput);
 			
 			// TODO template listeners
 		}
@@ -239,7 +357,7 @@ public class PatternEditor extends Window implements Bindable {
 		}
 		
 		/**
-		 * Listeners for changes to the divisions input field
+		 * Listens for changes to the divisions input field
 		 * and updates the pattern accordingly
 		 * 
 		 * @author EPICI
@@ -270,6 +388,144 @@ public class PatternEditor extends Window implements Bindable {
 				}
 			}
 			
+		}
+		
+	}
+	
+	/**
+	 * Listens for changes to the clip start input field
+	 * and updates the selected clips accordingly
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static class ClipStartInputListener implements DoubleInput.DataListener{
+		
+		/**
+		 * Remember the parent, other data can be derived from here
+		 */
+		public LinkedEditorPane parent;
+		
+		/**
+		 * Standard constructor
+		 * 
+		 * @param parent
+		 */
+		public ClipStartInputListener(LinkedEditorPane parent){
+			this.parent = parent;
+		}
+		
+		@Override
+		public void updated(DoubleInput component, boolean commit) {
+			final double value = component.value,
+					lastValue = component.lastValue,
+					lastValueCommit = component.lastValueCommit;
+			int add = (int)(value-lastValueCommit);
+			IdentityHashMap<Clip,Clip> selection = parent.getSelection(false,false);
+			for(java.util.Map.Entry<Clip, Clip> entry:selection.entrySet()){
+				Clip original = entry.getKey();
+				Clip copy = entry.getValue();
+				original.delay = Math.max(0, copy.delay+add);
+			}
+			if(commit){
+				if(value==lastValueCommit){// Cancel
+					parent.finalizeSelection(false);
+				}else{// Confirm
+					parent.finalizeSelection(true);
+				}
+			}
+		}
+		
+	}
+	
+	/**
+	 * Listens for changes to the clip duration input field
+	 * and updates the selected clips accordingly
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static class ClipDurationInputListener implements DoubleInput.DataListener{
+		
+		/**
+		 * Remember the parent, other data can be derived from here
+		 */
+		public LinkedEditorPane parent;
+		
+		/**
+		 * Standard constructor
+		 * 
+		 * @param parent
+		 */
+		public ClipDurationInputListener(LinkedEditorPane parent){
+			this.parent = parent;
+		}
+		
+		@Override
+		public void updated(DoubleInput component, boolean commit) {
+			final double value = component.value,
+					lastValue = component.lastValue,
+					lastValueCommit = component.lastValueCommit;
+			double mult = value/lastValueCommit;
+			IdentityHashMap<Clip,Clip> selection = parent.getSelection(false,false);
+			for(java.util.Map.Entry<Clip, Clip> entry:selection.entrySet()){
+				Clip original = entry.getKey();
+				Clip copy = entry.getValue();
+				original.length = Math.max(1, (int)Math.round(copy.length*mult));
+			}
+			if(commit){
+				if(value==lastValueCommit){// Cancel
+					parent.finalizeSelection(false);
+				}else{// Confirm
+					parent.finalizeSelection(true);
+				}
+			}
+		}
+		
+	}
+	
+	/**
+	 * Listens for changes to the clip volume input field
+	 * and updates the selected clips accordingly
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static class ClipVolumeInputListener implements DoubleInput.DataListener{
+		
+		/**
+		 * Remember the parent, other data can be derived from here
+		 */
+		public LinkedEditorPane parent;
+		
+		/**
+		 * Standard constructor
+		 * 
+		 * @param parent
+		 */
+		public ClipVolumeInputListener(LinkedEditorPane parent){
+			this.parent = parent;
+		}
+		
+		@Override
+		public void updated(DoubleInput component, boolean commit) {
+			final double value = component.value,
+					lastValue = component.lastValue,
+					lastValueCommit = component.lastValueCommit;
+			double mult = value/lastValueCommit;
+			IdentityHashMap<Clip,Clip> selection = parent.getSelection(false,false);
+			for(java.util.Map.Entry<Clip, Clip> entry:selection.entrySet()){
+				Clip original = entry.getKey();
+				Clip copy = entry.getValue();
+				original.volume = copy.volume*mult;
+			}
+			if(commit){
+				if(value==lastValueCommit){// Cancel
+					parent.finalizeSelection(false);
+				}else{// Confirm
+					parent.finalizeSelection(true);
+				}
+			}
 		}
 		
 	}

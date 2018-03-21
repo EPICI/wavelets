@@ -273,11 +273,7 @@ public class TrackLSEditor extends Window implements Bindable {
 			}
 			IdentityHashMap<Pattern,BitSet> r = selection;
 			if(cleanup){
-				Iterator<Pattern> iter = r.keySet().iterator();
-				while(iter.hasNext()){
-					Pattern p = iter.next();
-					if(p.isDestroyed())iter.remove();
-				}
+				r.keySet().removeIf((Pattern p)->p.isDestroyed());
 			}
 			return r;
 		}

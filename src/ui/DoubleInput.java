@@ -57,6 +57,14 @@ public class DoubleInput extends FillPane {
 	 */
 	public double value;
 	/**
+	 * The previously stored value, used by listeners
+	 */
+	public double lastValue;
+	/**
+	 * The value from the previous committed change, used by listeners
+	 */
+	public double lastValueCommit;
+	/**
 	 * The slider view
 	 */
 	public DoubleSlider slider;
@@ -78,7 +86,7 @@ public class DoubleInput extends FillPane {
 	 */
 	public DoubleInput(){
 		// Redirect with default values
-		this(new DoubleValidator.HyperStep(-Double.MAX_VALUE, Double.MAX_VALUE, 0, 2), 1, 0.002);
+		this(new DoubleValidator.HyperbolicStep(-Double.MAX_VALUE, Double.MAX_VALUE, 0, 2), 1, 0.002);
 	}
 	
 	/**
@@ -89,6 +97,7 @@ public class DoubleInput extends FillPane {
 	 * @param stepScale
 	 */
 	public DoubleInput(DoubleValidator validator,double initialValue,double stepScale){
+		if(validator==null)throw new IllegalArgumentException("validator can't be null: validator ("+validator+")");
 		this.validator = validator;
 		this.stepScale = stepScale;
 		this.value = initialValue;
@@ -109,7 +118,7 @@ public class DoubleInput extends FillPane {
 	public void toSliderView(boolean update){
 		if(update){
 			try{
-				value = parse(text.getText());
+				value = validator.nearest(parse(text.getText()));
 				valueChanged(true);
 			}catch(Exception e){
 				e.printStackTrace();
@@ -139,9 +148,45 @@ public class DoubleInput extends FillPane {
 	 * or committed/permanent (true)
 	 */
 	public void valueChanged(boolean commit){
-		for(DataListener listener:dataListeners){
-			listener.updated(this, commit);
+		valueChanged(commit,true);
+	}
+	
+	/**
+	 * Notify the data listeners
+	 * 
+	 * @param commit whether the change is pending (false)
+	 * or committed/permanent (true)
+	 * @param notify true to notify listeners, false to not notify listeners
+	 */
+	public void valueChanged(boolean commit,boolean notify){
+		if(notify){
+			for(DataListener listener:dataListeners){
+				listener.updated(this, commit);
+			}
 		}
+		lastValue = value;
+		if(commit)lastValueCommit = value;
+	}
+	
+	/**
+	 * Convenience method to set the value to the nearest valid
+	 * value without updating anything else
+	 * 
+	 * @param value
+	 */
+	public void setValueNearest(double value){
+		this.value = validator.nearest(value);
+	}
+	
+	/**
+	 * Set the validator and update data accordingly
+	 * 
+	 * @param newValidator
+	 */
+	public void setValidator(DoubleValidator newValidator){
+		if(newValidator==null)throw new IllegalArgumentException("validator can't be null: newValidator ("+newValidator+")");
+		validator = newValidator;
+		value = validator.nearest(value);
 	}
 	
 	/**
@@ -657,7 +702,7 @@ public class DoubleInput extends FillPane {
 		 * @author EPICI
 		 * @version 1.0
 		 */
-		public static class HyperStep extends BoundedDoubleValidator{
+		public static class HyperbolicStep extends BoundedDoubleValidator{
 			
 			/**
 			 * Logarithm of <i>pbase</i>, used because <i>exp()</i>
@@ -678,7 +723,7 @@ public class DoubleInput extends FillPane {
 			 * @param base
 			 * @param pbase base for power to use instead of e
 			 */
-			public HyperStep(double min, double max, double base, double pbase) {
+			public HyperbolicStep(double min, double max, double base, double pbase) {
 				super(min, max, base);
 				this.pbase = pbase;
 				this.lpbase = Math.log(pbase);
@@ -865,12 +910,14 @@ public class DoubleInput extends FillPane {
 			if(mouseDown!=1)return 0;
 			// Choose x or y based on whichever is larger
 			double dx = lastMousex-originMousex;
-			double dy = lastMousey-originMousey;
+			double dy = originMousey-lastMousey;// up needs to be positive
 			return Math.abs(dx)>Math.abs(dy)?dx:dy;
 		}
 		
 		@Override
 	    public boolean mouseDown(Component componentArgument, Mouse.Button button, int x, int y) {
+			DoubleSlider slider = (DoubleSlider) getComponent();
+	        if(slider.isBlocked())return false;// if disabled, then ignore
 			switch(button){
 			case LEFT:
 				mouseDown = 1;
@@ -885,7 +932,6 @@ public class DoubleInput extends FillPane {
 				mouseDown = 4;
 				break;
 			}
-	        DoubleSlider slider = (DoubleSlider) getComponent();
 	        originMousex =  x;
 	        originMousey =  y;
 	        lastMousex = x;
@@ -901,13 +947,37 @@ public class DoubleInput extends FillPane {
     		DoubleInput sliderParent = slider.parent;
 	    	if(mouseDown==1){
 	    		if(mouseDragged){// Dragged -> change value
-	    			// changing value already done by mouseMove
+	    			// copy back value
+	    			slider.value = sliderParent.value;
 	    			// need to notify listeners
 	    			sliderParent.valueChanged(true);
 	    	    	slider.repaint();
-	    		}else{// Clicked -> switch view
-	    			// no data to change
-	    			sliderParent.toTextView();
+	    		}else{// Clicked -> switch view or fine adjustment
+	    			int width = getWidth(), height = getHeight();
+	    			int lowerDist,upperDist;
+	    			boolean useUp;
+	    			if(width<height){
+	    				lowerDist = x;
+	    				upperDist = width-x;
+	    			}else{
+	    				lowerDist = y;
+	    				upperDist = height-y;
+	    			}
+    				useUp = upperDist<lowerDist;
+	    			boolean useIncrement = Math.min(lowerDist, upperDist)<0;
+	    			if(useIncrement){// Clicked near arrow -> increment
+	    				if(useUp){
+	    					sliderParent.value = sliderParent.validator.next(slider.value);
+	    				}else{
+	    					sliderParent.value = sliderParent.validator.prev(slider.value);
+	    				}
+	    				slider.value = sliderParent.value;
+	    				sliderParent.valueChanged(true);
+	    				slider.repaint();
+	    			}else{// Clicked in middle -> switch view
+	    				// no data to change
+		    			sliderParent.toTextView();
+	    			}
 	    		}
 	    	}
 	    	mouseDown = 0;
@@ -923,7 +993,7 @@ public class DoubleInput extends FillPane {
 		    	lastMousex = x;
 		    	lastMousey = y;
 		    	double shift = getShift()*sliderParent.stepScale;
-		    	double newValue = sliderParent.validator.step(slider.value, shift);
+		    	double newValue = sliderParent.validator.step(sliderParent.value, shift);
 		    	sliderParent.value = newValue;
 		    	sliderParent.valueChanged(false);
 		    	slider.repaint();
@@ -949,6 +1019,18 @@ public class DoubleInput extends FillPane {
 	    @Override
 	    public boolean keyReleased(Component componentArgument, int keyCode, Keyboard.KeyLocation keyLocation) {
 	        keys.clear(keyCode);
+    		DoubleSlider slider = (DoubleSlider) getComponent();
+    		DoubleInput sliderParent = slider.parent;
+	        switch(keyCode){
+	        case KeyEvent.VK_ESCAPE:{
+	        	// Cancel current changes
+	        	mouseDown = 0;
+	        	sliderParent.value = slider.value;
+	        	sliderParent.valueChanged(true);
+    	    	slider.repaint();
+	        	break;
+	        }
+	        }
 	    	return false;
 	    }
 
@@ -991,6 +1073,7 @@ public class DoubleInput extends FillPane {
 			Font font = this.font = g.getFont();
 			FontMetrics fm = g.getFontMetrics();
 			final double ushift = getShift();
+			boolean enabled = !ds.isBlocked();
 			// Update cached bounds if possible
 			if(!preferredLock){
 				Rectangle2D bounds = fm.getStringBounds(TEST_STRING, g);
@@ -1054,21 +1137,24 @@ public class DoubleInput extends FillPane {
 				textLength = fm.stringWidth(text);
 			}
 			Draw.drawTextImage(g, 0, 0, width, height, text, null, font, textCol, null, 0.5, 0.5, 0.0, 0);
-			// Draw arrows
-			double arrowWidth = minradius*ARROW_FAC;
-			g.setColor(arrowCol);
-			Path2D.Double arrowPath = new Path2D.Double();
-			arrowPath.moveTo(width-minradius+arrowWidth, centery);
-			arrowPath.moveTo(width-minradius, centery+arrowWidth);
-			arrowPath.moveTo(width-minradius, centery-arrowWidth);
-			arrowPath.closePath();
-			g.fill(arrowPath);
-			arrowPath = new Path2D.Double();
-			arrowPath.moveTo(minradius-arrowWidth, centery);
-			arrowPath.moveTo(minradius, centery+arrowWidth);
-			arrowPath.moveTo(minradius, centery-arrowWidth);
-			arrowPath.closePath();
-			g.fill(arrowPath);
+			// No arrows if disabled, this indicates they cannot change it
+			if(enabled){
+				// Draw arrows
+				double arrowWidth = minradius*ARROW_FAC;
+				g.setColor(arrowCol);
+				Path2D.Double arrowPath = new Path2D.Double();
+				arrowPath.moveTo(width-minradius+arrowWidth, centery);
+				arrowPath.moveTo(width-minradius, centery+arrowWidth);
+				arrowPath.moveTo(width-minradius, centery-arrowWidth);
+				arrowPath.closePath();
+				g.fill(arrowPath);
+				arrowPath = new Path2D.Double();
+				arrowPath.moveTo(minradius-arrowWidth, centery);
+				arrowPath.moveTo(minradius, centery+arrowWidth);
+				arrowPath.moveTo(minradius, centery-arrowWidth);
+				arrowPath.closePath();
+				g.fill(arrowPath);
+			}
 		}
 		
 	}

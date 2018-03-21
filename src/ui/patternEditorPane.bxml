@@ -73,10 +73,17 @@
 								<PushButton bxml:id="templateNew" buttonData="Create New"/>
 							</TablePane.Row>
 							<TablePane.Row>
+								<Label text="Volume (B)"/>
+								<TablePane.Filler/>
+							</TablePane.Row>
+							<TablePane.Row>
+								<TablePane.Filler/>
+								<TablePane.Filler/>
+							</TablePane.Row>
+							<TablePane.Row>
 								<TablePane.Filler/>
 								<PushButton bxml:id="templateParamNew" buttonData="Add Parameter"/>
 							</TablePane.Row>
-							<!-- title, (start, duration)/(profile selector) -->
 						</TablePane>
 					</ScrollPane>
 				</TablePane.Row>
