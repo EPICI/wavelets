@@ -31,6 +31,10 @@ public class PlayerDoubleBuffer implements Player {
 	 * The current time, if sound is playing
 	 */
 	public volatile double currentTime;
+	/**
+	 * The current session
+	 */
+	public Session session;
 	
 	/**
 	 * Destroyed yet?
@@ -215,9 +219,14 @@ public class PlayerDoubleBuffer implements Player {
 		//Allowable true,false
 		boolean bigEndian = true;
 		
+		int bufferSize = session.getBufferSize();
+		int bufferBytes = bufferSize*2;
+		double timeMult = 0.5d/sampleRate;// halved because 2 bytes per sample
+		
 		double[] audioDataDouble = samples.sampleData;
 		int sampleCount = audioDataDouble.length;
-		byte[] audioData = new byte[sampleCount*2];
+		int sampleBytes = sampleCount*2;
+		byte[] audioData = new byte[sampleBytes];
 		
 		ByteBuffer byteBuffer;
 		ShortBuffer shortBuffer;
@@ -240,8 +249,14 @@ public class PlayerDoubleBuffer implements Player {
 				sourceDataLine.start();
 
 				while(cont){
-					// Due to sending all the data at once, we can't know the time
-					sourceDataLine.write(audioData, 0, sampleCount*2);
+					int start = 0, end = 0;
+					while(start<sampleBytes){
+						start=end;
+						end=Math.min(sampleBytes, start+bufferBytes);
+						int transferBytes = end-start;
+						currentTime=start*timeMult;// keep time updated
+						sourceDataLine.write(audioData, start, transferBytes);
+					}
 					if(!loop){
 						break;
 					}

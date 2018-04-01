@@ -219,4 +219,80 @@ public class Clip implements Serializable {
 		return hash.squeezeInt();
 	}
 	
+	/**
+	 * A clip template which defines additional properties
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static class Template implements Serializable {
+		private static final long serialVersionUID = 1L;
+		
+		/**
+		 * List of properties
+		 */
+		public final ArrayList<Property> properties;
+		
+		/**
+		 * Blank constructor
+		 */
+		public Template(){
+			properties = new ArrayList<>();
+		}
+		
+		/**
+		 * An individual property, as used by the clip template,
+		 * which defines how to treat the value but not the actual value,
+		 * which is held by the clip
+		 * <br>
+		 * See {@link ui.PatternEditor} for how some of these are used
+		 * 
+		 * @author EPICI
+		 * @version 1.0
+		 */
+		public static class Property implements Serializable {
+			private static final long serialVersionUID = 1L;
+			
+			/**
+			 * This shows in the UI, and is not a unique identifier
+			 * <br>
+			 * Optional
+			 */
+			public String name;
+			/**
+			 * Minimum allowed value
+			 */
+			public double min;
+			/**
+			 * Default value, used for new clips
+			 */
+			public double base;
+			/**
+			 * Maximum allowed value
+			 */
+			public double max;
+			/**
+			 * Determines how to step values
+			 */
+			public String step;
+			/**
+			 * Determines how to update clips from a value change
+			 */
+			public String update;
+			
+			/**
+			 * Blank constructor, uses default values
+			 */
+			public Property(){
+				name = "";
+				min = -Double.MAX_VALUE;
+				base = DEFAULT_VALUE;
+				max = Double.MAX_VALUE;
+				step = "Add";
+				update = "Add difference";
+			}
+		}
+		
+	}
+	
 }

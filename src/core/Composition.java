@@ -37,6 +37,29 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	 */
 	public TrackLayerCompound tracks;
 	/**
+	 * All clip templates, with the name as the key
+	 * and the template object as the value
+	 */
+	public HashMap<String,Clip.Template> clipTemplates;
+	/**
+	 * All synthesizers by name, stored by their specifications
+	 * <br>
+	 * Will always match <i>synths</i>
+	 * <br>
+	 * Please use the provided methods rather than modifying this directly
+	 * for safety reasons
+	 */
+	public HashMap<String,Synthesizer.Specification> synthSpecs;
+	/**
+	 * All synthesizers by name
+	 * <br>
+	 * Will always match <i>synthSpecs</i>
+	 * <br>
+	 * Please use the provided methods rather than modifying this directly
+	 * for safety reasons
+	 */
+	public transient HashMap<String,Synthesizer> synths;
+	/**
 	 * Current session
 	 */
 	public transient Session currentSession;
@@ -54,6 +77,8 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	public Composition(Session session){
 		currentSession = session;
 		tracks = new TrackLayerCompound(this);
+		clipTemplates = new HashMap<>();
+		synthSpecs = new HashMap<>();
 		initTransient(currentSession);
 	}
 
@@ -66,8 +91,14 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 			synchronized(globalsDynamic){
 				for(String k:globalsStatic.keySet()){
 					Object v = globalsStatic.get(k);
-					if(v instanceof BetterClone<?,?>){
-						globalsDynamic.put(k, ((BetterClone<?,?>) v).deepCopy(null));
+					if(v instanceof BetterClone<?>){
+						BetterClone<?> bcv = ((BetterClone<?>) v);
+						HashMap<String,Object> copyOptions = new HashMap<>();
+						TreeSet<String> copyBlacklist = new TreeSet<>();
+						copyBlacklist.add("*Session");
+						copyBlacklist.add("*Composition");
+						copyOptions.put("blacklist", copyBlacklist);
+						globalsDynamic.put(k, bcv.copy(Integer.MAX_VALUE, copyOptions));
 					}else{
 						globalsDynamic.put(k, v);
 					}
@@ -98,15 +129,54 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 		return seconds/baseSpeed;
 	}
 	
+	/**
+	 * Attempt to rename a synthesizer, return true if successful
+	 * 
+	 * @param oldName the current name of the synthesizer
+	 * @param newName the desired new name of the synthesizer
+	 * @return true if successful, indicating a change happened, otherwise false
+	 */
+	public boolean renameSynth(String oldName,String newName){
+		if(newName==null
+				||newName.equals(oldName)
+				||synthSpecs.containsKey(newName))return false;
+		Synthesizer.Specification synthSpec = synthSpecs.get(oldName);
+		if(synthSpec==null)return false;
+		synths.put(newName, synths.remove(oldName));
+		synthSpecs.remove(oldName);
+		synthSpecs.put(newName, synthSpec);
+		return true;
+	}
+	
+	/**
+	 * Attempt to add a synthesizer, return true if successful
+	 * 
+	 * @param name desired name of the synthesizer
+	 * @param synth synthesizer to add
+	 * @param synthSpec specification for synthesizer, or null to use default
+	 * @return true if successful, indicating a change happened, otherwise false
+	 */
+	public boolean addSynth(String name,Synthesizer synth,Synthesizer.Specification synthSpec){
+		if(synth==null
+				||name==null
+				||synthSpecs.containsKey(name))return false;
+		if(synthSpec==null)synthSpec = Synthesizer.specWrap(synth);
+		synthSpecs.put(name, synthSpec);
+		synths.put(name, synth);
+		return true;
+	}
+	
+	// TODO remove synth method
+	
+	// TODO update synth specification method
+	
 	@Override
 	public void destroy() {
-		// TODO Auto-generated method stub
 		destroyed = true;
 	}
 
 	@Override
 	public void destroySelf() {
-		// TODO Auto-generated method stub
 		destroyed = true;
 	}
 	
@@ -117,8 +187,10 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 
 	@Override
 	public void initTransient(Session parent) {
-		// TODO Auto-generated method stub
-		
+		synths = new HashMap<>();
+		for(Map.Entry<String, Synthesizer.Specification> entry:synthSpecs.entrySet()){
+			synths.put(entry.getKey(), entry.getValue().resolve(currentSession));
+		}
 	}
 
 }

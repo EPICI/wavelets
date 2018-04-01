@@ -298,7 +298,6 @@ public class PatternEditor extends Window implements Bindable {
 		
 		@Override
 		public void initialize(Map<String, Object> namespace, URL location, Resources resources) {
-			TablePane.Row tr;
 			tabName = (ButtonData) namespace.get("tabName");
 			editorInnerPane = (LinkedEditorInnerPane) namespace.get("editorInnerPane");
 			outerTablePane = (TablePane) namespace.get("outerTablePane");
@@ -314,12 +313,19 @@ public class PatternEditor extends Window implements Bindable {
 			templateCopy = (PushButton) namespace.get("templateCopy");
 			templateNew = (PushButton) namespace.get("templateNew");
 			templateParamNew = (PushButton) namespace.get("templateParamNew");
+		}
+		
+		/**
+		 * Initialize, called after setting fields
+		 */
+		public void init(){
+			TablePane.Row tr;
 			
 			divisionsInput = new DoubleInput(
 					new DoubleInput.DoubleValidator.SplitDoubleValidator(
 							new DoubleInput.DoubleValidator.BoundedIntegerValidator(1, 1e6, 4),
 							new DoubleInput.DoubleValidator.HyperbolicStep(-Double.MAX_VALUE, Double.MAX_VALUE, 0, 2)),
-					4, 0.05);
+					view.divisions, 0.05);
 			divisionsInput.dataListeners.add(new DivisionsInputListener(this));
 			tr = patternTablePane.getRows().get(INDEX_DIVISIONS_INPUT);
 			tr.update(0, divisionsInput);
@@ -346,14 +352,8 @@ public class PatternEditor extends Window implements Bindable {
 			tr.update(0, clipVolumeInput);
 			
 			// TODO template listeners
-		}
-		
-		/**
-		 * Initialize, called after setting fields
-		 */
-		public void init(){
+			
 			tabName.setText(view.getName());
-			divisionsInput.value = view.divisions;
 		}
 		
 		/**
@@ -526,6 +526,75 @@ public class PatternEditor extends Window implements Bindable {
 					parent.finalizeSelection(true);
 				}
 			}
+		}
+		
+	}
+	
+	public static class LinkedClipTableRow extends TablePane.Row implements Bindable{
+		
+		/**
+		 * Index of the row for the clip property input
+		 */
+		public static final int INDEX_PROPERTY_INPUT = 1;
+		/**
+		 * Index of the row for the clip property bounds (min/max/default) inputs
+		 */
+		public static final int INDEX_BOUNDS_INPUT = 1;
+		
+		/**
+		 * The pane that contains this
+		 */
+		public LinkedEditorPane parent;
+		/**
+		 * The property that this edits
+		 */
+		public Clip.Template.Property view;
+		public Label nameLabel;
+		public ListButton stepModeSelector;
+		public ListButton updateModeSelector;
+		public PushButton moveDown;
+		public PushButton moveUp;
+		public PushButton remove;
+		public TablePane boundsTablePane;
+		public TablePane leftTablePane;
+		public TablePane moveTablePane;
+		public TablePane rightTablePane;
+		public TextInput nameInput;
+		public DoubleInput propertyInput;
+		public DoubleInput minInput;
+		public DoubleInput baseInput;
+		public DoubleInput maxInput;
+		
+		@Override
+		public void initialize(Map<String, Object> namespace, URL location, Resources resources) {
+			nameLabel = (Label) namespace.get("nameLabel");
+			stepModeSelector = (ListButton) namespace.get("stepModeSelector");
+			updateModeSelector = (ListButton) namespace.get("updateModeSelector");
+			moveDown = (PushButton) namespace.get("moveDown");
+			moveUp = (PushButton) namespace.get("moveUp");
+			remove = (PushButton) namespace.get("remove");
+			boundsTablePane = (TablePane) namespace.get("boundsTablePane");
+			leftTablePane = (TablePane) namespace.get("leftTablePane");
+			moveTablePane = (TablePane) namespace.get("moveTablePane");
+			rightTablePane = (TablePane) namespace.get("rightTablePane");
+			nameInput = (TextInput) namespace.get("nameInput");
+		}
+		
+		/**
+		 * Initialize, called after setting fields
+		 */
+		public void init(){
+			TablePane.Row tr;
+			
+			// TODO property, min, base, max inputs
+			
+			// TODO name updating listener
+			
+			// TODO remove listener
+			
+			// TODO move up, down listener
+			
+			// TODO change property input to match step mode, and listener for that
 		}
 		
 	}

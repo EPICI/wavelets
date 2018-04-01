@@ -1,0 +1,87 @@
+<components:PatternEditor.LinkedClipTableRow
+	xmlns:bxml="http://pivot.apache.org/bxml"
+	xmlns:content="org.apache.pivot.wtk.content"
+	xmlns:components="ui"
+	xmlns="org.apache.pivot.wtk">
+	<TablePane bxml:id="leftTablePane">
+		<columns>
+			<TablePane.Column width="1*"/>
+		</columns>
+		<TablePane.Row>
+			<Label bxml:id="nameLabel" text=""/>
+		</TablePane.Row>
+		<TablePane.Row>
+			<TablePane.Filler/>
+		</TablePane.Row>
+	</TablePane>
+	<TablePane bxml:id="rightTablePane">
+		<columns>
+			<TablePane.Column width="1*"/>
+			<TablePane.Column width="-1"/>
+		</columns>
+		<TablePane.Row>
+			<TablePane>
+				<columns>
+					<TablePane.Column width="1*"/>
+				</columns>
+				<TablePane.Row>
+					<TextInput bxml:id="nameInput"/>
+				</TablePane.Row>
+				<TablePane.Row>
+					<TablePane bxml:id="boundsTablePane">
+						<columns>
+							<TablePane.Column width="1*"/>
+							<TablePane.Column width="1*"/>
+							<TablePane.Column width="1*"/>
+						</columns>
+						<TablePane.Row>
+							<Label text="Min"/>
+							<Label text="Default"/>
+							<Label text="Max"/>
+						</TablePane.Row>
+						<TablePane.Row>
+							<TablePane.Filler/>
+							<TablePane.Filler/>
+							<TablePane.Filler/>
+						</TablePane.Row>
+					</TablePane>
+				</TablePane.Row>
+				<TablePane.Row>
+					<Label text="Step mode"/>
+				</TablePane.Row>
+				<TablePane.Row>
+					<ListButton bxml:id="stepModeSelector" listData="[
+						'Add',
+						'Multiply'
+					]"/>
+				</TablePane.Row>
+				<TablePane.Row>
+					<Label text="Update mode"/>
+				</TablePane.Row>
+				<TablePane.Row>
+					<ListButton bxml:id="updateModeSelector" listData="[
+						'Overwrite',
+						'Add',
+						'Multiply'
+					]"/>
+				</TablePane.Row>
+			</TablePane>
+		</TablePane.Row>
+		<TablePane.Row>
+			<TablePane bxml:id="moveTablePane">
+				<columns>
+					<TablePane.Column width="1*"/>
+				</columns>
+				<TablePane.Row>
+					<PushButton bxml:id="moveUp" buttonData="Move up"/>
+				</TablePane.Row> 
+				<TablePane.Row>
+					<PushButton bxml:id="remove" buttonData="Remove"/>
+				</TablePane.Row>
+				<TablePane.Row>
+					<PushButton bxml:id="moveDown" buttonData="Move down"/>
+				</TablePane.Row>
+			</TablePane>
+		</TablePane.Row>
+	</TablePane>
+</components:PatternEditor.LinkedClipTableRow>

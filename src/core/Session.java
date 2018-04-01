@@ -174,6 +174,7 @@ public class Session {
 		mainFrame.setResizable(true);
 		mainFrame.setVisible(true);
 		player = new PlayerDoubleBuffer(bufferSize);
+		player.session = this;
 	}
 	
 	/**

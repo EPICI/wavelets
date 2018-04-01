@@ -3,6 +3,7 @@ package core;
 import org.python.core.PyObject;
 import util.jython.*;
 import java.awt.Color;
+import java.io.Serializable;
 import java.util.HashMap;
 import javax.swing.*;
 import util.*;
@@ -100,4 +101,64 @@ public interface Synthesizer extends Destructable, TransientContainer<Compositio
 	 * @see AutoDouble
 	 */
 	public Color getColorSignature(double time);
+	
+	/**
+	 * Synthesizers are saved with an instance of this rather than
+	 * the actual synthesizer, that way it's not necessary to store
+	 * all the data with the project files, but only the data relevant
+	 * to the instance. Common data like scripts and preferences can go
+	 * elsewhere. Since the {@link Session} is needed to resolve such
+	 * information, it is used in the interface here.
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static interface Specification extends Serializable{
+		/**
+		 * Create or fetch the synthesizer object corresponding to this
+		 * specification, using the session.
+		 * 
+		 * @param session current session
+		 * @return specified synthesizer object
+		 */
+		public Synthesizer resolve(Session session);
+		
+		/**
+		 * Specification which stores the synthesizer directly.
+		 * 
+		 * @author EPICI
+		 * @version 1.0
+		 */
+		public static class DirectSpecification implements Specification{
+			private static final long serialVersionUID = 1L;
+			
+			/**
+			 * The synthesizer instance
+			 */
+			public Synthesizer synthesizer;
+			
+			/**
+			 * Standard constructor, used to wrap a synthesizer.
+			 * 
+			 * @param synthesizer
+			 */
+			public DirectSpecification(Synthesizer synthesizer){
+				this.synthesizer = synthesizer;
+			}
+			
+			public Synthesizer resolve(Session session){
+				return synthesizer;
+			}
+		}
+	}
+	
+	/**
+	 * Use default methods to get a specification for a synthesizer
+	 * 
+	 * @param synth
+	 * @return
+	 */
+	public static Specification specWrap(Synthesizer synth){
+		return new Specification.DirectSpecification(synth);
+	}
 }

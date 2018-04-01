@@ -32,32 +32,11 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	 */
 	public final ArrayList<Clip> clips;
 	
-	/** 
-	 * Int encoding:
-	 * <br>
-	 * 0 is unset
-	 * <br>
-	 * Negative is system managed:
-	 * <ul>
-	 * <li>-1 is built in (Java)</li>
-	 * <li>-2 is included (Python)</li>
-	 * <li>-3 is project specific (Python) with file path relative to project file</li>
-	 * </ul>
-	 * <br>
-	 * Positive is user managed:
-	 * <ul>
-	 * <li>1-999999 is reserved for user defined libraries (Python),
-	 * the number determines where to look with file path relative to executable</li>
-	 * </ul>
-	 */
-	protected int synthType;
 	/**
-	 * The synthesizer to be used for everything
+	 * The synthesizer to be used for everything, may be shared
 	 * <br>
-	 * This may be shared
-	 * <br>
-	 * Based on int code:
-	 * if built in, string is the name, otherwise it's a filename
+	 * Each synthesizer instance has a unique name, so this is the key
+	 * which is used to resolve the instance
 	 */
 	protected String synthName;
 	/**
@@ -86,14 +65,12 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	 * 
 	 * @param length length in measures
 	 * @param divisions number of steps per measure
-	 * @param synthType synthesizer type code
-	 * @param synthName synthesizer name/filename depending on type
+	 * @param synthName synthesizer name
 	 * @param composition parent
 	 */
-	public Pattern(int length,int divisions,byte synthType,String synthName,Composition composition){
+	public Pattern(int length,int divisions,String synthName,Composition composition){
 		this.length = length;
 		this.divisions = divisions;
-		this.synthType = synthType;
 		this.synthName = synthName;
 		clips = new ArrayList<>();
 		initTransient(composition);
