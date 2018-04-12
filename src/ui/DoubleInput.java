@@ -309,7 +309,7 @@ public class DoubleInput extends FillPane {
 	 * @author EPICI
 	 * @version 1.0
 	 */
-	public static interface DoubleValidator{
+	public static interface DoubleValidator extends BetterClone<DoubleValidator>{
 		
 		/**
 		 * Given a value, what valid value is closest to it?
@@ -413,6 +413,16 @@ public class DoubleInput extends FillPane {
 			 * The base value
 			 */
 			public final double base;
+			
+			/**
+			 * Shortcut constructor which uses all doubles
+			 * as the range.
+			 * 
+			 * @param base see method <i>base()</i>
+			 */
+			public BoundedDoubleValidator(double base){
+				this(-Double.MAX_VALUE, Double.MAX_VALUE, base);
+			}
 			
 			/**
 			 * Standard constructor providing both
@@ -524,6 +534,22 @@ public class DoubleInput extends FillPane {
 				return sb.toString();
 			}
 			
+			private static final String BOUNDEDDOUBLEVALIDATOR_CLASS_NAME = BoundedDoubleValidator.class.getCanonicalName();
+			public DoubleValidator copy(int depth,Map<String,Object> options){
+				double newMin = this.min, newMax = this.max, newBase = this.base;
+				Map<String,Object> set = (Map<String,Object>)options.get("set");
+				if(set!=null){
+					Number val;
+					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min");
+					if(val!=null)newMin = val.doubleValue();
+					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max");
+					if(val!=null)newMax = val.doubleValue();
+					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base");
+					if(val!=null)newBase = val.doubleValue();
+				}
+				return new BoundedDoubleValidator(newMin,newMax,newBase);
+			}
+			
 		}
 		
 		/**
@@ -537,6 +563,11 @@ public class DoubleInput extends FillPane {
 		 * @version 1.0
 		 */
 		public static class BoundedIntegerValidator extends BoundedDoubleValidator{
+			
+			/**
+			 * Hash key for <i>hashCode()</i>
+			 */
+			public static final long HK_HC = QuickKeyGen.next64();
 			
 			/**
 			 * Is it a mathematical integer?
@@ -588,6 +619,26 @@ public class DoubleInput extends FillPane {
 				return Math.min(Math.nextDown(value), value-1);
 			}
 			
+			public double rounding(){
+				return 1;
+			}
+			
+			private static final String BOUNDEDDOUBLEVALIDATOR_CLASS_NAME = BoundedDoubleValidator.class.getCanonicalName();
+			public DoubleValidator copy(int depth,Map<String,Object> options){
+				double newMin = this.min, newMax = this.max, newBase = this.base;
+				Map<String,Object> set = (Map<String,Object>)options.get("set");
+				if(set!=null){
+					Number val;
+					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min");
+					if(val!=null)newMin = val.doubleValue();
+					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max");
+					if(val!=null)newMax = val.doubleValue();
+					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base");
+					if(val!=null)newBase = val.doubleValue();
+				}
+				return new BoundedIntegerValidator(newMin,newMax,newBase);
+			}
+			
 		}
 		
 		/**
@@ -616,8 +667,8 @@ public class DoubleInput extends FillPane {
 			/**
 			 * Standard constructor providing both
 			 * 
-			 * @param set
-			 * @param step
+			 * @param set determines what values are valid, including bounds, as well as base
+			 * @param step determines stepping between values
 			 */
 			public SplitDoubleValidator(DoubleValidator set,DoubleValidator step){
 				if(set==null||step==null)throw new IllegalArgumentException("backing validators cannot be null: set ("+set+"), step ("+step+")");
@@ -690,6 +741,35 @@ public class DoubleInput extends FillPane {
 				return sb.toString();
 			}
 			
+			private static final String SPLITDOUBLEVALIDATOR_CLASS_NAME = SplitDoubleValidator.class.getCanonicalName();
+			public DoubleValidator copy(int depth,Map<String,Object> options){
+				if(options==null){
+					options = new HashMap<String,Object>();
+				}
+				DoubleValidator newSet = this.set, newStep = this.step;
+				Collection<String> blacklist = (Collection<String>)options.get("blacklist");
+				Collection<String> whitelist = (Collection<String>)options.get("whitelist");
+				Map<String,Object> set = (Map<String,Object>)options.get("set");
+				DoubleValidator val;
+				val = (DoubleValidator) set.get(SPLITDOUBLEVALIDATOR_CLASS_NAME+".set");
+				if(val!=null){
+					newSet = val;
+				}else if(depth>0
+						|| BetterClone.fieldIncluded(whitelist, newSet.getClass(),
+								SPLITDOUBLEVALIDATOR_CLASS_NAME+".set")){
+					newSet = BetterClone.copy(newSet, depth-1, options);
+				}
+				val = (DoubleValidator) set.get(SPLITDOUBLEVALIDATOR_CLASS_NAME+".step");
+				if(val!=null){
+					newStep = val;
+				}else if(depth>0
+						|| BetterClone.fieldIncluded(whitelist, newSet.getClass(),
+								SPLITDOUBLEVALIDATOR_CLASS_NAME+".step")){
+					newStep = BetterClone.copy(newStep, depth-1, options);
+				}
+				return new SplitDoubleValidator(newSet,newStep);
+			}
+			
 		}
 		
 		/**
@@ -715,6 +795,16 @@ public class DoubleInput extends FillPane {
 			 */
 			public final double pbase;
 
+			/**
+			 * Shortcut constructor which uses all doubles
+			 * as the range and 0 as the default value.
+			 * 
+			 * @param pbase base for power to use instead of e
+			 */
+			public HyperbolicStep(double pbase){
+				this(-Double.MAX_VALUE, Double.MAX_VALUE, 0, pbase);
+			}
+			
 			/**
 			 * Standard constructor, see {@link BoundedDoubleValidator} for usage
 			 * 
@@ -747,6 +837,25 @@ public class DoubleInput extends FillPane {
 				sb.append(pbase);
 				sb.append("]");
 				return sb.toString();
+			}
+			
+			private static final String HYPERBOLICSTEP_CLASS_NAME = HyperbolicStep.class.getCanonicalName();
+			private static final String BOUNDEDDOUBLEVALIDATOR_CLASS_NAME = BoundedDoubleValidator.class.getCanonicalName();
+			public DoubleValidator copy(int depth,Map<String,Object> options){
+				double newMin = this.min, newMax = this.max, newBase = this.base, newPbase = this.pbase;
+				Map<String,Object> set = (Map<String,Object>)options.get("set");
+				if(set!=null){
+					Number val;
+					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min");
+					if(val!=null)newMin = val.doubleValue();
+					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max");
+					if(val!=null)newMax = val.doubleValue();
+					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base");
+					if(val!=null)newBase = val.doubleValue();
+					val = (Number) set.get(HYPERBOLICSTEP_CLASS_NAME+".pbase");
+					if(val!=null)newPbase = val.doubleValue();
+				}
+				return new HyperbolicStep(newMin,newMax,newBase,newPbase);
 			}
 			
 		}

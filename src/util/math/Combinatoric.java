@@ -16,7 +16,7 @@ public final class Combinatoric {
 	/**
 	 * Calculates n choose k in O(n) time
 	 * <br>
-	 * Breaks for very large n, under 29 is guaranteed safe
+	 * Breaks for very large n, under 30 is guaranteed safe
 	 * 
 	 * @param n n
 	 * @param k k
@@ -34,7 +34,7 @@ public final class Combinatoric {
 	/**
 	 * Calculates n choose p for 0 &#x2264; p &#x2264; k
 	 * <br>
-	 * Breaks for very large n, under 29 is guaranteed safe
+	 * Breaks for very large n, under 30 is guaranteed safe
 	 * 
 	 * @param n n
 	 * @param k k
@@ -55,7 +55,7 @@ public final class Combinatoric {
 	/**
 	 * Calculates n choose k in O(n) time
 	 * <br>
-	 * Breaks for very large n, under 60 is guaranteed safe
+	 * Breaks for very large n, under 62 is guaranteed safe
 	 * 
 	 * @param n n
 	 * @param k k
@@ -73,7 +73,7 @@ public final class Combinatoric {
 	/**
 	 * Calculates n choose p for 0 &#x2264; p &#x2264; k
 	 * <br>
-	 * Breaks for very large n, under 60 is guaranteed safe
+	 * Breaks for very large n, under 62 is guaranteed safe
 	 * 
 	 * @param n n
 	 * @param k k
@@ -94,7 +94,9 @@ public final class Combinatoric {
 	/**
 	 * Calculates n choose k in O(n) time
 	 * <br>
-	 * Always safe, but not necessarily accurate
+	 * Not necessarily accurate
+	 * <br>
+	 * Breaks for very large n, under 1021 is guaranteed safe
 	 * 
 	 * @param n n
 	 * @param k k
@@ -112,7 +114,9 @@ public final class Combinatoric {
 	/**
 	 * Calculates n choose p for 0 &#x2264; p &#x2264; k
 	 * <br>
-	 * Always safe, but not necessarily accurate
+	 * Not necessarily accurate
+	 * <br>
+	 * Breaks for very large n, under 1021 is guaranteed safe
 	 * 
 	 * @param n n
 	 * @param k k
@@ -133,16 +137,18 @@ public final class Combinatoric {
 	/**
 	 * Calculates n choose p for 0 &#x2264; p &#x2264; k
 	 * <br>
-	 * Adaptive
+	 * Adaptive, uses highest precision available without sacrificing speed
+	 * <br>
+	 * Breaks for very large n, under 1021 is guaranteed safe
 	 * 
 	 * @param n n
 	 * @param k k
 	 * @return values for that range
 	 */
 	public static double[] adaptiveChooseDoubleRange(int n,int k){
-		if(n>=60){
+		if(n>=62){
 			return chooseDoubleRange(n,k);
-		}else if(n>=29){
+		}else if(n>=30){
 			long[] pre = chooseLongRange(n,k);
 			double[] result = new double[pre.length];
 			for(int i=0;i<pre.length;i++){
@@ -159,5 +165,15 @@ public final class Combinatoric {
 		}else{
 			throw new IllegalArgumentException("n ("+n+") must be 1 or greater");
 		}
+	}
+	
+	public static void main(String[] args){
+		int i=1;
+		while(chooseIntRange(i,i)[i]==1)i++;
+		System.out.println("chooseIntRange breaks at "+i);
+		while(chooseLongRange(i,i)[i]==1)i++;
+		System.out.println("chooseLongRange breaks at "+i);
+		while(Double.isFinite(chooseDoubleRange(i,i)[i]))i++;
+		System.out.println("chooseDoubleRange breaks at "+i);
 	}
 }

@@ -35,6 +35,8 @@ public interface BetterClone<Self extends BetterClone<Self>> {
 	 * <li>&quot;whitelist&quot; is some collection of strings where
 	 * if the name of a field is or is similar to a string in the collection,
 	 * it should be copied regardless of whether the depth would allow it</li>
+	 * <li>&quot;set&quot; is a string-object map which says specific fields should
+	 * be changed in the copy; this is useful for modifying immutable objects</li>
 	 * </ul>
 	 * 
 	 * @param depth 0 for shallow, some other number for a depth limit
@@ -43,4 +45,95 @@ public interface BetterClone<Self extends BetterClone<Self>> {
 	 * @return
 	 */
 	public Self copy(int depth,Map<String,Object> options);
+	
+	/**
+	 * Put any <i>options</i> parameter through this first, it will fix
+	 * nulls and add blanks for missing common values.
+	 * 
+	 * @param options copy options
+	 * @return
+	 */
+	public static Map<String,Object> fixOptions(Map<String,Object> options){
+		if(options==null){
+			options = new HashMap<>();
+		}
+		Map<Object,Object> replace = (Map<Object,Object>)options.get("replace");
+		if(replace==null){
+			options.put("replace",
+					new IdentityHashMap<>());
+		}
+		Collection<String> blacklist = (Collection<String>)options.get("blacklist");
+		if(blacklist==null){
+			options.put("blacklist",
+					new TreeSet<>());
+		}
+		Collection<String> whitelist = (Collection<String>)options.get("whitelist");
+		if(whitelist==null){
+			options.put("whitelist",
+					new TreeSet<>());
+		}
+		Map<String,Object> set = (Map<String,Object>)options.get("set");
+		if(set==null){
+			options.put("set",
+					new HashMap<>());
+		}
+		return options;
+	}
+	
+	/**
+	 * Useful for whitelist and blacklist: check if the field name or class
+	 * is in the collection.
+	 * 
+	 * @param collection collection to search in
+	 * @param oclass class of value to check for
+	 * @param name if provided, also check for this exact string
+	 * @return
+	 */
+	public static boolean fieldIncluded(Collection<String> collection,Class<?> oclass,String name){
+		if(name!=null && collection.contains(name))return true;
+		while(oclass!=null && oclass!=Object.class){
+			String check = "*"+oclass.getCanonicalName();
+			if(collection.contains(check))return true;
+			oclass = oclass.getSuperclass();
+		}
+		return false;
+	}
+	
+	/**
+	 * Copies <i>source</i>, with safety. Special cases taken care of by this method:
+	 * <ul>
+	 * <li>If <i>source</i> is null, returns null</li>
+	 * <li>If <i>depth</i> is negative, returns <i>source</i> uncopied</li>
+	 * <li>If <i>source</i> is in the &quot;replace&quot; in <i>options</i>,
+	 * returns the mapped value</li>
+	 * <li>If the class of <i>source</i> is in the &quot;blacklist&quot;
+	 * in <i>options</i>, returns <i>source</i> uncopied</li>
+	 * <li>If <i>options</i> is null, it will be substituted; however this
+	 * will lose all the data in the options so don't do this</li>
+	 * </ul>
+	 * 
+	 * @param source object to copy
+	 * @param depth
+	 * @param options
+	 * @return
+	 */
+	public static <T extends BetterClone<T>> T copy(T source,int depth,Map<String,Object> options){
+		if(source==null)return null;
+		if(depth<0)return source;
+		options = fixOptions(options);
+		Class<?> sourceClass = source.getClass();
+		Collection<String> blacklist = (Collection<String>)options.get("blacklist");
+		if(blacklist.contains("*"+sourceClass.getCanonicalName())){
+			// We only accept the full name to avoid ambiguity
+			return source;
+		}
+		Map<Object,Object> replace = (Map<Object,Object>)options.get("replace");
+		Object replaceWith = replace.get(source);
+		if(replaceWith!=null){
+			return (T)replaceWith;
+		}
+		T result = source.copy(depth, options);
+		replace.put(source, result);
+		return result;
+	}
 }
