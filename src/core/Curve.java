@@ -1,6 +1,7 @@
 package core;
 
 import java.io.Serializable;
+import java.util.function.*;
 
 /**
  * A curve, a function, or anything else that maps
@@ -9,7 +10,7 @@ import java.io.Serializable;
  * @author EPICI
  * @version 1.0
  */
-public interface Curve extends Serializable {
+public interface Curve extends Serializable, DoubleUnaryOperator, VarDouble {
 	/**
 	 * Get the value for a specific position
 	 * <br>
@@ -19,4 +20,16 @@ public interface Curve extends Serializable {
 	 * @return that value
 	 */
 	public double valueAtPosition(double position);
+	
+	// Standard interface that does the same thing
+	@Override
+	public default double applyAsDouble(double value){
+		return valueAtPosition(value);
+	}
+	
+	// Allow using a curve directly
+	@Override
+	public default double get(double time){
+		return valueAtPosition(time);
+	}
 }

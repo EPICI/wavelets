@@ -1,6 +1,7 @@
 package ui;
 
 import core.*;
+import core.curves.*;
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.Mouse.Button;
 import org.apache.pivot.wtk.Mouse.ScrollType;
@@ -713,6 +714,31 @@ public class PatternEditor extends Window implements Bindable {
 			// fix the mismatches
 			updateView(true);
 			updatePropertyInput(false,true,true,true,true);
+		}
+		
+		/**
+		 * Given the name of an update mode, return the corresponding
+		 * curve instance which maps each value to a new value.
+		 * If not recognized, returns null.
+		 * 
+		 * @param name
+		 * @param oldValue old value of the property input
+		 * @param newValue new value of the property input
+		 * @return
+		 */
+		public Curve getUpdateInstance(String name,double oldValue,double newValue){
+			switch(name){
+			case PatternEditor.LinkedEditorPane.UPDATE_MODE_NAME_SET:{
+				return new CurvePolynomial(newValue);
+			}
+			case PatternEditor.LinkedEditorPane.UPDATE_MODE_NAME_DIFFERENCE_ADD:{
+				return new CurvePolynomial(newValue-oldValue,1);
+			}
+			case PatternEditor.LinkedEditorPane.UPDATE_MODE_NAME_DIFFERENCE_MULTIPLY:{
+				return new CurvePolynomial(0,newValue/oldValue);
+			}
+			}
+			return null;
 		}
 		
 		/**

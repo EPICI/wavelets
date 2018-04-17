@@ -98,7 +98,7 @@ public interface Synthesizer extends Destructable, TransientContainer<Compositio
 	 * 
 	 * @param time time at which to get the signature
 	 * @return a colour "signature"
-	 * @see AutoDouble
+	 * @see VarDouble
 	 */
 	public Color getColorSignature(double time);
 	

@@ -172,11 +172,11 @@ public class SynthNOsc implements Synthesizer {
 		 * <br>
 		 * Arrays allow for easy automation
 		 */
-		public final AutoDouble[] properties;
+		public final VarDouble[] properties;
 		
 		public Osc(){
 			type = 0;
-			properties = AutoDouble.wrapCopy(new double[]{
+			properties = VarDouble.wrapCopy(new double[]{
 					0d,//detune
 					0d,//volume
 					0d,//attackConst
@@ -193,7 +193,7 @@ public class SynthNOsc implements Synthesizer {
 		 * 
 		 * @param time applicable if automated
 		 * @return
-		 * @see AutoDouble
+		 * @see VarDouble
 		 */
 		public synchronized double getDetune(double time) {
 			return properties[0].get(time);
@@ -215,7 +215,7 @@ public class SynthNOsc implements Synthesizer {
 		 * 
 		 * @param time applicable if automated
 		 * @return
-		 * @see AutoDouble
+		 * @see VarDouble
 		 */
 		public synchronized double getVolume(double time) {
 			return properties[1].get(time);
@@ -239,7 +239,7 @@ public class SynthNOsc implements Synthesizer {
 		 * 
 		 * @param time applicable if automated
 		 * @return
-		 * @see AutoDouble
+		 * @see VarDouble
 		 */
 		public synchronized double getAttackConst(double time) {
 			return properties[2].get(time);
@@ -266,7 +266,7 @@ public class SynthNOsc implements Synthesizer {
 		 * 
 		 * @param time applicable if automated
 		 * @return
-		 * @see AutoDouble
+		 * @see VarDouble
 		 */
 		public synchronized double getAttackFrac(double time) {
 			return properties[3].get(time);
@@ -293,7 +293,7 @@ public class SynthNOsc implements Synthesizer {
 		 * 
 		 * @param time applicable if automated
 		 * @return
-		 * @see AutoDouble
+		 * @see VarDouble
 		 */
 		public synchronized double getHoldConst(double time) {
 			return properties[4].get(time);
@@ -320,7 +320,7 @@ public class SynthNOsc implements Synthesizer {
 		 * 
 		 * @param time applicable if automated
 		 * @return
-		 * @see AutoDouble
+		 * @see VarDouble
 		 */
 		public synchronized double getHoldFrac(double time) {
 			return properties[5].get(time);
@@ -347,7 +347,7 @@ public class SynthNOsc implements Synthesizer {
 		 * 
 		 * @param time applicable if automated
 		 * @return
-		 * @see AutoDouble
+		 * @see VarDouble
 		 */
 		public synchronized double getDecayConst(double time) {
 			return properties[6].get(time);
@@ -374,7 +374,7 @@ public class SynthNOsc implements Synthesizer {
 		 * 
 		 * @param time applicable if automated
 		 * @return
-		 * @see AutoDouble
+		 * @see VarDouble
 		 */
 		public synchronized double getDecayFrac(double time) {
 			return properties[7].get(time);
@@ -404,7 +404,7 @@ public class SynthNOsc implements Synthesizer {
 		 * 
 		 * @param time applicable if automated
 		 * @return
-		 * @see AutoDouble
+		 * @see VarDouble
 		 */
 		public synchronized double getMinVolume(double time) {
 			return properties[9].get(time);

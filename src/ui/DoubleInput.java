@@ -17,6 +17,8 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
+import java.io.Serializable;
+
 import org.apache.pivot.util.*;
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.skin.*;
@@ -309,7 +311,7 @@ public class DoubleInput extends FillPane {
 	 * @author EPICI
 	 * @version 1.0
 	 */
-	public static interface DoubleValidator extends BetterClone<DoubleValidator>{
+	public static interface DoubleValidator extends BetterClone<DoubleValidator>, Serializable{
 		
 		/**
 		 * Given a value, what valid value is closest to it?
@@ -387,6 +389,19 @@ public class DoubleInput extends FillPane {
 		public double step(double value,double by);
 		
 		/**
+		 * What is the granularity of this set?
+		 * <br>
+		 * If 0, means unrestricted, otherwise, values in this set
+		 * are at least this much absolute difference or relative difference
+		 * or some other metric apart
+		 * 
+		 * @return
+		 */
+		public default double rounding(){
+			return 0;
+		}
+		
+		/**
 		 * Simple double validator which uses bounds and
 		 * linear <i>step</i>, can be treated as an abstract class
 		 * for more complex implementations
@@ -395,7 +410,8 @@ public class DoubleInput extends FillPane {
 		 * @version 1.0
 		 */
 		public static class BoundedDoubleValidator implements DoubleValidator{
-			
+			private static final long serialVersionUID = 1L;
+
 			/**
 			 * Hash key for <i>hashCode()</i>
 			 */
@@ -487,19 +503,6 @@ public class DoubleInput extends FillPane {
 				return nearest(value+by);
 			}
 			
-			/**
-			 * What is the granularity of this set?
-			 * <br>
-			 * If 0, means unrestricted, otherwise, values in this set
-			 * are at least this much absolute difference or relative difference
-			 * or some other metric apart
-			 * 
-			 * @return
-			 */
-			public double rounding(){
-				return 0;
-			}
-			
 			public boolean equals(Object o){
 				if(o==this)return true;
 				if(o==null||!(o instanceof BoundedDoubleValidator))return false;
@@ -563,6 +566,7 @@ public class DoubleInput extends FillPane {
 		 * @version 1.0
 		 */
 		public static class BoundedIntegerValidator extends BoundedDoubleValidator{
+			private static final long serialVersionUID = 1L;
 			
 			/**
 			 * Hash key for <i>hashCode()</i>
@@ -649,6 +653,7 @@ public class DoubleInput extends FillPane {
 		 * @version 1.0
 		 */
 		public static class SplitDoubleValidator implements DoubleValidator{
+			private static final long serialVersionUID = 1L;
 			
 			/**
 			 * Hash key for <i>hashCode()</i>
@@ -719,6 +724,12 @@ public class DoubleInput extends FillPane {
 				return set.nearest(step.step(value, by));
 			}
 			
+			@Override
+			public double rounding(){
+				double rset = set.rounding(), rstep = step.rounding();
+				return Math.max(rset, rstep);
+			}
+			
 			public boolean equals(Object o){
 				if(o==this)return true;
 				if(o==null||!(o instanceof SplitDoubleValidator))return false;
@@ -755,6 +766,8 @@ public class DoubleInput extends FillPane {
 				if(val!=null){
 					newSet = val;
 				}else if(depth>0
+						&&!BetterClone.fieldIncluded(blacklist, newSet.getClass(),
+								SPLITDOUBLEVALIDATOR_CLASS_NAME+".set")
 						|| BetterClone.fieldIncluded(whitelist, newSet.getClass(),
 								SPLITDOUBLEVALIDATOR_CLASS_NAME+".set")){
 					newSet = BetterClone.copy(newSet, depth-1, options);
@@ -763,6 +776,8 @@ public class DoubleInput extends FillPane {
 				if(val!=null){
 					newStep = val;
 				}else if(depth>0
+						&&!BetterClone.fieldIncluded(blacklist, newSet.getClass(),
+								SPLITDOUBLEVALIDATOR_CLASS_NAME+".step")
 						|| BetterClone.fieldIncluded(whitelist, newSet.getClass(),
 								SPLITDOUBLEVALIDATOR_CLASS_NAME+".step")){
 					newStep = BetterClone.copy(newStep, depth-1, options);
@@ -783,6 +798,12 @@ public class DoubleInput extends FillPane {
 		 * @version 1.0
 		 */
 		public static class HyperbolicStep extends BoundedDoubleValidator{
+			private static final long serialVersionUID = 1L;
+			
+			/**
+			 * Hash key for <i>hashCode()</i>
+			 */
+			public static final long HK_HC = QuickKeyGen.next64();
 			
 			/**
 			 * Logarithm of <i>pbase</i>, used because <i>exp()</i>
@@ -830,6 +851,12 @@ public class DoubleInput extends FillPane {
 				return (Math.sqrt(value*value+1)*(ub-vb)+value*(ub+vb))*0.5;
 			}
 			
+			public int hashCode(){
+				HashTriArx hash = new HashTriArx(HK_HC);
+				hash.absorb(min,max,pbase,rounding());
+				return hash.squeezeInt();
+			}
+			
 			public String toString(){
 				StringBuilder sb = new StringBuilder();
 				sb.append(Expressions.wrapBrackets(super.toString()));
@@ -856,6 +883,208 @@ public class DoubleInput extends FillPane {
 					if(val!=null)newPbase = val.doubleValue();
 				}
 				return new HyperbolicStep(newMin,newMax,newBase,newPbase);
+			}
+			
+		}
+		
+		/**
+		 * Applies a linear function (x -&gt; <i>mul</i>&#00b7;x+<i>add</i>)
+		 * over another {@link DoubleValidator}.
+		 * 
+		 * @author EPICI
+		 * @version 1.0
+		 */
+		public static class LinearMap implements DoubleValidator{
+			private static final long serialVersionUID = 1L;
+			
+			/**
+			 * Hash key for <i>hashCode()</i>
+			 */
+			public static final long HK_HC = QuickKeyGen.next64();
+			
+			/**
+			 * The original/backing instance
+			 */
+			public final DoubleValidator view;
+			/**
+			 * Coefficient of linear term
+			 */
+			public final double mul;
+			/**
+			 * Constant term
+			 */
+			public final double add;
+			
+			/**
+			 * Shortcut constructor to use a {@link BoundedDoubleValidator}
+			 * representing all valid values.
+			 * 
+			 * @param mul coefficient of linear term
+			 * @param add constant term
+			 */
+			public LinearMap(double mul,double add){
+				this(new BoundedDoubleValidator(0),mul,add);
+			}
+			
+			/**
+			 * Standard constructor providing all values.
+			 * 
+			 * @param view the instance to map
+			 * @param mul coefficient of linear term
+			 * @param add constant term
+			 */
+			public LinearMap(DoubleValidator view,double mul,double add){
+				if(view==null)throw new IllegalArgumentException("backing validator cannot be null: view ("+view+")");
+				if(!(Double.isFinite(mul)&&Double.isFinite(add)))throw new IllegalArgumentException("values must be finite: mul ("+mul+"), add ("+add+")");
+				this.view=view;
+				this.mul=mul;
+				this.add=add;
+			}
+			
+			/**
+			 * Apply the mapping to a value.
+			 * Result is bound to finite doubles.
+			 * 
+			 * @param value
+			 * @return
+			 */
+			public double map(double value){
+				double result = mul*value+add;
+				return Floats.median(-Double.MAX_VALUE, result, Double.MAX_VALUE);
+			}
+			
+			/**
+			 * Apply the inverse mapping to a value.
+			 * Result is bound to finite doubles.
+			 * 
+			 * @param value
+			 * @return
+			 */
+			public double invmap(double value){
+				double result = (value-add)/mul;
+				return Floats.median(-Double.MAX_VALUE, result, Double.MAX_VALUE);
+			}
+			
+			@Override
+			public double nearest(double value) {
+				return map(view.nearest(invmap(value)));
+			}
+
+			@Override
+			public boolean valid(double value) {
+				return view.valid(invmap(value));
+			}
+
+			@Override
+			public double base() {
+				return map(view.base());
+			}
+
+			@Override
+			public double min() {
+				if(mul==0){
+					return add;
+				}else if(mul>0){
+					return map(view.min());
+				}else{
+					return map(view.max());
+				}
+			}
+
+			@Override
+			public double max() {
+				if(mul==0){
+					return add;
+				}else if(mul>0){
+					return map(view.max());
+				}else{
+					return map(view.min());
+				}
+			}
+
+			@Override
+			public double next(double value) {
+				return map(view.next(invmap(value)));
+			}
+
+			@Override
+			public double prev(double value) {
+				return map(view.prev(invmap(value)));
+			}
+
+			@Override
+			public double step(double value, double by) {
+				return map(view.step(invmap(value),by));
+			}
+			
+			@Override
+			public double rounding(){
+				return mul*view.rounding();
+			}
+			
+			public boolean equals(Object o){
+				if(o==this)return true;
+				if(o==null||!(o instanceof LinearMap))return false;
+				LinearMap ov = (LinearMap) o;
+				boolean eqmul = mul==ov.mul;
+				boolean eqadd = add==ov.add;
+				if(eqmul&&mul==0)return eqadd;
+				/*
+				 * We can't know the behaviour of the backing instance.
+				 * Even if they would be equal after the transform,
+				 * we can't be sure.
+				 */
+				return (eqmul&eqadd)&&view.equals(ov.view);
+			}
+			
+			public int hashCode(){
+				HashTriArx hash = new HashTriArx(HK_HC);
+				hash.absorb(mul,add);
+				hash.absorbObj(view);
+				return hash.squeezeInt();
+			}
+			
+			public String toString(){
+				StringBuilder sb = new StringBuilder();
+				sb.append(Expressions.wrapBrackets(view.toString()));
+				/*
+				 * Polynomial is preferred to be represented in little endian
+				 * order, so that index of coefficient = exponent of that term
+				 */
+				sb.append("[P(");
+				sb.append(add);
+				sb.append(",");
+				sb.append(mul);
+				sb.append(")");
+				return sb.toString();
+			}
+			
+			private static final String LINEARMAP_CLASS_NAME = LinearMap.class.getCanonicalName();
+			public DoubleValidator copy(int depth,Map<String,Object> options){
+				DoubleValidator newView = this.view;
+				double newMul = this.mul, newAdd = this.add;
+				Collection<String> blacklist = (Collection<String>)options.get("blacklist");
+				Collection<String> whitelist = (Collection<String>)options.get("whitelist");
+				Map<String,Object> set = (Map<String,Object>)options.get("set");
+				DoubleValidator dval;
+				dval = (DoubleValidator) set.get(LINEARMAP_CLASS_NAME+".view");
+				if(dval!=null){
+					newView = dval;
+				}else if(depth>0
+						&&!BetterClone.fieldIncluded(blacklist, newView.getClass(),
+								LINEARMAP_CLASS_NAME+".view")
+						|| BetterClone.fieldIncluded(whitelist, newView.getClass(),
+								LINEARMAP_CLASS_NAME+".view")){
+					newView = BetterClone.copy(newView, depth-1, options);
+				}
+				if(set!=null){
+					Number val;
+					val = (Number) set.get(LINEARMAP_CLASS_NAME+".mul");
+					if(val!=null)newMul = val.doubleValue();
+					val = (Number) set.get(LINEARMAP_CLASS_NAME+".add");
+					if(val!=null)newAdd = val.doubleValue();
+				}
+				return new LinearMap(newView,newMul,newAdd);
 			}
 			
 		}
