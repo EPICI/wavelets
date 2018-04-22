@@ -236,7 +236,32 @@ public class PatternEditor extends Window implements Bindable {
 		 */
 		public IdentityHashMap<Clip,Clip> selection;
 		
-		// TODO method to get current template object
+		/**
+		 * Attempt to retrieve the current template. Returns null
+		 * on failure.
+		 * 
+		 * @return
+		 */
+		public Clip.Template getTemplate(){
+			Session session = parent.session;
+			Composition composition = session.composition;
+			Object oname = templateSelector.getSelectedItem();
+			if(oname!=null){
+				String name = oname.toString();
+				Clip.Template result;
+				/*
+				 * Here we make attempts to resolve the name.
+				 * All should be of the following format:
+				 *   result = ...
+				 *   if(result!=null)return result;
+				 * It's not so efficient, but it's obvious what it does
+				 * and it's more easy to add/change attempts later.
+				 */
+				result = composition.clipTemplates.get(name);
+				if(result!=null)return result;
+			}
+			return null;
+		}
 		
 		/**
 		 * Get the selection, never returns null
@@ -699,7 +724,15 @@ public class PatternEditor extends Window implements Bindable {
 			tr = boundsTablePane.getRows().get(INDEX_BOUNDS_INPUT);
 			tr.update(2, maxInput);
 			
-			// TODO property, min, base, max inputs
+			baseInput = new DoubleInput(
+					new DoubleInput.DoubleValidator.SplitDoubleValidator(
+							new DoubleInput.DoubleValidator.BoundedDoubleValidator(0.5),
+							new DoubleInput.DoubleValidator.BoundedDoubleValidator(0)),
+					0.5, 0.01
+					);
+			baseInput.dataListeners.add(new TemplateBaseInputListener(this));
+			tr = boundsTablePane.getRows().get(INDEX_BOUNDS_INPUT);
+			tr.update(1, baseInput);
 			
 			// TODO name updating listener
 			
@@ -801,7 +834,7 @@ public class PatternEditor extends Window implements Bindable {
 				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
 				propertyInput.setValidator(
 						BetterClone.copy(propertyInput.validator, 0, copyOptions));
-				// TODO update
+				updateModeSelector.setSelectedItem(view.update);
 			}else{
 				Clip.Template.Property view = this.view;
 				DoubleInput.DoubleValidator.SplitDoubleValidator validator =
@@ -810,13 +843,16 @@ public class PatternEditor extends Window implements Bindable {
 				view.max = validator.max();
 				view.base = validator.base();
 				view.step = Objects.requireNonNull(getStepName(validator.step), "step is not a recognized type");
-				// TODO update
+				view.update = Objects.toString(updateModeSelector.getSelectedItem());// Unsafe?
 			}
 		}
 		
 		/**
 		 * Update to or from the property input. For all items which are to be updated,
 		 * the property input and setting input will match after.
+		 * <br>
+		 * Secondary values such as the minimum of the maximum input are always updated to,
+		 * in order to match the others.
 		 * 
 		 * @param reverse false to update from other settings to the property input,
 		 * true to update from property input to other settings
@@ -827,19 +863,27 @@ public class PatternEditor extends Window implements Bindable {
 		 */
 		public void updatePropertyInput(boolean reverse,boolean min,boolean max,boolean base,boolean step){
 			if(min){
-				// Get the new value
-				double value = minInput.value;
-				// TODO reverse branch
+				double value;
 				java.util.Map<String,Object> copyOptions, copySet;
 				Collection<String> copyWhitelist;
-				// Set property input minimum
-				copyOptions = BetterClone.fixOptions(null);
-				copySet = (java.util.Map<String,Object>)copyOptions.get("set");
-				copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", value);
-				copyWhitelist = (Collection<String>)copyOptions.get("whitelist");
-				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
-				propertyInput.setValidator(
-						BetterClone.copy(propertyInput.validator, 0, copyOptions));
+				if(reverse){// udpate property -> min
+					// Fetch value
+					value = propertyInput.validator.min();
+					// Set min input value
+					minInput.value = value;
+					minInput.valueChanged(true, false);
+				}else{// update min -> property
+					// Fetch value
+					value = minInput.value;
+					// Set property input minimum
+					copyOptions = BetterClone.fixOptions(null);
+					copySet = (java.util.Map<String,Object>)copyOptions.get("set");
+					copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", value);
+					copyWhitelist = (Collection<String>)copyOptions.get("whitelist");
+					copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
+					propertyInput.setValidator(
+							BetterClone.copy(propertyInput.validator, 0, copyOptions));
+				}
 				// Set max input minimum, because max can't be below min
 				copyOptions = BetterClone.fixOptions(null);
 				copySet = (java.util.Map<String,Object>)copyOptions.get("set");
@@ -866,6 +910,78 @@ public class PatternEditor extends Window implements Bindable {
 			if(step){
 				// TODO update step
 			}
+		}
+		
+		/**
+		 * Convenience method to apply a modification to a property for a clip.
+		 * If the property doesn't exist for the clip, fills up to there with
+		 * default values, then applies the modification using the curve.
+		 * 
+		 * @param clip clip to modify
+		 * @param template template being used
+		 * @param index index of property
+		 * @param modify maps old values to new values
+		 */
+		public void modifyClipProperty(Clip clip,Clip.Template template,int index,Curve modify){
+			/*
+			 * The clip may not have enough properties.
+			 * We must make sure to fill from the template,
+			 * including the index we're going to modify.
+			 */
+			for(int i=clip.countProperties();i<=index;i++){
+				clip.setProperty(i, template.properties.get(i).base);
+			}
+			// Now we modify the index we want
+			clip.setProperty(index, modify.valueAtPosition(clip.getProperty(index)));
+		}
+		
+		/**
+		 * Listens for changes to the clip property input field, and accordingly either
+		 * updates all selected clips or reverts the changes made.
+		 * 
+		 * @author EPICI
+		 * @version 1.0
+		 */
+		public static class ClipPropertyInputListener implements DoubleInput.DataListener{
+			
+			/**
+			 * Remember the parent, other data can be derived from here
+			 */
+			public LinkedClipTableRow parent;
+			
+			/**
+			 * Standard constructor
+			 * 
+			 * @param parent
+			 */
+			public ClipPropertyInputListener(LinkedClipTableRow parent){
+				this.parent = parent;
+			}
+			
+			@Override
+			public void updated(DoubleInput component, boolean commit) {
+				final double value = component.value,
+						lastValue = component.lastValue,
+						lastValueCommit = component.lastValueCommit;
+				if(value!=lastValue){// Change to make
+					Clip.Template template = parent.parent.getTemplate();
+					Clip.Template.Property property = parent.view;
+					int index = template.properties.indexOf(property);
+					Curve modify = parent.getUpdateInstance(property.update, lastValue, value);
+					IdentityHashMap<Clip,Clip> selection = parent.parent.getSelection(false, false);
+					for(Clip clip:selection.keySet()){
+						parent.modifyClipProperty(clip,template,index,modify);
+					}
+				}
+				if(commit){
+					if(value!=lastValueCommit){// Confirm
+						parent.parent.finalizeSelection(true);
+					}else{// Cancel
+						parent.parent.finalizeSelection(false);
+					}
+				}
+			}
+			
 		}
 		
 		/**
@@ -934,6 +1050,42 @@ public class PatternEditor extends Window implements Bindable {
 						lastValueCommit = component.lastValueCommit;
 				if(commit && value!=lastValueCommit){// Confirm
 					parent.updatePropertyInput(false, false, true, false, false);
+					// it's okay that we don't update the clips
+				}
+			}
+			
+		}
+		
+		/**
+		 * Listens for changes to the template property default value input field
+		 * and updates the clip property input accordingly
+		 * 
+		 * @author EPICI
+		 * @version 1.0
+		 */
+		public static class TemplateBaseInputListener implements DoubleInput.DataListener{
+			
+			/**
+			 * Remember the parent, other data can be derived from here
+			 */
+			public LinkedClipTableRow parent;
+			
+			/**
+			 * Standard constructor
+			 * 
+			 * @param parent
+			 */
+			public TemplateBaseInputListener(LinkedClipTableRow parent){
+				this.parent = parent;
+			}
+			
+			@Override
+			public void updated(DoubleInput component, boolean commit) {
+				final double value = component.value,
+						lastValue = component.lastValue,
+						lastValueCommit = component.lastValueCommit;
+				if(commit && value!=lastValueCommit){// Confirm
+					parent.updatePropertyInput(false, false, false, true, false);
 					// it's okay that we don't update the clips
 				}
 			}
