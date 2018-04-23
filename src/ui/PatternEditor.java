@@ -934,14 +934,22 @@ public class PatternEditor extends Window implements Bindable {
 			double newMin = 0, newMax = 0, newBase = 0;
 			String newStepName = null;
 			DoubleInput.DoubleValidator newStepInstance = null;
-			if(min){
+			if(min|max|base){
 				newMin = reverse?minInput.value:propertyInput.validator.min();
-			}
-			if(max){
 				newMax = reverse?maxInput.value:propertyInput.validator.max();
-			}
-			if(base){
 				newBase = reverse?baseInput.value:propertyInput.validator.base();
+				if(min&&reverse){
+					minInput.value = newMin;
+					minInput.valueChanged(true,false);
+				}
+				if(max&&reverse){
+					maxInput.value = newMax;
+					maxInput.valueChanged(true,false);
+				}
+				if(base&&reverse){
+					baseInput.value = newBase;
+					baseInput.valueChanged(true,false);
+				}
 			}
 			if(step){
 				if(reverse){
@@ -965,30 +973,25 @@ public class PatternEditor extends Window implements Bindable {
 				propertyInput.setValidator(
 						BetterClone.copy(propertyInput.validator, 0, propertyInputCopyOptions));
 			}
-			if(min&&reverse||max||base){
+			if(max|base){
 				minInputCopyOptions = BetterClone.fixOptions(null);
 				copySet = (java.util.Map<String,Object>)minInputCopyOptions.get("set");
-				if(min&&reverse)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", newMin);
-				if(max)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max", newMax);
-				if(base)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base", newBase);
+				/*if(max|base)*/copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max", Math.min(newMax, newBase));
 				copyWhitelist = (Collection<String>)minInputCopyOptions.get("whitelist");
 				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
 				minInput.setValidator(
 						BetterClone.copy(minInput.validator, 0, minInputCopyOptions));
 			}
-			if(max&&reverse||min||base){
+			if(min|base){
 				maxInputCopyOptions = BetterClone.fixOptions(null);
-				if(max&&reverse)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max", newMax);
-				if(min)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", newMin);
-				if(base)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base", newBase);
+				/*if(min|base)*/copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", Math.max(newMin, newBase));
 				copyWhitelist = (Collection<String>)maxInputCopyOptions.get("whitelist");
 				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
 				maxInput.setValidator(
 						BetterClone.copy(maxInput.validator, 0, maxInputCopyOptions));
 			}
-			if(base&&reverse||min||max){
+			if(min|max){
 				baseInputCopyOptions = BetterClone.fixOptions(null);
-				if(base&&reverse)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base", newBase);
 				if(min)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", newMin);
 				if(max)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max", newMax);
 				copyWhitelist = (Collection<String>)baseInputCopyOptions.get("whitelist");
