@@ -50,6 +50,13 @@ public class PatternEditor extends Window implements Bindable {
 	}
 	
 	/**
+	 * Initialize, called after setting fields
+	 */
+	public void init(){
+		// TODO force refresh when changing tabs
+	}
+	
+	/**
 	 * The actual editor interface for the {@link Pattern}.
 	 * <br>
 	 * Note that it is only a {@link Container} so it can hold components.
@@ -700,7 +707,7 @@ public class PatternEditor extends Window implements Bindable {
 							new DoubleInput.DoubleValidator.BoundedDoubleValidator(0)),
 					view.base, 0.05
 					);
-			// TODO add listener for this
+			propertyInput.dataListeners.add(new ClipPropertyInputListener(this));
 			tr = leftTablePane.getRows().get(INDEX_PROPERTY_INPUT);
 			tr.update(0, propertyInput);
 			
@@ -710,7 +717,7 @@ public class PatternEditor extends Window implements Bindable {
 							new DoubleInput.DoubleValidator.HyperbolicStep(2)),
 					0, 0.01
 					);
-			minInput.dataListeners.add(new TemplateMinInputListener(this));
+			minInput.dataListeners.add(new PropertyMinInputListener(this));
 			tr = boundsTablePane.getRows().get(INDEX_BOUNDS_INPUT);
 			tr.update(0, minInput);
 			
@@ -720,7 +727,7 @@ public class PatternEditor extends Window implements Bindable {
 							new DoubleInput.DoubleValidator.HyperbolicStep(2)),
 					1, 0.01
 					);
-			maxInput.dataListeners.add(new TemplateMaxInputListener(this));
+			maxInput.dataListeners.add(new PropertyMaxInputListener(this));
 			tr = boundsTablePane.getRows().get(INDEX_BOUNDS_INPUT);
 			tr.update(2, maxInput);
 			
@@ -730,19 +737,20 @@ public class PatternEditor extends Window implements Bindable {
 							new DoubleInput.DoubleValidator.BoundedDoubleValidator(0)),
 					0.5, 0.01
 					);
-			baseInput.dataListeners.add(new TemplateBaseInputListener(this));
+			baseInput.dataListeners.add(new PropertyBaseInputListener(this));
 			tr = boundsTablePane.getRows().get(INDEX_BOUNDS_INPUT);
 			tr.update(1, baseInput);
 			
-			// TODO name updating listener
+			nameInput.getComponentKeyListeners().add(new PropertyNameInputListener(this));
 			
-			// TODO remove listener
+			remove.getButtonPressListeners().add(new PropertyRemoveInputListener(this));
 			
-			// TODO move up, down listener
+			moveUp.getButtonPressListeners().add(new PropertyMoveInputListener(this,-1));
+			moveDown.getButtonPressListeners().add(new PropertyMoveInputListener(this,1));
 			
-			// TODO update mode listener
+			updateModeSelector.getListButtonSelectionListeners().add(new PropertyUpdateModeInputListener(this));
 			
-			// TODO step mode listener
+			stepModeSelector.getListButtonSelectionListeners().add(new PropertyStepModeInputListener(this));
 			
 			// fix the mismatches
 			updateView(true);
@@ -810,40 +818,92 @@ public class PatternEditor extends Window implements Bindable {
 		}
 		
 		/**
+		 * Calls {@link #updateView(boolean, boolean, boolean, boolean)}
+		 * with parameters to update all.
+		 * 
+		 * @param reverse
+		 */
+		public void updateView(boolean reverse){
+			updateView(reverse,true,true,true);
+		}
+		
+		/**
+		 * Calls {@link #updateView(boolean, boolean, boolean, boolean, boolean, boolean, boolean)}
+		 * and forward the parameters. The <i>main</i> parameter corresponds to all
+		 * of <i>min, max, base, step</i>
+		 * 
+		 * @param reverse true to update from the view to the property input instead
+		 * @param main whether to update the main
+		 * @param updateMode whether to update the update mode
+		 * @param name whether to update the name
+		 */
+		public void updateView(boolean reverse,boolean main,boolean updateMode,boolean name){
+			updateView(reverse,main,main,main,main,updateMode,name);
+		}
+		
+		/**
 		 * Update the view using all properties based on the property input.
 		 * Doesn't handle updating between the property input and the other settings.
 		 * <br>
 		 * Update mode is handled by the list button, not the property input,
 		 * and follows the same rules for update direction.
+		 * <br>
+		 * Name is updated similarly.
 		 * 
 		 * @param reverse true to update from the view to the property input instead
+		 * @param min whether to update the min
+		 * @param max whether to update the max
+		 * @param base whether to update the default value
+		 * @param step whether to update the step
+		 * @param updateMode whether to update the update mode
+		 * @param name whether to update the name
 		 */
-		public void updateView(boolean reverse){
+		public void updateView(boolean reverse,boolean min,boolean max,boolean base,boolean step,boolean updateMode,boolean name){
 			if(reverse){
 				Clip.Template.Property view = this.view;
-				DoubleInput.DoubleValidator validator = propertyInput.validator;
-				java.util.Map<String,Object> copyOptions, copySet;
-				Collection<String> copyWhitelist;
-				copyOptions = BetterClone.fixOptions(null);
-				copySet = (java.util.Map<String,Object>)copyOptions.get("set");
-				copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", view.min);
-				copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max", view.max);
-				copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base", view.base);
-				copySet.put(SPLITDOUBLEVALIDATOR_CLASS_NAME+".step", getStepInstance(view.step));
-				copyWhitelist = (Collection<String>)copyOptions.get("whitelist");
-				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
-				propertyInput.setValidator(
-						BetterClone.copy(propertyInput.validator, 0, copyOptions));
-				updateModeSelector.setSelectedItem(view.update);
+				if(min|max|base|step){
+					DoubleInput.DoubleValidator validator = propertyInput.validator;
+					java.util.Map<String,Object> copyOptions, copySet;
+					Collection<String> copyWhitelist;
+					copyOptions = BetterClone.fixOptions(null);
+					copySet = (java.util.Map<String,Object>)copyOptions.get("set");
+					if(min)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", view.min);
+					if(max)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max", view.max);
+					if(base)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base", view.base);
+					if(step)copySet.put(SPLITDOUBLEVALIDATOR_CLASS_NAME+".step", getStepInstance(view.step));
+					copyWhitelist = (Collection<String>)copyOptions.get("whitelist");
+					copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
+					propertyInput.setValidator(
+							BetterClone.copy(validator, 0, copyOptions));
+				}
 			}else{
 				Clip.Template.Property view = this.view;
-				DoubleInput.DoubleValidator.SplitDoubleValidator validator =
-						(DoubleInput.DoubleValidator.SplitDoubleValidator) propertyInput.validator;
-				view.min = validator.min();
-				view.max = validator.max();
-				view.base = validator.base();
-				view.step = Objects.requireNonNull(getStepName(validator.step), "step is not a recognized type");
-				view.update = Objects.toString(updateModeSelector.getSelectedItem());// Unsafe?
+				if(min|max|base|step){
+					DoubleInput.DoubleValidator.SplitDoubleValidator validator =
+							(DoubleInput.DoubleValidator.SplitDoubleValidator) propertyInput.validator;
+					if(min)view.min = validator.min();
+					if(max)view.max = validator.max();
+					if(base)view.base = validator.base();
+					if(step)view.step = Objects.requireNonNull(getStepName(validator.step), "step is not a recognized type");
+				}
+			}
+			if(updateMode){
+				if(reverse){
+					updateModeSelector.setSelectedItem(view.update);
+				}else{
+					view.update = Objects.toString(updateModeSelector.getSelectedItem());// Unsafe?
+				}
+			}
+			if(name){
+				String newName;
+				if(reverse){
+					newName = view.name;
+					nameInput.setText(newName);
+				}else{
+					newName = nameInput.getText();
+					view.name = newName;
+				}
+				nameLabel.setText(newName);
 			}
 		}
 		
@@ -913,6 +973,45 @@ public class PatternEditor extends Window implements Bindable {
 		}
 		
 		/**
+		 * Updates just the main set: min, max, base, step. From inputs to
+		 * the property's fields.
+		 * <br>
+		 * They are grouped together for performance reasons - doing all of them
+		 * is barely more expensive than doing one, if done together.
+		 * Not much surprises are possible because of extra updating,
+		 * but the user should be aware of what this method does versus
+		 * calling {@link #updateView(boolean, boolean, boolean, boolean, boolean, boolean, boolean)}
+		 * directly should it ever cause problems.
+		 * 
+		 * @param reverse true to update property's fields to inputs instead
+		 */
+		public void updateMainSet(boolean reverse){
+			updateView(reverse,true,false,false);
+		}
+		
+		/**
+		 * Update just the update mode, from the update mode selector to the
+		 * property's field.
+		 * 
+		 * @param reverse true to update property's field to update mode selector instead
+		 */
+		public void updateUpdateMode(boolean reverse){
+			updateView(reverse,false,true,false);
+		}
+		
+		/**
+		 * Update just the name, from the name input to the property name field,
+		 * or the reverse.
+		 * <br>
+		 * Name field is updated to match.
+		 * 
+		 * @param reverse true to update property name field to name input instead
+		 */
+		public void updateName(boolean reverse){
+			updateView(reverse,false,false,true);
+		}
+		
+		/**
 		 * Convenience method to apply a modification to a property for a clip.
 		 * If the property doesn't exist for the clip, fills up to there with
 		 * default values, then applies the modification using the curve.
@@ -922,15 +1021,9 @@ public class PatternEditor extends Window implements Bindable {
 		 * @param index index of property
 		 * @param modify maps old values to new values
 		 */
-		public void modifyClipProperty(Clip clip,Clip.Template template,int index,Curve modify){
-			/*
-			 * The clip may not have enough properties.
-			 * We must make sure to fill from the template,
-			 * including the index we're going to modify.
-			 */
-			for(int i=clip.countProperties();i<=index;i++){
-				clip.setProperty(i, template.properties.get(i).base);
-			}
+		public static void modifyClipProperty(Clip clip,Clip.Template template,int index,Curve modify){
+			// Ensure it has the property we want to modify
+			clip.fillWith(template,index);
 			// Now we modify the index we want
 			clip.setProperty(index, modify.valueAtPosition(clip.getProperty(index)));
 		}
@@ -991,7 +1084,7 @@ public class PatternEditor extends Window implements Bindable {
 		 * @author EPICI
 		 * @version 1.0
 		 */
-		public static class TemplateMinInputListener implements DoubleInput.DataListener{
+		public static class PropertyMinInputListener implements DoubleInput.DataListener{
 			
 			/**
 			 * Remember the parent, other data can be derived from here
@@ -1003,7 +1096,7 @@ public class PatternEditor extends Window implements Bindable {
 			 * 
 			 * @param parent
 			 */
-			public TemplateMinInputListener(LinkedClipTableRow parent){
+			public PropertyMinInputListener(LinkedClipTableRow parent){
 				this.parent = parent;
 			}
 			
@@ -1014,6 +1107,7 @@ public class PatternEditor extends Window implements Bindable {
 						lastValueCommit = component.lastValueCommit;
 				if(commit && value!=lastValueCommit){// Confirm
 					parent.updatePropertyInput(false, true, false, false, false);
+					parent.updateMainSet(false);
 					// it's okay that we don't update the clips
 				}
 			}
@@ -1027,7 +1121,7 @@ public class PatternEditor extends Window implements Bindable {
 		 * @author EPICI
 		 * @version 1.0
 		 */
-		public static class TemplateMaxInputListener implements DoubleInput.DataListener{
+		public static class PropertyMaxInputListener implements DoubleInput.DataListener{
 			
 			/**
 			 * Remember the parent, other data can be derived from here
@@ -1039,7 +1133,7 @@ public class PatternEditor extends Window implements Bindable {
 			 * 
 			 * @param parent
 			 */
-			public TemplateMaxInputListener(LinkedClipTableRow parent){
+			public PropertyMaxInputListener(LinkedClipTableRow parent){
 				this.parent = parent;
 			}
 			
@@ -1050,6 +1144,7 @@ public class PatternEditor extends Window implements Bindable {
 						lastValueCommit = component.lastValueCommit;
 				if(commit && value!=lastValueCommit){// Confirm
 					parent.updatePropertyInput(false, false, true, false, false);
+					parent.updateMainSet(false);
 					// it's okay that we don't update the clips
 				}
 			}
@@ -1063,7 +1158,7 @@ public class PatternEditor extends Window implements Bindable {
 		 * @author EPICI
 		 * @version 1.0
 		 */
-		public static class TemplateBaseInputListener implements DoubleInput.DataListener{
+		public static class PropertyBaseInputListener implements DoubleInput.DataListener{
 			
 			/**
 			 * Remember the parent, other data can be derived from here
@@ -1075,7 +1170,7 @@ public class PatternEditor extends Window implements Bindable {
 			 * 
 			 * @param parent
 			 */
-			public TemplateBaseInputListener(LinkedClipTableRow parent){
+			public PropertyBaseInputListener(LinkedClipTableRow parent){
 				this.parent = parent;
 			}
 			
@@ -1086,9 +1181,225 @@ public class PatternEditor extends Window implements Bindable {
 						lastValueCommit = component.lastValueCommit;
 				if(commit && value!=lastValueCommit){// Confirm
 					parent.updatePropertyInput(false, false, false, true, false);
+					parent.updateMainSet(false);
 					// it's okay that we don't update the clips
 				}
 			}
+			
+		}
+		
+		/**
+		 * Listens for changes to the template property name input field and update the
+		 * property name and name label accordingly
+		 * 
+		 * @author EPICI
+		 * @version 1.0
+		 */
+		public static class PropertyNameInputListener implements ComponentKeyListener{
+			
+			/**
+			 * Remember the parent, other data can be derived from here
+			 */
+			public LinkedClipTableRow parent;
+			
+			/**
+			 * Standard constructor
+			 * 
+			 * @param parent
+			 */
+			public PropertyNameInputListener(LinkedClipTableRow parent){
+				this.parent = parent;
+			}
+
+		    @Override
+			public boolean keyTyped(Component component, char character){
+				return false;
+			}
+
+		    @Override
+		    public boolean keyPressed(Component component, int keyCode, Keyboard.KeyLocation keyLocation){
+		    	return false;
+		    }
+
+		    @Override
+		    public boolean keyReleased(Component component, int keyCode, Keyboard.KeyLocation keyLocation){
+		    	switch(keyCode){
+		    	case KeyEvent.VK_ENTER:{
+		    		// Update it
+		    		parent.updateName(false);
+		    		break;
+		    	}
+		    	}
+		    	return false;
+		    }
+			
+		}
+		
+		/**
+		 * Listens for changes to the template property update mode selector and updates
+		 * the property's field accordingly
+		 * 
+		 * @author EPICI
+		 * @version 1.0
+		 */
+		public static class PropertyUpdateModeInputListener implements ListButtonSelectionListener{
+			
+			/**
+			 * Remember the parent, other data can be derived from here
+			 */
+			public LinkedClipTableRow parent;
+			
+			/**
+			 * Standard constructor
+			 * 
+			 * @param parent
+			 */
+			public PropertyUpdateModeInputListener(LinkedClipTableRow parent){
+				this.parent = parent;
+			}
+
+		    @Override
+			public void selectedIndexChanged(ListButton listButton, int previousSelectedIndex){
+			}
+
+		    @Override
+		    public void selectedItemChanged(ListButton listButton, Object previousSelectedItem){
+		    	parent.updateUpdateMode(false);
+		    }
+			
+		}
+		
+		/**
+		 * Listens for changes to the template property step mode selector and updates
+		 * the property's field and property input accordingly
+		 * 
+		 * @author EPICI
+		 * @version 1.0
+		 */
+		public static class PropertyStepModeInputListener implements ListButtonSelectionListener{
+			
+			/**
+			 * Remember the parent, other data can be derived from here
+			 */
+			public LinkedClipTableRow parent;
+			
+			/**
+			 * Standard constructor
+			 * 
+			 * @param parent
+			 */
+			public PropertyStepModeInputListener(LinkedClipTableRow parent){
+				this.parent = parent;
+			}
+
+		    @Override
+			public void selectedIndexChanged(ListButton listButton, int previousSelectedIndex){
+			}
+
+		    @Override
+		    public void selectedItemChanged(ListButton listButton, Object previousSelectedItem){
+		    	parent.updateMainSet(false);
+		    }
+			
+		}
+		
+		/**
+		 * Listens for presses of the remove button, and removes the property
+		 * and updates clips accordingly when that happens
+		 * 
+		 * @author EPICI
+		 * @version 1.0
+		 */
+		public static class PropertyRemoveInputListener implements ButtonPressListener{
+			
+			/**
+			 * Remember the parent, other data can be derived from here
+			 */
+			public LinkedClipTableRow parent;
+			
+			/**
+			 * Standard constructor
+			 * 
+			 * @param parent
+			 */
+			public PropertyRemoveInputListener(LinkedClipTableRow parent){
+				this.parent = parent;
+			}
+
+		    @Override
+		    public void buttonPressed(org.apache.pivot.wtk.Button button){
+		    	Clip.Template template = parent.parent.getTemplate();
+				Clip.Template.Property property = parent.view;
+				int index = template.properties.indexOf(property);
+				// Update template
+				template.properties.remove(index);
+				// Update UI
+				parent.parent.clipTablePane.getRows().remove(
+						index+LinkedEditorPane.CLIP_TABLE_EXTRA_ROWS_TOP,
+						1);
+				// Need to update selection as well
+				IdentityHashMap<Clip,Clip> selection = parent.parent.getSelection(false, false);
+				for(Clip clip:selection.keySet()){
+					clip.removeProperty(index);
+				}
+				parent.parent.finalizeSelection(true);
+		    }
+			
+		}
+		
+		/**
+		 * Listens for presses of the move up or move down button, 
+		 * and moves the property and updates the UI accordingly when that happens
+		 * 
+		 * @author EPICI
+		 * @version 1.0
+		 */
+		public static class PropertyMoveInputListener implements ButtonPressListener{
+			
+			/**
+			 * Remember the parent, other data can be derived from here
+			 */
+			public LinkedClipTableRow parent;
+			/**
+			 * Add this value to get the index to swap with
+			 */
+			public int direction;
+			
+			/**
+			 * Standard constructor
+			 * 
+			 * @param parent
+			 * @param direction
+			 */
+			public PropertyMoveInputListener(LinkedClipTableRow parent,int direction){
+				this.parent = parent;
+				this.direction = direction;
+			}
+
+		    @Override
+		    public void buttonPressed(org.apache.pivot.wtk.Button button){
+		    	Clip.Template template = parent.parent.getTemplate();
+				Clip.Template.Property property = parent.view;
+				int left = template.properties.indexOf(property);
+				int right = left+direction;
+				// Ensure left<right
+				if(direction<0){int temp=left;left=right;right=temp;}
+				// Do nothing if out of range
+				if(left>=0&&right<template.properties.size()){
+					// Update template
+					Collections.swap(template.properties, left, right);
+					// Update UI
+					PivotSwingUtils.swap(parent.parent.clipTablePane.getRows(), left, right);
+					// Need to update selection as well
+					IdentityHashMap<Clip,Clip> selection = parent.parent.getSelection(false, false);
+					for(Clip clip:selection.keySet()){
+						clip.fillWith(template, right);
+						// Only this property should jump, so direction is reversed
+						clip.rotateProperty(left, right+1, direction<0?1:-1);
+					}
+					parent.parent.finalizeSelection(true);
+				}
+		    }
 			
 		}
 		

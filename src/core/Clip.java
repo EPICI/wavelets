@@ -50,8 +50,11 @@ public class Clip implements Serializable {
 	/**
 	 * Additional properties, as a list instead of a map
 	 * so that properties do not need to be named/keyed
+	 * <br>
+	 * While it is public, direct access is not recommended.
+	 * Please use the methods instead when possible.
 	 */
-	protected final ArrayList<Double> properties;
+	public final ArrayList<Double> properties;
 	
 	/**
 	 * Blank constructor, useful if another source will immediately
@@ -147,12 +150,79 @@ public class Clip implements Serializable {
 	 * Trim the property list to be at most <i>key</i> long
 	 * 
 	 * @param key
+	 * @return how many properties were removed
 	 */
-	public void removeProperty(int key){
+	public int trimProperty(int key){
 		int n = countProperties();
+		int diff = n-key;
 		for(int i=n-1;i>=key;i--){
 			properties.remove(i);
 		}
+		return Math.max(diff, 0);
+	}
+	
+	/**
+	 * Remove the property if it exists, shifting all properties
+	 * after it back by 1
+	 * 
+	 * @param key
+	 * @return if a property was removed
+	 */
+	public boolean removeProperty(int key){
+		int n = countProperties();
+		if(n>key){
+			properties.remove(key);
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * Attempt to swap two properties.
+	 * 
+	 * @param left
+	 * @param right
+	 * @return true if any modifications were made
+	 */
+	public boolean swapProperty(int left,int right){
+		if(left==right)return false;
+		// Ensure left<right
+		if(left>right){int temp=left;left=right;right=temp;}
+		// Range check
+		if(left>=0&&right<countProperties()){
+			Collections.swap(properties,left,right);
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * Attempt to rotate all properties in a range.
+	 * Considering the range as a subset of size <i>n</i>,
+	 * index <i>i</i> will move to <i>i+by</i> modulo <i>n</i>
+	 * within the subset.
+	 * 
+	 * @param from first index, inclusive
+	 * @param to last index, exclusive
+	 * @param by offset
+	 * @return true if any modifications were made
+	 */
+	public boolean rotateProperty(int from,int to,int by){
+		if(from<to&&from>=0&&to<=countProperties()){
+			int length = to-from;
+			by = Math.floorMod(by, length);
+			if(by!=0){
+				// Copy to buffer permuted
+				ArrayList<Double> slice = new ArrayList<>();
+				slice.addAll(properties.subList(to-by, to));
+				slice.addAll(properties.subList(from,to-by));
+				// Copy back
+				for(int i=0;i<length;i++){
+					properties.set(i+from, slice.get(i));
+				}
+			}
+		}
+		return false;
 	}
 	
 	/**
@@ -162,6 +232,29 @@ public class Clip implements Serializable {
 	 */
 	public int countProperties(){
 		return properties.size();
+	}
+	
+	/**
+	 * Fill up this clip's properties until it has
+	 * all properties defined by the template.
+	 * 
+	 * @param template
+	 */
+	public void fillWith(Clip.Template template){
+		fillWith(template,template.properties.size()-1);
+	}
+	
+	/**
+	 * Fill up this clip's properties until it includes <i>key</i>,
+	 * using the template to define what values to add as defaults
+	 * 
+	 * @param template
+	 * @param key
+	 */
+	public void fillWith(Clip.Template template,int key){
+		for(int i=countProperties();i<=length;i++){
+			setProperty(i, template.properties.get(i).base);
+		}
 	}
 	
 	/**
