@@ -922,53 +922,82 @@ public class PatternEditor extends Window implements Bindable {
 		 * @param step true to update the stepping
 		 */
 		public void updatePropertyInput(boolean reverse,boolean min,boolean max,boolean base,boolean step){
+			boolean any = min|max|base|step;
+			if(!any)return;// Skip if no changes
+			java.util.Map<String,Object>
+					propertyInputCopyOptions = null,
+					minInputCopyOptions = null,
+					maxInputCopyOptions = null,
+					baseInputCopyOptions = null,
+					copySet = null;
+			Collection<String> copyWhitelist;
+			double newMin = 0, newMax = 0, newBase = 0;
+			String newStepName = null;
+			DoubleInput.DoubleValidator newStepInstance = null;
 			if(min){
-				double value;
-				java.util.Map<String,Object> copyOptions, copySet;
-				Collection<String> copyWhitelist;
-				if(reverse){// udpate property -> min
-					// Fetch value
-					value = propertyInput.validator.min();
-					// Set min input value
-					minInput.value = value;
-					minInput.valueChanged(true, false);
-				}else{// update min -> property
-					// Fetch value
-					value = minInput.value;
-					// Set property input minimum
-					copyOptions = BetterClone.fixOptions(null);
-					copySet = (java.util.Map<String,Object>)copyOptions.get("set");
-					copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", value);
-					copyWhitelist = (Collection<String>)copyOptions.get("whitelist");
-					copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
-					propertyInput.setValidator(
-							BetterClone.copy(propertyInput.validator, 0, copyOptions));
-				}
-				// Set max input minimum, because max can't be below min
-				copyOptions = BetterClone.fixOptions(null);
-				copySet = (java.util.Map<String,Object>)copyOptions.get("set");
-				copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", value);
-				copyWhitelist = (Collection<String>)copyOptions.get("whitelist");
-				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
-				maxInput.setValidator(
-						BetterClone.copy(maxInput.validator, 0, copyOptions));
-				// Set default input minimum, because default can't be below min
-				copyOptions = BetterClone.fixOptions(null);
-				copySet = (java.util.Map<String,Object>)copyOptions.get("set");
-				copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", value);
-				copyWhitelist = (Collection<String>)copyOptions.get("whitelist");
-				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
-				baseInput.setValidator(
-						BetterClone.copy(baseInput.validator, 0, copyOptions));
+				newMin = reverse?minInput.value:propertyInput.validator.min();
 			}
 			if(max){
-				// TODO update max
+				newMax = reverse?maxInput.value:propertyInput.validator.max();
 			}
 			if(base){
-				// TODO update base
+				newBase = reverse?baseInput.value:propertyInput.validator.base();
 			}
 			if(step){
-				// TODO update step
+				if(reverse){
+					newStepInstance = ((DoubleInput.DoubleValidator.SplitDoubleValidator)
+							propertyInput.validator).step;
+					newStepName = getStepName(newStepInstance);
+				}else{
+					newStepName = Objects.toString(stepModeSelector.getSelectedItem());
+					newStepInstance = getStepInstance(newStepName);
+				}
+			}
+			if(!reverse){
+				propertyInputCopyOptions = BetterClone.fixOptions(null);
+				copySet = (java.util.Map<String,Object>)minInputCopyOptions.get("set");
+				if(min)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", newMin);
+				if(max)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max", newMax);
+				if(base)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base", newBase);
+				if(step)copySet.put(SPLITDOUBLEVALIDATOR_CLASS_NAME+".step", newStepInstance);
+				copyWhitelist = (Collection<String>)propertyInputCopyOptions.get("whitelist");
+				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
+				propertyInput.setValidator(
+						BetterClone.copy(propertyInput.validator, 0, propertyInputCopyOptions));
+			}
+			if(min&&reverse||max||base){
+				minInputCopyOptions = BetterClone.fixOptions(null);
+				copySet = (java.util.Map<String,Object>)minInputCopyOptions.get("set");
+				if(min&&reverse)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", newMin);
+				if(max)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max", newMax);
+				if(base)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base", newBase);
+				copyWhitelist = (Collection<String>)minInputCopyOptions.get("whitelist");
+				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
+				minInput.setValidator(
+						BetterClone.copy(minInput.validator, 0, minInputCopyOptions));
+			}
+			if(max&&reverse||min||base){
+				maxInputCopyOptions = BetterClone.fixOptions(null);
+				if(max&&reverse)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max", newMax);
+				if(min)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", newMin);
+				if(base)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base", newBase);
+				copyWhitelist = (Collection<String>)maxInputCopyOptions.get("whitelist");
+				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
+				maxInput.setValidator(
+						BetterClone.copy(maxInput.validator, 0, maxInputCopyOptions));
+			}
+			if(base&&reverse||min||max){
+				baseInputCopyOptions = BetterClone.fixOptions(null);
+				if(base&&reverse)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base", newBase);
+				if(min)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", newMin);
+				if(max)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max", newMax);
+				copyWhitelist = (Collection<String>)baseInputCopyOptions.get("whitelist");
+				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
+				baseInput.setValidator(
+						BetterClone.copy(baseInput.validator, 0, baseInputCopyOptions));
+			}
+			if(step&&reverse){
+				stepModeSelector.setSelectedItem(newStepName);
 			}
 		}
 		
@@ -1063,7 +1092,7 @@ public class PatternEditor extends Window implements Bindable {
 					Curve modify = parent.getUpdateInstance(property.update, lastValue, value);
 					IdentityHashMap<Clip,Clip> selection = parent.parent.getSelection(false, false);
 					for(Clip clip:selection.keySet()){
-						parent.modifyClipProperty(clip,template,index,modify);
+						LinkedClipTableRow.modifyClipProperty(clip,template,index,modify);
 					}
 				}
 				if(commit){

@@ -212,14 +212,15 @@ public class Clip implements Serializable {
 			int length = to-from;
 			by = Math.floorMod(by, length);
 			if(by!=0){
-				// Copy to buffer permuted
-				ArrayList<Double> slice = new ArrayList<>();
-				slice.addAll(properties.subList(to-by, to));
-				slice.addAll(properties.subList(from,to-by));
-				// Copy back
-				for(int i=0;i<length;i++){
-					properties.set(i+from, slice.get(i));
-				}
+				// Work with only this range
+				List<Double> slice = properties.subList(from, to);
+				ArrayList<Double> copy = new ArrayList<>();
+				// Make a rotated copy
+				copy.addAll(slice.subList(length-by, length));
+				copy.addAll(slice.subList(0, length-by));
+				// Copy back to slice
+				Collections.copy(slice, copy);
+				return true;
 			}
 		}
 		return false;
