@@ -922,8 +922,7 @@ public class PatternEditor extends Window implements Bindable {
 		 * @param step true to update the stepping
 		 */
 		public void updatePropertyInput(boolean reverse,boolean min,boolean max,boolean base,boolean step){
-			boolean any = min|max|base|step;
-			if(!any)return;// Skip if no changes
+			if(!(min|max|base|step))return;// Skip if no changes
 			java.util.Map<String,Object>
 					propertyInputCopyOptions = null,
 					minInputCopyOptions = null,
@@ -935,9 +934,9 @@ public class PatternEditor extends Window implements Bindable {
 			String newStepName = null;
 			DoubleInput.DoubleValidator newStepInstance = null;
 			if(min|max|base){
-				newMin = reverse?minInput.value:propertyInput.validator.min();
-				newMax = reverse?maxInput.value:propertyInput.validator.max();
-				newBase = reverse?baseInput.value:propertyInput.validator.base();
+				newMin = reverse?propertyInput.validator.min():minInput.value;
+				newMax = reverse?propertyInput.validator.max():maxInput.value;
+				newBase = reverse?propertyInput.validator.base():baseInput.value;
 				if(min&&reverse){
 					minInput.value = newMin;
 					minInput.valueChanged(true,false);
