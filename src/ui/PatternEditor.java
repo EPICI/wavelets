@@ -956,6 +956,7 @@ public class PatternEditor extends Window implements Bindable {
 					newStepInstance = ((DoubleInput.DoubleValidator.SplitDoubleValidator)
 							propertyInput.validator).step;
 					newStepName = getStepName(newStepInstance);
+					stepModeSelector.setSelectedItem(newStepName);
 				}else{
 					newStepName = Objects.toString(stepModeSelector.getSelectedItem());
 					newStepInstance = getStepInstance(newStepName);
@@ -963,7 +964,7 @@ public class PatternEditor extends Window implements Bindable {
 			}
 			if(!reverse){
 				propertyInputCopyOptions = BetterClone.fixOptions(null);
-				copySet = (java.util.Map<String,Object>)minInputCopyOptions.get("set");
+				copySet = (java.util.Map<String,Object>)propertyInputCopyOptions.get("set");
 				if(min)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", newMin);
 				if(max)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max", newMax);
 				if(base)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base", newBase);
@@ -998,9 +999,6 @@ public class PatternEditor extends Window implements Bindable {
 				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
 				baseInput.setValidator(
 						BetterClone.copy(baseInput.validator, 0, baseInputCopyOptions));
-			}
-			if(step&&reverse){
-				stepModeSelector.setSelectedItem(newStepName);
 			}
 		}
 		
