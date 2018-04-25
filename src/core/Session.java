@@ -2,7 +2,6 @@ package core;
 
 import java.awt.event.WindowEvent;
 import java.io.*;
-
 import util.*;
 import util.ui.PivotSwingUtils;
 import javax.swing.*;

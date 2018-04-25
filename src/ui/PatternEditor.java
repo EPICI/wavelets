@@ -416,7 +416,15 @@ public class PatternEditor extends Window implements Bindable {
 			tr = clipTablePane.getRows().get(INDEX_CLIP_VOLUME_INPUT);
 			tr.update(0, clipVolumeInput);
 			
-			// TODO template listeners
+			// TODO template selector listener
+			
+			// TODO template rename listener
+			
+			// TODO template copy listener
+			
+			// TODO template add new listener
+			
+			// TODO template new parameter listener
 			
 			tabName.setText(view.getName());
 		}

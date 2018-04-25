@@ -35,6 +35,10 @@ public class SynthNOsc implements Synthesizer {
 	 * Destroyed yet?
 	 */
 	protected transient boolean destroyed = false;
+	/**
+	 * The name of this synthesizer. Use getter and setter instead of direct access.
+	 */
+	public String name;
 	
 	/**
 	 * Default constructor
@@ -146,6 +150,18 @@ public class SynthNOsc implements Synthesizer {
 	private long sig(double v){
 		long bits = Double.doubleToLongBits(v);
 		return bits>>>48;
+	}
+	
+	@Override
+	public String getName(){
+		if(name==null || name.length()==0)return Track.defaultNameAny("Synthesizer", this);
+		return name;
+	}
+	
+	@Override
+	public boolean setName(String newName){
+		name = newName;
+		return true;
 	}
 	
 	/**

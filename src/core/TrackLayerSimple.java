@@ -281,8 +281,9 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 		return name;
 	}
 	
-	public void setName(String newName){
+	public boolean setName(String newName){
 		name=newName;
+		return true;
 	}
 
 }

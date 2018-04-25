@@ -2,9 +2,9 @@ package ui;
 
 import java.util.*;
 import core.*;
-import util.Expressions;
 import util.hash.*;
 import util.math.Floats;
+import util.text.Expressions;
 import util.ui.Draw;
 import java.awt.Color;
 import java.awt.Font;

@@ -319,19 +319,35 @@ public class Clip implements Serializable {
 	 * @author EPICI
 	 * @version 1.0
 	 */
-	public static class Template implements Serializable {
+	public static class Template implements Named, Serializable {
 		private static final long serialVersionUID = 1L;
 		
 		/**
 		 * List of properties
 		 */
 		public final ArrayList<Property> properties;
+		/**
+		 * The name of this template. Use getter and setter rather than direct access.
+		 */
+		public String name;
 		
 		/**
 		 * Blank constructor
 		 */
 		public Template(){
 			properties = new ArrayList<>();
+		}
+		
+		@Override
+		public String getName(){
+			if(name==null || name.length()==0)return Track.defaultNameAny("Template", this);
+			return name;
+		}
+		
+		@Override
+		public boolean setName(String newName){
+			name = newName;
+			return true;
 		}
 		
 		/**

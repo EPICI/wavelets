@@ -1,6 +1,7 @@
 package core;
 
 import java.util.*;
+import util.ds.*;
 
 /**
  * An actual composition, the parent of everything else
@@ -40,7 +41,7 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	 * All clip templates, with the name as the key
 	 * and the template object as the value
 	 */
-	public HashMap<String,Clip.Template> clipTemplates;
+	public NamedMap<Clip.Template> clipTemplates;
 	/**
 	 * All synthesizers by name, stored by their specifications
 	 * <br>
@@ -49,7 +50,7 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	 * Please use the provided methods rather than modifying this directly
 	 * for safety reasons
 	 */
-	public HashMap<String,Synthesizer.Specification> synthSpecs;
+	public NamedMap<Synthesizer.Specification> synthSpecs;
 	/**
 	 * All synthesizers by name
 	 * <br>
@@ -58,7 +59,7 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	 * Please use the provided methods rather than modifying this directly
 	 * for safety reasons
 	 */
-	public transient HashMap<String,Synthesizer> synths;
+	public transient NamedMap<Synthesizer> synths;
 	/**
 	 * Current session
 	 */
@@ -77,8 +78,8 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	public Composition(Session session){
 		currentSession = session;
 		tracks = new TrackLayerCompound(this);
-		clipTemplates = new HashMap<>();
-		synthSpecs = new HashMap<>();
+		clipTemplates = NamedMap.create();
+		synthSpecs = NamedMap.create();
 		initTransient(currentSession);
 	}
 
@@ -187,7 +188,7 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 
 	@Override
 	public void initTransient(Session parent) {
-		synths = new HashMap<>();
+		synths = NamedMap.create();
 		for(Map.Entry<String, Synthesizer.Specification> entry:synthSpecs.entrySet()){
 			synths.put(entry.getKey(), entry.getValue().resolve(currentSession));
 		}

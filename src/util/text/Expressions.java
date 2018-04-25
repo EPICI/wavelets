@@ -1,4 +1,4 @@
-package util;
+package util.text;
 
 /**
  * Utility class for dealing with mathematical

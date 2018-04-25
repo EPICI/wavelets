@@ -17,7 +17,7 @@ import util.*;
  * @author EPICI
  * @version 1.0
  */
-public interface Synthesizer extends Destructable, TransientContainer<Composition> {
+public interface Synthesizer extends Named, Destructable, TransientContainer<Composition> {
 	/**
 	 * Use array of double arrays to indicate which clips need to be created
 	 * <br>
@@ -113,7 +113,7 @@ public interface Synthesizer extends Destructable, TransientContainer<Compositio
 	 * @author EPICI
 	 * @version 1.0
 	 */
-	public static interface Specification extends Serializable{
+	public static interface Specification extends Named, Serializable{
 		/**
 		 * Create or fetch the synthesizer object corresponding to this
 		 * specification, using the session.
@@ -148,6 +148,16 @@ public interface Synthesizer extends Destructable, TransientContainer<Compositio
 			
 			public Synthesizer resolve(Session session){
 				return synthesizer;
+			}
+			
+			@Override
+			public String getName(){
+				return synthesizer.getName();
+			}
+			
+			@Override
+			public boolean setName(String newName){
+				return synthesizer.setName(newName);
 			}
 		}
 	}

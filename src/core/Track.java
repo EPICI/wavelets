@@ -10,7 +10,7 @@ import org.apache.pivot.wtk.*;
  * @author EPICI
  * @version 1.0
  */
-public interface Track extends Serializable {
+public interface Track extends Serializable, Named {
 	/**
 	 * Take the existing samples and do whatever with them
 	 * <br>
@@ -68,20 +68,6 @@ public interface Track extends Serializable {
 	 * @see TrackLayerCompound
 	 */
 	public ViewComponent getViewComponent();
-	
-	/**
-	 * Name getter
-	 * 
-	 * @return the track's name
-	 */
-	public String getName();
-	
-	/**
-	 * Name setter
-	 * 
-	 * @param newName the new name to (attempt to) give it
-	 */
-	public void setName(String newName);
 	
 	/**
 	 * Generic type id name
