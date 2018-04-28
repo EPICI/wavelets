@@ -78,8 +78,8 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	public Composition(Session session){
 		currentSession = session;
 		tracks = new TrackLayerCompound(this);
-		clipTemplates = NamedMap.create();
-		synthSpecs = NamedMap.create();
+		clipTemplates = new NamedMap<>();
+		synthSpecs = new NamedMap<>();
 		initTransient(currentSession);
 	}
 
@@ -138,15 +138,9 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	 * @return true if successful, indicating a change happened, otherwise false
 	 */
 	public boolean renameSynth(String oldName,String newName){
-		if(newName==null
-				||newName.equals(oldName)
-				||synthSpecs.containsKey(newName))return false;
-		Synthesizer.Specification synthSpec = synthSpecs.get(oldName);
-		if(synthSpec==null)return false;
-		synths.put(newName, synths.remove(oldName));
-		synthSpecs.remove(oldName);
-		synthSpecs.put(newName, synthSpec);
-		return true;
+		boolean result = synths.rename(oldName, newName);
+		if(result)synthSpecs.renameMapOnly(oldName, newName);
+		return result;
 	}
 	
 	/**
@@ -160,10 +154,10 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	public boolean addSynth(String name,Synthesizer synth,Synthesizer.Specification synthSpec){
 		if(synth==null
 				||name==null
-				||synthSpecs.containsKey(name))return false;
+				||synthSpecs.dualMap.containsKey(name))return false;
 		if(synthSpec==null)synthSpec = Synthesizer.specWrap(synth);
-		synthSpecs.put(name, synthSpec);
-		synths.put(name, synth);
+		synthSpecs.dualMap.put(name, synthSpec);
+		synths.dualMap.put(name, synth);
 		return true;
 	}
 	
@@ -188,9 +182,9 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 
 	@Override
 	public void initTransient(Session parent) {
-		synths = NamedMap.create();
-		for(Map.Entry<String, Synthesizer.Specification> entry:synthSpecs.entrySet()){
-			synths.put(entry.getKey(), entry.getValue().resolve(currentSession));
+		synths = new NamedMap<>();
+		for(Map.Entry<String, Synthesizer.Specification> entry:synthSpecs.dualMap.entrySet()){
+			synths.dualMap.put(entry.getKey(), entry.getValue().resolve(currentSession));
 		}
 	}
 

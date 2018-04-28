@@ -15,10 +15,11 @@ import org.apache.commons.collections4.bidimap.*;
  * For example, for sorted map operations access the forward map directly.
  * 
  * @author EPICI
+ * @version 1.0
  *
  * @param <T>
  */
-public class NamedMap<T extends Named> extends AbstractDualBidiMap<String, T> implements Serializable{
+public class NamedMap<T extends Named> implements Serializable{
 	private static final long serialVersionUID = 1L;
 	
 	/**
@@ -28,63 +29,122 @@ public class NamedMap<T extends Named> extends AbstractDualBidiMap<String, T> im
 	/**
 	 * Backward map.
 	 */
-	public IdentityHashMap<T, String> backwardMap;
+	public transient IdentityHashMap<T, String> backwardMap;
+	/**
+	 * Two way map, view of the forward and backward maps.
+	 * Recommended to use this for map operations.
+	 */
+	public transient DualMap<T> dualMap;
 	
 	/**
-	 * View based constructor. For internal use only.
+	 * Inner class, used as the map because API weirdness in Apache Commons Collections
+	 * demands it.
 	 * 
-	 * @param forwardMap the forward map to use (field not set)
-	 * @param backwardMap the backward map to use (field not set)
+	 * @author EPICI
+	 * @version 1.0
+	 *
+	 * @param <T>
 	 */
-	protected NamedMap(PatriciaTrie<T> forwardMap,IdentityHashMap<T, String> backwardMap){
-		super(forwardMap,backwardMap);
+	public static class DualMap<T> extends AbstractDualBidiMap<String,T>{
+		
+		/**
+		 * Redirect constructor.
+		 * 
+		 * @param forward
+		 * @param backward
+		 */
+		public DualMap(Map<String, T> forward,Map<T, String> backward){
+			super(forward,backward);
+		}
+
+		@Override
+		protected BidiMap<T, String> createBidiMap(Map<T, String> forward, Map<String, T> backward, BidiMap<String, T> bidi) {
+			return null;
+		}
+		
 	}
 	
 	/**
-	 * Returns a new instance equivalent to using a blank constructor.
-	 * 
-	 * @return
+	 * Blank constructor.
 	 */
-	public static <T extends Named> NamedMap<T> create(){
-		return create(new PatriciaTrie<>(),new IdentityHashMap<>());
+	public NamedMap(){
+		forwardMap = new PatriciaTrie<>();
+		initTransient();
 	}
 	
 	/**
-	 * Returns a new instance using the specified maps. For internal use only.
-	 * 
-	 * @param forwardMap
-	 * @param backwardMap
-	 * @return
-	 */
-	protected static <T extends Named> NamedMap<T> create(PatriciaTrie<T> forwardMap,IdentityHashMap<T, String> backwardMap){
-		NamedMap<T> result = new NamedMap<>(forwardMap,backwardMap);
-		result.forwardMap = forwardMap;
-		result.backwardMap = backwardMap;
-		return result;
-	}
-	
-	/**
-	 * Returns a new instance which is a shallow copy of the given instance.
+	 * Copy constructor.
 	 * 
 	 * @param source
-	 * @return
 	 */
-	public static <T extends Named> NamedMap<T> copy(NamedMap<T> source){
-		return create(source.forwardMap,source.backwardMap);
+	public NamedMap(NamedMap<T> source){
+		this();
+		dualMap.putAll(source.dualMap);
 	}
-
+	
 	/**
-	 * This method is supposed to return a new inverse map for the given maps.
-	 * It's meaningless for this class, so it will return null.
-	 * 
-	 * @param normalMap
-	 * @param reverseMap
-	 * @param inverseBidiMap
-	 * @return
+	 * Initialize transient fields.
 	 */
-	@Override
-	protected BidiMap<T, String> createBidiMap(Map<T, String> normalMap, Map<String, T> reverseMap, BidiMap<String, T> inverseBidiMap) {
-		return null;
+	public void initTransient(){
+		backwardMap = new IdentityHashMap<>();
+		dualMap = new DualMap<T>(forwardMap,backwardMap);
+		MapIterator<String,T> iter = forwardMap.mapIterator();
+		while(iter.hasNext()){
+			String k = iter.next();
+			T v = iter.getValue();
+			backwardMap.put(v, k);
+			// no need to update dualMap because it's a view
+		}
+	}
+	
+	/**
+	 * Attempts a rename operation, returns true on success.
+	 * If failed, nothing should change.
+	 * 
+	 * @param oldName the name of the object to change
+	 * @param newName the new name to give to the object
+	 * @return did it succeed?
+	 */
+	public boolean rename(String oldName,String newName){
+		// Skip if the request is clearly bad
+		if(oldName!=null
+				&& newName!=null
+				&& oldName!=newName
+				&& forwardMap.containsKey(oldName)
+				&&!forwardMap.containsKey(newName)){
+			T value = forwardMap.get(oldName);
+			// test if it will reject the new name
+			if(value.setName(newName)){
+				// it removes the old pairing for us, so no more work needed
+				dualMap.put(newName, value);
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
+	 * Unsafe version of {@link #rename(String, String)}. Forces a rename,
+	 * and doesn't update the value's name. Useful if multiple maps point to
+	 * the same objects.
+	 * 
+	 * @param oldName
+	 * @param newName
+	 */
+	public void renameMapOnly(String oldName,String newName){
+		T value = forwardMap.get(oldName);
+		dualMap.put(newName, value);
+	}
+	
+	/*
+	private void writeObject(ObjectOutputStream oos) throws IOException {
+		oos.defaultWriteObject();
+	}
+	*/
+
+	private void readObject(ObjectInputStream ois) throws ClassNotFoundException, IOException {
+		ois.defaultReadObject();
+		initTransient();
 	}
 
 	/*

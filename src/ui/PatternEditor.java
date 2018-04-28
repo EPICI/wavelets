@@ -264,7 +264,7 @@ public class PatternEditor extends Window implements Bindable {
 				 * It's not so efficient, but it's obvious what it does
 				 * and it's more easy to add/change attempts later.
 				 */
-				result = composition.clipTemplates.get(name);
+				result = composition.clipTemplates.dualMap.get(name);
 				if(result!=null)return result;
 			}
 			return null;
