@@ -146,9 +146,108 @@ public class NamedMap<T extends Named> implements Serializable{
 		ois.defaultReadObject();
 		initTransient();
 	}
+	
+	/**
+	 * Get the string <i>nameBase</i>+<i>partsSeparator</i>+<i>nextIndex</i>,
+	 * where <i>nextIndex</i> is a <i>digitsIndex</i> digit integer greater than
+	 * or equal to <i>minIndex</i> and so the result is not in this map.
+	 * If <i>nameIncluded</i>, then <i>nameBase</i>+<i>partsSeparator</i>+<i>nameIndex</i>
+	 * cannot be the result.
+	 * Different length <i>nextIndex</i> corresponding to the same
+	 * integer are treated as equivalent.
+	 * 
+	 * @param nameBase common prefix string
+	 * @param nameIndex index of current string
+	 * @param nameIncluded whether to include current string as candidate
+	 * @param digitsIndex requested length of index string in result
+	 * @param minIndex minimum considered index string
+	 * @param partsSeparator goes between prefix and index
+	 * @param blankIndex assumed index for no index suffix
+	 * @return
+	 */
+	public String nextName(String nameBase,int nameIndex,boolean nameIncluded,int digitsIndex,int minIndex,String partsSeparator,int blankIndex){
+		// add prefix and separator
+		StringBuilder sb = new StringBuilder();
+		sb.append(nameBase);
+		sb.append(partsSeparator);
+		// get index suffix
+		String suffix = Integer.toString(nextNameIndex(nameBase,nameIndex,nameIncluded,minIndex,partsSeparator,blankIndex));
+		// pad to length
+		for(int i=suffix.length();i<digitsIndex;i++)sb.append("0");
+		sb.append(suffix);
+		// result
+		String result = sb.toString();
+		return result;
+	}
+	
+	/**
+	 * Gets just the index as used by
+	 * {@link #nextName(String, int, boolean, int, int, String, int)}
+	 * 
+	 * @param nameBase
+	 * @param nameIndex
+	 * @param nameIncluded
+	 * @param minIndex
+	 * @param partsSeparator
+	 * @param blankIndex
+	 * @return
+	 */
+	public int nextNameIndex(String nameBase,int nameIndex,boolean nameIncluded,int minIndex,String partsSeparator,int blankIndex){
+		// first get our java regex with escaping
+		String regex = "(.+?)"+java.util.regex.Pattern.quote(partsSeparator)+"(\\d+)";
+		// make pattern for it
+		java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(regex);
+		// initial exclusion set, items offset by -minIndex
+		HashSet<Integer> exclude = new HashSet<>();
+		// pre-filter by prefix, since to be equal it needs to have prefix
+		for(String cand:forwardMap.prefixMap(nameBase).keySet()){
+			java.util.regex.Matcher matcher = pattern.matcher(cand);
+			// no index, then assume 0
+			String candBase = cand;
+			int candIndex = blankIndex;
+			// if specified, use that index
+			if(matcher.matches()){
+				candBase = matcher.group(1);
+				candIndex = Integer.parseInt(matcher.group(2));
+			}
+			// only proceed if same name
+			if(nameBase.equals(candBase)){
+				// offset by -minIndex for exclusion set
+				candIndex -= minIndex;
+				// if below minIndex, not of interest
+				if(candIndex>=0){
+					exclude.add(candIndex);
+				}
+			}
+		}
+		// optionally, the request itself is included
+		if(nameIncluded && nameIndex>=minIndex){
+			exclude.add(nameIndex-minIndex);
+		}
+		// transfer to more efficient representation
+		BitSet bexclude = new BitSet();
+		int nexclude = exclude.size();
+		/*
+		 * if first n are excluded, then result is n
+		 * in this case, all excluded are <n
+		 * if not, then result is <n
+		 * excluded >=n will never change result
+		 * so we can filter n and up
+		 */
+		for(int candIndex:exclude){
+			if(candIndex<nexclude){
+				bexclude.set(candIndex);
+			}
+		}
+		// get our result
+		int result = bexclude.nextClearBit(0);
+		// offset back by +minIndex
+		result += minIndex;
+		return result;
+	}
 
 	/*
-	 * TODO method to get next valid name
+	 * method to get next valid name
 	 * Name -> Name.001 -> Name.002
 	 * Name. -> Name..001
 	 * Name.2 -> Name.000 -> Name.001 -> Name.003
@@ -165,6 +264,10 @@ public class NamedMap<T extends Named> implements Serializable{
 	 * get size of hashset
 	 * create bitset from hashset, ignoring any at or higher than size
 	 * use nextClearBit()
+	 * 
+	 * TODO redirect using preferences
+	 * TODO static variant using any set, prefix filter is preferred but not required,
+	 * current method will redirect to this new method
 	 */
 	
 }
