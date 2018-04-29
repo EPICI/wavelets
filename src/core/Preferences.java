@@ -204,9 +204,8 @@ public class Preferences implements Serializable {
 	 * @return value in preferences, or default if null given
 	 */
 	public static boolean getBooleanSafe(Session session,int index){
-		if(session==null)return getDefaultBoolean(index);
-		Preferences pref = session.preferences;
-		if(pref==null)return getDefaultBoolean(index);
+		Preferences pref;
+		if(session==null || (pref=session.getPreferences())==null)return getDefaultBoolean(index);
 		return pref.booleans.get(index);
 	}
 	
@@ -218,9 +217,8 @@ public class Preferences implements Serializable {
 	 * @return value in preferences, or default if null given
 	 */
 	public static long getLongSafe(Session session,int index){
-		if(session==null)return getDefaultInt(index);
-		Preferences pref = session.preferences;
-		if(pref==null)return getDefaultInt(index);
+		Preferences pref;
+		if(session==null || (pref=session.getPreferences())==null)return getDefaultInt(index);
 		return pref.ints[index];
 	}
 	
@@ -232,9 +230,8 @@ public class Preferences implements Serializable {
 	 * @return value in preferences, or default if null given
 	 */
 	public static double getDoubleSafe(Session session,int index){
-		if(session==null)return getDefaultFloat(index);
-		Preferences pref = session.preferences;
-		if(pref==null)return getDefaultFloat(index);
+		Preferences pref;
+		if(session==null || (pref=session.getPreferences())==null)return getDefaultFloat(index);
 		return pref.floats[index];
 	}
 	

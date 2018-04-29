@@ -181,8 +181,9 @@ public class NamedMap<T extends Named> implements Serializable{
 	}
 	
 	/**
-	 * Gets just the index as used by
-	 * {@link #nextName(String, int, boolean, int, int, String, int)}
+	 * Redirects to
+	 * {@link #nextNameIndex(Set, String, int, boolean, int, String, int)}
+	 * using the forward map to derive the set <i>candidates</i>.
 	 * 
 	 * @param nameBase
 	 * @param nameIndex
@@ -193,6 +194,31 @@ public class NamedMap<T extends Named> implements Serializable{
 	 * @return
 	 */
 	public int nextNameIndex(String nameBase,int nameIndex,boolean nameIncluded,int minIndex,String partsSeparator,int blankIndex){
+		int result = nextNameIndex(
+				forwardMap.prefixMap(nameBase).keySet(),
+				nameBase,
+				nameIndex,
+				nameIncluded,
+				minIndex,
+				partsSeparator,
+				blankIndex);
+		return result;
+	}
+	
+	/**
+	 * Gets just the index as used by
+	 * {@link #nextName(String, int, boolean, int, int, String, int)}.
+	 * 
+	 * @param candidates possible strings to exclude
+	 * @param nameBase
+	 * @param nameIndex
+	 * @param nameIncluded
+	 * @param minIndex
+	 * @param partsSeparator
+	 * @param blankIndex
+	 * @return
+	 */
+	public static int nextNameIndex(Set<String> candidates,String nameBase,int nameIndex,boolean nameIncluded,int minIndex,String partsSeparator,int blankIndex){
 		// first get our java regex with escaping
 		String regex = "(.+?)"+java.util.regex.Pattern.quote(partsSeparator)+"(\\d+)";
 		// make pattern for it
@@ -200,7 +226,7 @@ public class NamedMap<T extends Named> implements Serializable{
 		// initial exclusion set, items offset by -minIndex
 		HashSet<Integer> exclude = new HashSet<>();
 		// pre-filter by prefix, since to be equal it needs to have prefix
-		for(String cand:forwardMap.prefixMap(nameBase).keySet()){
+		for(String cand:candidates){
 			java.util.regex.Matcher matcher = pattern.matcher(cand);
 			// no index, then assume 0
 			String candBase = cand;
@@ -266,8 +292,6 @@ public class NamedMap<T extends Named> implements Serializable{
 	 * use nextClearBit()
 	 * 
 	 * TODO redirect using preferences
-	 * TODO static variant using any set, prefix filter is preferred but not required,
-	 * current method will redirect to this new method
 	 */
 	
 }
