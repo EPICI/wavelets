@@ -155,6 +155,11 @@ public class NamedMap<T extends Named> implements Serializable{
 	 * cannot be the result.
 	 * Different length <i>nextIndex</i> corresponding to the same
 	 * integer are treated as equivalent.
+	 * <br>
+	 * If <i>nameIndex</i> is negative, treats <i>nameBase</i>
+	 * as a full name and splits it to get a new <i>nameBase</i> and <i>nameIndex</i>.
+	 * If of the form <i>nameBase</i>+<i>partsSeparator</i>+<i>nameIndex</i>,
+	 * then <i>nameIndex</i> is used as the index, otherwise <i>blankIndex</i> is used.
 	 * 
 	 * @param nameBase common prefix string
 	 * @param nameIndex index of current string
@@ -166,6 +171,24 @@ public class NamedMap<T extends Named> implements Serializable{
 	 * @return
 	 */
 	public String nextName(String nameBase,int nameIndex,boolean nameIncluded,int digitsIndex,int minIndex,String partsSeparator,int blankIndex){
+		// if negative nameIndex, split
+		if(nameIndex<0){
+			// convenience variable
+			String name = nameBase;
+			// first get our java regex with escaping
+			String regex = "(.+?)"+java.util.regex.Pattern.quote(partsSeparator)+"(\\d+)";
+			// make pattern for it
+			java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(regex);
+			java.util.regex.Matcher matcher = pattern.matcher(name);
+			// no index, then assume blankIndex
+			nameBase = name;
+			nameIndex = blankIndex;
+			// if specified, use that index
+			if(matcher.matches()){
+				nameBase = matcher.group(1);
+				nameIndex = Integer.parseInt(matcher.group(2));
+			}
+		}
 		// add prefix and separator
 		StringBuilder sb = new StringBuilder();
 		sb.append(nameBase);

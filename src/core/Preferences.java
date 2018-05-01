@@ -13,13 +13,6 @@ import util.*;
  */
 public class Preferences implements Serializable {
 	private static final long serialVersionUID = 1L;
-
-	/**
-	 * Subpreferences defaults
-	 * <br>
-	 * Made public so scripts and stuff can add their own
-	 */
-	public static final HashMap<String,Sub<?,?>> SUB_DEFAULTS = new HashMap<>();
 	
 	/*
 	 * Indexes for various built-in settings
@@ -59,6 +52,12 @@ public class Preferences implements Serializable {
 	private static final double[] FLOAT_DEFAULTS = {
 			
 	};
+	/**
+	 * Float defaults
+	 */
+	private static final String[] STRING_DEFAULTS = {
+			
+	};
 	
 	/**
 	 * Total number of booleans
@@ -72,6 +71,10 @@ public class Preferences implements Serializable {
 	 * Total number of floats
 	 */
 	public static final int FLOAT_COUNT = FLOAT_DEFAULTS.length;
+	/**
+	 * Total number of strings
+	 */
+	public static final int STRING_COUNT = STRING_DEFAULTS.length;
 	
 	/**
 	 * Get a default boolean value
@@ -99,6 +102,15 @@ public class Preferences implements Serializable {
 	public static double getDefaultFloat(int index){
 		return FLOAT_DEFAULTS[index];
 	}
+	
+	/**
+	 * Get a default string value
+	 * @param index index, should be named
+	 * @return the default associated string value
+	 */
+	public static String getDefaultString(int index){
+		return STRING_DEFAULTS[index];
+	}
 
 	/**
 	 * All booleans in preferences
@@ -125,15 +137,18 @@ public class Preferences implements Serializable {
 	 */
 	protected double[] floats;
 	/**
-	 * All subpreferences
+	 * All strings in preferences
+	 * <br>
+	 * Some non-primitive data structures or other values can be
+	 * represented simply with a string, so they can also be included here,
+	 * however, the cost of parsing may make it not worth it
 	 */
-	protected HashMap<String,Sub<?,?>> subprefs;
+	protected String[] strings;
 	
 	/**
 	 * Initialize with factory settings
 	 */
 	public Preferences(){
-		subprefs = new HashMap<>();
 		restoreDefaults();
 	}
 	
@@ -150,17 +165,23 @@ public class Preferences implements Serializable {
 	 * The current data is too short, so extend it with defaults
 	 */
 	protected void extendDefaults(){
-		int localBooleanCount = this.localBooleanCount, localIntCount = ints.length, localFloatCount = floats.length;
+		int localBooleanCount = this.localBooleanCount,
+				localIntCount = ints.length,
+				localFloatCount = floats.length,
+				localStringCount = strings.length;
 		ints = Arrays.copyOf(ints, INT_COUNT);
 		floats = Arrays.copyOf(floats, FLOAT_COUNT);
+		strings = Arrays.copyOf(strings, STRING_COUNT);
 		for(;localBooleanCount<BOOLEAN_COUNT;localBooleanCount++)
 			booleans.set(localBooleanCount,getDefaultBoolean(localBooleanCount));
 		for(;localIntCount<INT_COUNT;localIntCount++)
 			ints[localIntCount] = getDefaultInt(localIntCount);
 		for(;localFloatCount<FLOAT_COUNT;localFloatCount++)
 			floats[localFloatCount] = getDefaultFloat(localFloatCount);
+		for(;localStringCount<STRING_COUNT;localStringCount++)
+			strings[localStringCount] = getDefaultString(localStringCount);
 		this.localBooleanCount = localBooleanCount;
-		subprefs.putAll(SUB_DEFAULTS);
+		//subprefs.putAll(SUB_DEFAULTS);
 	}
 	
 	/**
@@ -171,7 +192,6 @@ public class Preferences implements Serializable {
 		localBooleanCount = 0;
 		ints = new long[0];
 		floats = new double[0];
-		subprefs = new HashMap<>();
 		extendDefaults();
 	}
 	
@@ -233,69 +253,6 @@ public class Preferences implements Serializable {
 		Preferences pref;
 		if(session==null || (pref=session.getPreferences())==null)return getDefaultFloat(index);
 		return pref.floats[index];
-	}
-	
-	/**
-	 * Get subpreferences by name
-	 * <br>
-	 * If null, hasn't been set
-	 * 
-	 * @param name the name
-	 * @return a subpreferences object
-	 */
-	public <K,V> Sub<K,V> getSub(String name){
-		return (Sub<K,V>)subprefs.get(name);
-	}
-	
-	/**
-	 * Set (may override) subpreferences by name
-	 * 
-	 * @param name the name
-	 * @param subpref subpreferences object to set
-	 */
-	public void setSub(String name,Sub<?,?> subpref){
-		subprefs.put(name, subpref);
-	}
-	
-	/**
-	 * Get the subpreferences map
-	 * <br>
-	 * This method is provided for when other operations or
-	 * anything more advanced is needed
-	 * 
-	 * @return map with all subpreferences
-	 */
-	public HashMap<String,Sub<?,?>> getSubPreferences(){
-		return subprefs;
-	}
-	
-	/**
-	 * Subpreferences for a specific module or something
-	 * <br>
-	 * Because they aren't used by the main program, fields
-	 * are public to allow for fast access
-	 * 
-	 * @author EPICI
-	 * @version 1.0
-	 */
-	public static class Sub<K,V>{
-		
-		/**
-		 * All booleans
-		 */
-		public BitSet booleans;
-		/**
-		 * All integers
-		 */
-		public long[] ints;
-		/**
-		 * All floats
-		 */
-		public double[] floats;
-		/**
-		 * Everything else
-		 */
-		public Map<K,V> objs;
 	}
 
 }
