@@ -676,7 +676,7 @@ public class TrackLSEditor extends Window implements Bindable {
 			 * 0 is individual pixels (highest resolution)
 			 * 30 makes everything the same tone (lowest resolution), 31 would cause overflow
 			 */
-			int gradientShift = (int)Preferences.getLongSafe(session, Preferences.INDEX_INT_TLS_PATTERN_BAR_GRADIENT_SHIFT), gradientShiftInc = 1<<gradientShift, gradientShiftMask = gradientShiftInc-1, gradientShiftMaskInv = ~gradientShiftMask;
+			int gradientShift = (int)Preferences.getIntSafe(session, Preferences.INDEX_INT_TLS_PATTERN_BAR_GRADIENT_SHIFT), gradientShiftInc = 1<<gradientShift, gradientShiftMask = gradientShiftInc-1, gradientShiftMaskInv = ~gradientShiftMask;
 			double imageScale = 0.5d;
 			// --- Pre-draw ---
 			IdentityHashMap<Pattern,BitSet> patterns = tls.patterns;

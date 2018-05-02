@@ -268,20 +268,20 @@ public class Preferences implements Serializable {
 	}
 	
 	/**
-	 * Get boolean for {@link Session}'s preferences, null-safe
+	 * Get int (actually long) for {@link Session}'s preferences, null-safe
 	 * 
 	 * @param session session to fetch preferences for
 	 * @param index index of value to fetch
 	 * @return value in preferences, or default if null given
 	 */
-	public static long getLongSafe(Session session,int index){
+	public static long getIntSafe(Session session,int index){
 		Preferences pref;
 		if(session==null || (pref=session.getPreferences())==null)return getDefaultInt(index);
 		return pref.ints[index];
 	}
 	
 	/**
-	 * Get boolean for {@link Session}'s preferences, null-safe
+	 * Get float (actually double) for {@link Session}'s preferences, null-safe
 	 * 
 	 * @param session session to fetch preferences for
 	 * @param index index of value to fetch
@@ -291,6 +291,19 @@ public class Preferences implements Serializable {
 		Preferences pref;
 		if(session==null || (pref=session.getPreferences())==null)return getDefaultFloat(index);
 		return pref.floats[index];
+	}
+	
+	/**
+	 * Get {@link String} for {@link Session}'s preferences, null-safe
+	 * 
+	 * @param session session to fetch preferences for
+	 * @param index index of value to fetch
+	 * @return value in preferences, or default if null given
+	 */
+	public static String getStringSafe(Session session,int index){
+		Preferences pref;
+		if(session==null || (pref=session.getPreferences())==null)return getDefaultString(index);
+		return pref.strings[index];
 	}
 
 }

@@ -224,6 +224,30 @@ public class NamedMap<T extends Named> implements Serializable{
 	
 	/**
 	 * Redirects to
+	 * {@link #nextName(String, int, boolean, int, int, String, int)}
+	 * using the session's {@link core.Preferences} to fill in the missing values.
+	 * If the session or preferences are null, the default values will be used instead.
+	 * 
+	 * @param nameBase
+	 * @param nameIndex
+	 * @param nameIncluded
+	 * @param session
+	 * @return
+	 */
+	public String nextName(String nameBase,int nameIndex,boolean nameIncluded,Session session){
+		return nextName(
+				nameBase,
+				nameIndex,
+				nameIncluded,
+				(int)Preferences.getIntSafe(session, Preferences.INDEX_INT_NAMEDMAP_NEXTNAME_DIGITS_INDEX),
+				(int)Preferences.getIntSafe(session, Preferences.INDEX_INT_NAMEDMAP_NEXTNAME_MIN_INDEX),
+				Preferences.getStringSafe(session, Preferences.INDEX_STRING_NAMEDMAP_NEXTNAME_PARTS_SEPARATOR),
+				(int)Preferences.getIntSafe(session, Preferences.INDEX_INT_NAMEDMAP_NEXTNAME_BLANK_INDEX)
+				);
+	}
+	
+	/**
+	 * Redirects to
 	 * {@link #nextNameIndex(Set, String, int, boolean, int, String, int)}
 	 * using the forward map to derive the set <i>candidates</i>.
 	 * 
@@ -278,7 +302,9 @@ public class NamedMap<T extends Named> implements Serializable{
 			// if specified, use that index
 			if(matcher.matches()){
 				candBase = matcher.group(1);
-				candIndex = Integer.parseInt(matcher.group(2));
+				String candIndexString = matcher.group(2);
+				// If more than 9 digits, it's insanely high and we can ignore it
+				candIndex = candIndexString.length()<=9?Integer.parseInt(candIndexString):-1;
 			}
 			// only proceed if same name
 			if(nameBase.equals(candBase)){
