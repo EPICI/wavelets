@@ -13,6 +13,20 @@ import org.apache.commons.collections4.bidimap.*;
  * Various views give most functionality that should be in the
  * class itself but isn't because the creator was being lazy.
  * For example, for sorted map operations access the forward map directly.
+ * <br>
+ * The method
+ * {@link #nextName(String, int, boolean, int, int, String, int)}
+ * and its family are for a naming system with
+ * numeric suffixes. It has a few quirks, but nonetheless it
+ * is a simple to understand and robust system.
+ * This idea was taken from Blender, which uses names like:
+ * <ul>
+ * <li>Cube &#x2192; Cube.001 &#x2192; Cube.002 &#x2192; Cube.003 &#x2192; Cube.004</li>
+ * <li>Plane.000 &#x2192; Plane.001 &#x2192; Plane.002 &#x2192; Plane.003 &#x2192; Plane.004</li>
+ * <li>Cone.002 &#x2192; Cone.000 &#x2192; Cone.001 &#x2192; Cone.003 &#x2192; Cone.004</li>
+ * <li>Torus.99999999 &#x2192; Torus.000 &#x2192; Torus.001 &#x2192; Torus.002 &#x2192; Torus.003</li>
+ * <li>Empty. &#x2192; Empty..001 &#x2192; Empty..002 &#x2192; Empty..003 &#x2192; Empty..004</li>
+ * </ul>
  * 
  * @author EPICI
  * @version 1.0
@@ -160,6 +174,11 @@ public class NamedMap<T extends Named> implements Serializable{
 	 * as a full name and splits it to get a new <i>nameBase</i> and <i>nameIndex</i>.
 	 * If of the form <i>nameBase</i>+<i>partsSeparator</i>+<i>nameIndex</i>,
 	 * then <i>nameIndex</i> is used as the index, otherwise <i>blankIndex</i> is used.
+	 * <br>
+	 * If <i>blankIndex</i> is less than -1, it will be replaced by
+	 * <i>minIndex</i>-<i>blankIndex</i>-2. As such, -1 should be used to
+	 * completely filter out names with empty suffixes, and -2 should be used
+	 * to assume the minimum for those.
 	 * 
 	 * @param nameBase common prefix string
 	 * @param nameIndex index of current string
@@ -242,6 +261,8 @@ public class NamedMap<T extends Named> implements Serializable{
 	 * @return
 	 */
 	public static int nextNameIndex(Set<String> candidates,String nameBase,int nameIndex,boolean nameIncluded,int minIndex,String partsSeparator,int blankIndex){
+		// correct blankIndex
+		if(blankIndex<-1)blankIndex = minIndex-blankIndex-2;
 		// first get our java regex with escaping
 		String regex = "(.+?)"+java.util.regex.Pattern.quote(partsSeparator)+"(\\d+)";
 		// make pattern for it

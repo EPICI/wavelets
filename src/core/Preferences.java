@@ -25,26 +25,64 @@ public class Preferences implements Serializable {
 	 */
 	
 	// Booleans (boolean)
-	public static final int INDEX_TLS_ALLOW_PATTERN_CONVERT = 0;
-	public static final int INDEX_TLS_ALLOW_PATTERN_MERGE = 1;
+	/**
+	 * Used by {@link ui.TrackLSEditor.LinkedEditorPaneSkin#allowPatternConvert()}.
+	 * Explained by its documentation.
+	 */
+	public static final int INDEX_BOOLEAN_TLS_ALLOW_PATTERN_CONVERT = 0;
+	/**
+	 * Used by {@link ui.TrackLSEditor.LinkedEditorPaneSkin#allowPatternMerge()}.
+	 * Explained by its documentation.
+	 */
+	public static final int INDEX_BOOLEAN_TLS_ALLOW_PATTERN_MERGE = 1;
 	
 	// Ints (long)
-	public static final int INDEX_TLS_PATTERN_BAR_GRADIENT_SHIFT = 0;
+	/**
+	 * Used by {@link ui.TrackLSEditor.LinkedEditorPaneSkin#paint(java.awt.Graphics2D)}.
+	 * A range of 2^(this number) pixels will use the same color.
+	 * In a way, it determines the gradient.
+	 */
+	public static final int INDEX_INT_TLS_PATTERN_BAR_GRADIENT_SHIFT = 0;
+	/**
+	 * Used by {@link util.ds.NamedMap#nextName(String, int, boolean, int, int, String, int)}.
+	 * Determines the minimum number of digits in the numeric suffix.
+	 */
+	public static final int INDEX_INT_NAMEDMAP_NEXTNAME_DIGITS_INDEX = 1;
+	/**
+	 * Used by {@link util.ds.NamedMap#nextName(String, int, boolean, int, int, String, int)}.
+	 * Determines the minimum considered number for suffixes.
+	 */
+	public static final int INDEX_INT_NAMEDMAP_NEXTNAME_MIN_INDEX = 2;
+	/**
+	 * Used by {@link util.ds.NamedMap#nextName(String, int, boolean, int, int, String, int)}.
+	 * Determines what number is assumed if the suffix of a name is missing.
+	 */
+	public static final int INDEX_INT_NAMEDMAP_NEXTNAME_BLANK_INDEX = 3;
 	
 	// Floats (double)
+	
+	// Strings (String)
+	/**
+	 * Used by {@link util.ds.NamedMap#nextName(String, int, boolean, int, int, String, int)}.
+	 * Determines what text separates the main body of the name and the suffix.
+	 */
+	public static final int INDEX_STRING_NAMEDMAP_NEXTNAME_PARTS_SEPARATOR = 0;
 	
 	/**
 	 * Boolean defaults
 	 */
 	private static final boolean[] BOOLEAN_DEFAULTS = {
-			false,
-			false,
+			false,//INDEX_BOOLEAN_TLS_ALLOW_PATTERN_CONVERT
+			false,//INDEX_BOOLEAN_TLS_ALLOW_PATTERN_MERGE
 	};
 	/**
 	 * Integer defaults
 	 */
 	private static final long[] INT_DEFAULTS = {
-			30,
+			30,//INDEX_INT_TLS_PATTERN_BAR_GRADIENT_SHIFT
+			3,//INDEX_INT_NAMEDMAP_NEXTNAME_DIGITS_INDEX
+			0,//INDEX_INT_NAMEDMAP_NEXTNAME_MIN_INDEX
+			-2,//INDEX_INT_NAMEDMAP_NEXTNAME_BLANK_INDEX
 	};
 	/**
 	 * Float defaults
@@ -56,7 +94,7 @@ public class Preferences implements Serializable {
 	 * Float defaults
 	 */
 	private static final String[] STRING_DEFAULTS = {
-			
+			".",//INDEX_STRING_NAMEDMAP_NEXTNAME_PARTS_SEPARATOR
 	};
 	
 	/**

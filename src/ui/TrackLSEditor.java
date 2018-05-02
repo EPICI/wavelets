@@ -299,7 +299,7 @@ public class TrackLSEditor extends Window implements Bindable {
 		 */
 		public boolean allowPatternConvert(){
 			LinkedEditorPane editor = (LinkedEditorPane)getComponent();
-			return Preferences.getBooleanSafe(editor.parent.session,Preferences.INDEX_TLS_ALLOW_PATTERN_CONVERT);
+			return Preferences.getBooleanSafe(editor.parent.session,Preferences.INDEX_BOOLEAN_TLS_ALLOW_PATTERN_CONVERT);
 		}
 		
 		/**
@@ -311,7 +311,7 @@ public class TrackLSEditor extends Window implements Bindable {
 		 */
 		public boolean allowPatternMerge(){
 			LinkedEditorPane editor = (LinkedEditorPane)getComponent();
-			return Preferences.getBooleanSafe(editor.parent.session,Preferences.INDEX_TLS_ALLOW_PATTERN_MERGE);
+			return Preferences.getBooleanSafe(editor.parent.session,Preferences.INDEX_BOOLEAN_TLS_ALLOW_PATTERN_MERGE);
 		}
 		
 		/**
@@ -676,7 +676,7 @@ public class TrackLSEditor extends Window implements Bindable {
 			 * 0 is individual pixels (highest resolution)
 			 * 30 makes everything the same tone (lowest resolution), 31 would cause overflow
 			 */
-			int gradientShift = (int)Preferences.getLongSafe(session, Preferences.INDEX_TLS_PATTERN_BAR_GRADIENT_SHIFT), gradientShiftInc = 1<<gradientShift, gradientShiftMask = gradientShiftInc-1, gradientShiftMaskInv = ~gradientShiftMask;
+			int gradientShift = (int)Preferences.getLongSafe(session, Preferences.INDEX_INT_TLS_PATTERN_BAR_GRADIENT_SHIFT), gradientShiftInc = 1<<gradientShift, gradientShiftMask = gradientShiftInc-1, gradientShiftMaskInv = ~gradientShiftMask;
 			double imageScale = 0.5d;
 			// --- Pre-draw ---
 			IdentityHashMap<Pattern,BitSet> patterns = tls.patterns;
