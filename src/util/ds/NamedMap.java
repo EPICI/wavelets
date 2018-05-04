@@ -112,6 +112,46 @@ public class NamedMap<T extends Named> implements Serializable{
 	}
 	
 	/**
+	 * Attempts a rename operation. On success, returns
+	 * what name the object now has, which may not be the requested name.
+	 * On failure, returns null, and no data is changed.
+	 * 
+	 * @param oldName the name of the object to change
+	 * @param newName the new name to give to the object
+	 * @param session determines some nuances, optional
+	 * @return actual new name if succeeded, null if failed
+	 */
+	public String rename(String oldName,String newName,Session session){
+		// Skip if the object doesn't even exist
+		if(oldName!=null
+				&& newName!=null
+				&& oldName!=newName
+				&& forwardMap.containsKey(oldName)){
+			// On failure, we will add this back
+			T value = dualMap.remove(oldName);
+			// Can we accept the given name?
+			if(!forwardMap.containsKey(newName)
+					&& value.setName(newName)){
+				// it removes the old pairing for us, so no more work needed
+				dualMap.put(newName, value);
+				return newName;
+			}
+			// Preferences determines whether we should try other names
+			if(Preferences.getBooleanSafe(session, Preferences.INDEX_BOOLEAN_NAMEDMAP_RENAME_USE_NEXTNAME)){
+				// What name would be next?
+				newName = nextName(oldName,-1,false,session);
+				if(value.setName(newName)){
+					dualMap.put(newName, value);
+					return newName;
+				}
+			}
+			// It failed, put the old mapping back
+			dualMap.put(oldName, value);
+		}
+		return null;
+	}
+	
+	/**
 	 * Attempts a rename operation, returns true on success.
 	 * If failed, nothing should change.
 	 * 

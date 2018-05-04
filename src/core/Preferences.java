@@ -35,6 +35,13 @@ public class Preferences implements Serializable {
 	 * Explained by its documentation.
 	 */
 	public static final int INDEX_BOOLEAN_TLS_ALLOW_PATTERN_MERGE = 1;
+	/**
+	 * Used by {@link util.ds.NamedMap#rename(String, String, Session)}.
+	 * If true, on rename failure will try to use
+	 * {@link util.ds.NamedMap#nextName(String, int, boolean, Session)}
+	 * to find an alternate name to rename to.
+	 */
+	public static final int INDEX_BOOLEAN_NAMEDMAP_RENAME_USE_NEXTNAME = 2;
 	
 	// Ints (long)
 	/**
@@ -74,6 +81,7 @@ public class Preferences implements Serializable {
 	private static final boolean[] BOOLEAN_DEFAULTS = {
 			false,//INDEX_BOOLEAN_TLS_ALLOW_PATTERN_CONVERT
 			false,//INDEX_BOOLEAN_TLS_ALLOW_PATTERN_MERGE
+			true,//INDEX_BOOLEAN_NAMEDMAP_RENAME_USE_NEXTNAME
 	};
 	/**
 	 * Integer defaults

@@ -57,6 +57,15 @@ public class PatternEditor extends Window implements Bindable {
 	}
 	
 	/**
+	 * Get the composition currently being edited.
+	 * 
+	 * @return
+	 */
+	public Composition getComposition(){
+		return session.composition;
+	}
+	
+	/**
 	 * The actual editor interface for the {@link Pattern}.
 	 * <br>
 	 * Note that it is only a {@link Container} so it can hold components.
@@ -93,9 +102,9 @@ public class PatternEditor extends Window implements Bindable {
 		 */
 		public static final int INDEX_CLIP_VOLUME_INPUT = 6;
 		/**
-		 * Index of the row for the template selector
+		 * Index of the row for the template rename button or text field
 		 */
-		public static final int INDEX_TEMPLATE_SELECTOR = 2;
+		public static final int INDEX_TEMPLATE_RENAME = 2;
 		
 		/**
 		 * Name of the step mode using
@@ -250,8 +259,7 @@ public class PatternEditor extends Window implements Bindable {
 		 * @return
 		 */
 		public Clip.Template getTemplate(){
-			Session session = parent.session;
-			Composition composition = session.composition;
+			Composition composition = parent.getComposition();
 			Object oname = templateSelector.getSelectedItem();
 			if(oname!=null){
 				String name = oname.toString();
@@ -418,7 +426,9 @@ public class PatternEditor extends Window implements Bindable {
 			
 			templateSelector.getListButtonSelectionListeners().add(new TemplateSelectorInputListener(this));
 			
-			// TODO template rename listener
+			templateRenameInput = new TextInput();
+			templateRename.getButtonPressListeners().add(new TemplateRenameButtonListener(this));
+			templateRenameInput.getComponentKeyListeners().add(new TemplateRenameInputListener(this));
 			
 			// TODO template copy listener
 			
@@ -436,7 +446,7 @@ public class PatternEditor extends Window implements Bindable {
 		 */
 		public void updateTemplateList(){
 			// get the original names
-			Set<String> source = parent.session.composition.clipTemplates.forwardMap.keySet();
+			Set<String> source = parent.getComposition().clipTemplates.forwardMap.keySet();
 			// make the new list
 			org.apache.pivot.collections.ArrayList<String> list =
 					new org.apache.pivot.collections.ArrayList<>();
@@ -463,7 +473,7 @@ public class PatternEditor extends Window implements Bindable {
 				// null fix
 				String name = Objects.toString(templateSelector.getSelectedItem(),"");
 				if(name.length()==0)return false;
-				template=parent.session.composition.clipTemplates.dualMap.get(name);
+				template=parent.getComposition().clipTemplates.dualMap.get(name);
 				if(template==null)return false;
 			}
 			// needs to be different
@@ -676,9 +686,9 @@ public class PatternEditor extends Window implements Bindable {
 		@Override
 		public void selectedItemChanged(ListButton listButton, Object previousSelectedItem){
 			// may need to remake interface
-			String name = Objects.toString(listButton.getSelectedItem(),"");
+			String name = Objects.toString(parent.templateSelector.getSelectedItem(),"");
 			if(name.length()>0){
-				Clip.Template template=parent.parent.session.composition.clipTemplates.dualMap.get(name);
+				Clip.Template template=parent.parent.getComposition().clipTemplates.dualMap.get(name);
 				if(template!=null){
 					// it's in the map, so make the change
 					parent.updateTemplate(template);
@@ -687,6 +697,108 @@ public class PatternEditor extends Window implements Bindable {
 					parent.updateTemplateList();
 				}
 			}
+		}
+		
+	}
+	
+	/**
+	 * Listens for pressing of the template rename button
+	 * and swaps it out for the text input when that happens
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static class TemplateRenameButtonListener implements ButtonPressListener{
+		
+		/**
+		 * Remember the parent, other data can be derived from here
+		 */
+		public LinkedEditorPane parent;
+		
+		/**
+		 * Standard constructor
+		 * 
+		 * @param parent
+		 */
+		public TemplateRenameButtonListener(LinkedEditorPane parent){
+			this.parent = parent;
+		}
+		
+		@Override
+		public void buttonPressed(org.apache.pivot.wtk.Button button){
+			// require a selection
+			String name = Objects.toString(parent.templateSelector.getSelectedItem(),"");
+			if(name.length()>0){
+				Clip.Template template=parent.parent.getComposition().clipTemplates.dualMap.get(name);
+				if(template!=null){
+					// it's in the map, so make the change
+					parent.templateRenameInput.setText(name);
+					TablePane.Row tr = parent.clipTablePane.getRows().get(LinkedEditorPane.INDEX_TEMPLATE_RENAME);
+					tr.update(1, parent.templateRenameInput);
+				}else{
+					// list clearly is outdated
+					parent.updateTemplateList();
+				}
+			}
+		}
+		
+	}
+	
+	/**
+	 * Listens for key presses for the template rename text input,
+	 * swaps out for button and updates accordingly on cancel or confirm
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static class TemplateRenameInputListener implements ComponentKeyListener{
+		
+		/**
+		 * Remember the parent, other data can be derived from here
+		 */
+		public LinkedEditorPane parent;
+		
+		/**
+		 * Standard constructor
+		 * 
+		 * @param parent
+		 */
+		public TemplateRenameInputListener(LinkedEditorPane parent){
+			this.parent = parent;
+		}
+		
+		public boolean keyTyped(Component component, char character){
+			// don't eat the event
+			return false;
+		}
+		
+		public boolean keyPressed(Component component, int keyCode, Keyboard.KeyLocation keyLocation){
+			// don't eat the event
+			return false;
+		}
+		
+		public boolean keyReleased(Component component, int keyCode, Keyboard.KeyLocation keyLocation){
+			switch(keyCode){
+			case KeyEvent.VK_ENTER:{// confirm
+				// get old name and new name
+				String oldName = parent.getTemplate().getName();
+				String newName = parent.templateRenameInput.getText();
+				// attempt rename, ignore return value
+				parent.parent.getComposition().clipTemplates.rename(oldName, newName, parent.parent.session);
+				// swap out for button
+				TablePane.Row tr = parent.clipTablePane.getRows().get(LinkedEditorPane.INDEX_TEMPLATE_RENAME);
+				tr.update(1, parent.templateRename);
+				break;
+			}
+			case KeyEvent.VK_ESCAPE:{// cancel
+				// swap out for button
+				TablePane.Row tr = parent.clipTablePane.getRows().get(LinkedEditorPane.INDEX_TEMPLATE_RENAME);
+				tr.update(1, parent.templateRename);
+				break;
+			}
+			}
+			// don't eat the event
+			return false;
 		}
 		
 	}
