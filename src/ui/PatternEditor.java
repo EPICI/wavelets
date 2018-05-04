@@ -416,7 +416,7 @@ public class PatternEditor extends Window implements Bindable {
 			tr = clipTablePane.getRows().get(INDEX_CLIP_VOLUME_INPUT);
 			tr.update(0, clipVolumeInput);
 			
-			// TODO template selector listener
+			templateSelector.getListButtonSelectionListeners().add(new TemplateSelectorInputListener(this));
 			
 			// TODO template rename listener
 			
@@ -427,6 +427,48 @@ public class PatternEditor extends Window implements Bindable {
 			// TODO template new parameter listener
 			
 			tabName.setText(view.getName());
+		}
+		
+		/**
+		 * Updates the template selector's list.
+		 * Causes the selection to be cleared due to the way
+		 * {@link ListButton} is implemented.
+		 */
+		public void updateTemplateList(){
+			// get the original names
+			Set<String> source = parent.session.composition.clipTemplates.forwardMap.keySet();
+			// make the new list
+			org.apache.pivot.collections.ArrayList<String> list =
+					new org.apache.pivot.collections.ArrayList<>();
+			// add all items
+			for(String name:source){
+				list.add(name);
+			}
+			// swap out the old list with the new list
+			templateSelector.setListData(list);
+		}
+		
+		/**
+		 * Set the current template to a given one,
+		 * and update the interface accordingly.
+		 * If null, will fetch the required template.
+		 * Returns true on success, if returned false, then
+		 * no changes should happen.
+		 * 
+		 * @param template
+		 * @return
+		 */
+		public boolean updateTemplate(Clip.Template template){
+			if(template==null){
+				// null fix
+				String name = Objects.toString(templateSelector.getSelectedItem(),"");
+				if(name.length()==0)return false;
+				template=parent.session.composition.clipTemplates.dualMap.get(name);
+				if(template==null)return false;
+			}
+			// needs to be different
+			if(template==getTemplate())return false;
+			return true;
 		}
 		
 		/**
@@ -597,6 +639,52 @@ public class PatternEditor extends Window implements Bindable {
 					parent.finalizeSelection(false);
 				}else{// Confirm
 					parent.finalizeSelection(true);
+				}
+			}
+		}
+		
+	}
+	
+	/**
+	 * Listens for changes to the template selector
+	 * and updates the clip and template property interfaces accordingly
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static class TemplateSelectorInputListener implements ListButtonSelectionListener{
+		
+		/**
+		 * Remember the parent, other data can be derived from here
+		 */
+		public LinkedEditorPane parent;
+		
+		/**
+		 * Standard constructor
+		 * 
+		 * @param parent
+		 */
+		public TemplateSelectorInputListener(LinkedEditorPane parent){
+			this.parent = parent;
+		}
+		
+		@Override
+		public void selectedIndexChanged(ListButton listButton, int previousSelectedIndex){
+			// nothing needs to change
+		}
+		
+		@Override
+		public void selectedItemChanged(ListButton listButton, Object previousSelectedItem){
+			// may need to remake interface
+			String name = Objects.toString(listButton.getSelectedItem(),"");
+			if(name.length()>0){
+				Clip.Template template=parent.parent.session.composition.clipTemplates.dualMap.get(name);
+				if(template!=null){
+					// it's in the map, so make the change
+					parent.updateTemplate(template);
+				}else{
+					// list clearly is outdated
+					parent.updateTemplateList();
 				}
 			}
 		}
