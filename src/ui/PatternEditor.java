@@ -783,8 +783,13 @@ public class PatternEditor extends Window implements Bindable {
 				// get old name and new name
 				String oldName = parent.getTemplate().getName();
 				String newName = parent.templateRenameInput.getText();
-				// attempt rename, ignore return value
-				parent.parent.getComposition().clipTemplates.rename(oldName, newName, parent.parent.session);
+				// attempt rename
+				String renamedTo = parent.parent.getComposition().clipTemplates.rename(oldName, newName, parent.parent.session);
+				if(renamedTo!=null){
+					// need to update list
+					parent.updateTemplateList();
+					parent.templateSelector.setSelectedItem(renamedTo);
+				}
 				// swap out for button
 				TablePane.Row tr = parent.clipTablePane.getRows().get(LinkedEditorPane.INDEX_TEMPLATE_RENAME);
 				tr.update(1, parent.templateRename);
