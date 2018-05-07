@@ -538,6 +538,7 @@ public class DoubleInput extends FillPane {
 			}
 			
 			private static final String BOUNDEDDOUBLEVALIDATOR_CLASS_NAME = BoundedDoubleValidator.class.getCanonicalName();
+			@Override
 			public DoubleValidator copy(int depth,Map<String,Object> options){
 				double newMin = this.min, newMax = this.max, newBase = this.base;
 				Map<String,Object> set = (Map<String,Object>)options.get("set");
@@ -628,6 +629,7 @@ public class DoubleInput extends FillPane {
 			}
 			
 			private static final String BOUNDEDDOUBLEVALIDATOR_CLASS_NAME = BoundedDoubleValidator.class.getCanonicalName();
+			@Override
 			public DoubleValidator copy(int depth,Map<String,Object> options){
 				double newMin = this.min, newMax = this.max, newBase = this.base;
 				Map<String,Object> set = (Map<String,Object>)options.get("set");
@@ -753,6 +755,7 @@ public class DoubleInput extends FillPane {
 			}
 			
 			private static final String SPLITDOUBLEVALIDATOR_CLASS_NAME = SplitDoubleValidator.class.getCanonicalName();
+			@Override
 			public DoubleValidator copy(int depth,Map<String,Object> options){
 				if(options==null){
 					options = new HashMap<String,Object>();
@@ -868,6 +871,7 @@ public class DoubleInput extends FillPane {
 			
 			private static final String HYPERBOLICSTEP_CLASS_NAME = HyperbolicStep.class.getCanonicalName();
 			private static final String BOUNDEDDOUBLEVALIDATOR_CLASS_NAME = BoundedDoubleValidator.class.getCanonicalName();
+			@Override
 			public DoubleValidator copy(int depth,Map<String,Object> options){
 				double newMin = this.min, newMax = this.max, newBase = this.base, newPbase = this.pbase;
 				Map<String,Object> set = (Map<String,Object>)options.get("set");
@@ -1060,6 +1064,7 @@ public class DoubleInput extends FillPane {
 			}
 			
 			private static final String LINEARMAP_CLASS_NAME = LinearMap.class.getCanonicalName();
+			@Override
 			public DoubleValidator copy(int depth,Map<String,Object> options){
 				DoubleValidator newView = this.view;
 				double newMul = this.mul, newAdd = this.add;

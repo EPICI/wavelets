@@ -2,6 +2,8 @@ package core;
 
 import java.io.Serializable;
 import java.util.*;
+
+import ui.PatternEditor;
 import util.math.*;
 import util.hash.*;
 
@@ -14,14 +16,14 @@ import util.hash.*;
  * @author EPICI
  * @version 1.0
  */
-public class Clip implements Serializable {
+public class Clip implements BetterClone<Clip>, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	/**
 	 * A rather safe default value used for extending the
 	 * properties list and fetching if the list is not long enough
 	 */
-	public static final double DEFAULT_VALUE = 1;
+	public static final double DEFAULT_VALUE = 0.5d;
 	
 	/**
 	 * Hash key for <i>hashCode()</i>
@@ -313,6 +315,55 @@ public class Clip implements Serializable {
 		return hash.squeezeInt();
 	}
 	
+	private static final String CLIP_CLASS_NAME = Clip.class.getCanonicalName();
+	@Override
+	public Clip copy(int depth,Map<String,Object> options){
+		int newDelay = delay,
+				newLength = length,
+				newPitch = pitch;
+		double newVolume = volume;
+		// avoid redundant copy, so set null for now
+		ArrayList<Double> newProperties = null;
+		Map<String,Object> set = (Map<String,Object>)options.get("set");
+		if(set!=null){
+			Number val;
+			val = (Number) set.get(CLIP_CLASS_NAME+".delay");
+			if(val!=null)newDelay = val.intValue();
+			val = (Number) set.get(CLIP_CLASS_NAME+".length");
+			if(val!=null)newLength = val.intValue();
+			val = (Number) set.get(CLIP_CLASS_NAME+".pitch");
+			if(val!=null)newPitch = val.intValue();
+			val = (Number) set.get(CLIP_CLASS_NAME+".volume");
+			if(val!=null)newVolume = val.doubleValue();
+			// any iterable is allowed, valid values override old ones
+			Iterable<?> lval = (Iterable<?>) set.get(CLIP_CLASS_NAME+".properties");
+			if(lval!=null){
+				// make copy
+				newProperties = new ArrayList<>(properties);
+				int size = newProperties.size();
+				Iterator<?> iter = lval.iterator();
+				// exhaust as many items as possible which don't need extending the list
+				for(int i=0;i<size && iter.hasNext();i++){
+					Object value = iter.next();
+					if(value!=null && (value instanceof Number)){
+						newProperties.set(i, ((Number)value).doubleValue());
+					}
+				}
+				// do remaining items, if any
+				while(iter.hasNext()){
+					Object value = iter.next();
+					if(value!=null && (value instanceof Number)){
+						newProperties.add(((Number)value).doubleValue());
+					}
+				}
+			}
+		}
+		Clip result = new Clip(newDelay,newLength,newPitch,newVolume);
+		// if null, then no changes, so use original
+		result.properties.addAll(newProperties==null?properties:newProperties);
+		return result;
+	}
+	
 	/**
 	 * A clip template which defines additional properties
 	 * 
@@ -338,6 +389,13 @@ public class Clip implements Serializable {
 			properties = new ArrayList<>();
 		}
 		
+		/*
+		 * delaying implementation of copy methods for now
+		 * since template is a named object and it needs to be given
+		 * a different name, renaming is specified by NamedMap
+		 * and needs knowledge of session
+		 */
+		
 		@Override
 		public String getName(){
 			if(name==null || name.length()==0)return Track.defaultNameAny("Template", this);
@@ -360,7 +418,7 @@ public class Clip implements Serializable {
 		 * @author EPICI
 		 * @version 1.0
 		 */
-		public static class Property implements Serializable {
+		public static class Property implements BetterClone<Property>, Serializable {
 			private static final long serialVersionUID = 1L;
 			
 			/**
@@ -394,12 +452,88 @@ public class Clip implements Serializable {
 			 * Blank constructor, uses default values
 			 */
 			public Property(){
-				name = "";
-				min = -Double.MAX_VALUE;
-				base = DEFAULT_VALUE;
-				max = Double.MAX_VALUE;
-				step = "Add";
-				update = "Add difference";
+				this(
+						"",
+						-Double.MAX_VALUE,
+						DEFAULT_VALUE,
+						Double.MAX_VALUE,
+						PatternEditor.LinkedEditorPane.STEP_MODE_NAME_LINEAR,
+						PatternEditor.LinkedEditorPane.UPDATE_MODE_NAME_DIFFERENCE_ADD
+						);
+			}
+			
+			/**
+			 * Constructor providing all values. Unchecked.
+			 * 
+			 * @param name
+			 * @param min
+			 * @param base
+			 * @param max
+			 * @param step
+			 * @param update
+			 */
+			public Property(String name,double min,double base,double max,String step,String update){
+				this.name = name;
+				this.min = min;
+				this.base = base;
+				this.max = max;
+				this.step = step;
+				this.update = update;
+			}
+			
+			/**
+			 * Copy the data of another property object.
+			 * 
+			 * @param source
+			 */
+			public void copyFrom(Property source){
+				name = source.name;
+				min = source.min;
+				base = source.base;
+				max = source.max;
+				step = source.step;
+				update = source.update;
+			}
+			
+			/**
+			 * Make a property with the same data as this instance.
+			 * 
+			 * @return copy
+			 */
+			public Property copy(){
+				Property result = new Property();
+				result.copyFrom(this);
+				return result;
+			}
+			
+			private static final String PROPERTY_CLASS_NAME = Property.class.getCanonicalName();
+			@Override
+			public Property copy(int depth,Map<String,Object> options){
+				double newMin = min,
+						newBase = base,
+						newMax = max;
+				String newName = name,
+						newStep = step,
+						newUpdate = update;
+				Map<String,Object> set = (Map<String,Object>)options.get("set");
+				if(set!=null){
+					Number val;
+					val = (Number) set.get(PROPERTY_CLASS_NAME+".min");
+					if(val!=null)newMin = val.doubleValue();
+					val = (Number) set.get(PROPERTY_CLASS_NAME+".base");
+					if(val!=null)newBase = val.doubleValue();
+					val = (Number) set.get(PROPERTY_CLASS_NAME+".max");
+					if(val!=null)newMax = val.doubleValue();
+					CharSequence sval;
+					sval = (CharSequence) set.get(PROPERTY_CLASS_NAME+".name");
+					if(sval!=null)newName = sval.toString();
+					sval = (CharSequence) set.get(PROPERTY_CLASS_NAME+".step");
+					if(sval!=null)newStep = sval.toString();
+					sval = (CharSequence) set.get(PROPERTY_CLASS_NAME+".update");
+					if(sval!=null)newUpdate = sval.toString();
+				}
+				Property result = new Property(newName,newMin,newBase,newMax,newStep,newUpdate);
+				return result;
 			}
 		}
 		
