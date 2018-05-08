@@ -316,6 +316,15 @@ public class Clip implements BetterClone<Clip>, Serializable {
 	}
 	
 	private static final String CLIP_CLASS_NAME = Clip.class.getCanonicalName();
+	/**
+	 * Implements {@link BetterClone#copy(int, Map)}.
+	 * <br>
+	 * Special behaviour is implemented for modifying the properties list.
+	 * Any iterable will be accepted, and non-null {@link Number} instances
+	 * will override existing values, everything else will be kept.
+	 * Specifying &quot;properties.size&quot; will limit the properties list to at
+	 * most that long.
+	 */
 	@Override
 	public Clip copy(int depth,Map<String,Object> options){
 		int newDelay = delay,
@@ -343,7 +352,8 @@ public class Clip implements BetterClone<Clip>, Serializable {
 				int size = newProperties.size();
 				Iterator<?> iter = lval.iterator();
 				// exhaust as many items as possible which don't need extending the list
-				for(int i=0;i<size && iter.hasNext();i++){
+				int i;
+				for(i=0;i<size && iter.hasNext();i++){
 					Object value = iter.next();
 					if(value!=null && (value instanceof Number)){
 						newProperties.set(i, ((Number)value).doubleValue());
@@ -354,6 +364,15 @@ public class Clip implements BetterClone<Clip>, Serializable {
 					Object value = iter.next();
 					if(value!=null && (value instanceof Number)){
 						newProperties.add(((Number)value).doubleValue());
+					}
+				}
+				// need to limit length?
+				int j;
+				if(i<size 
+						&& (val = (Number) set.get(CLIP_CLASS_NAME+".properties.size"))!=null
+						&& (j = val.intValue())<i){
+					for(size--;size>=j;size--){
+						newProperties.remove(size);
 					}
 				}
 			}
@@ -370,7 +389,7 @@ public class Clip implements BetterClone<Clip>, Serializable {
 	 * @author EPICI
 	 * @version 1.0
 	 */
-	public static class Template implements Named, Serializable {
+	public static class Template implements BetterClone<Template>, Named, Serializable {
 		private static final long serialVersionUID = 1L;
 		
 		/**
@@ -389,12 +408,75 @@ public class Clip implements BetterClone<Clip>, Serializable {
 			properties = new ArrayList<>();
 		}
 		
-		/*
-		 * delaying implementation of copy methods for now
-		 * since template is a named object and it needs to be given
-		 * a different name, renaming is specified by NamedMap
-		 * and needs knowledge of session
+		private static final String TEMPLATE_CLASS_NAME = Template.class.getCanonicalName();
+		/**
+		 * Implements {@link BetterClone#copy(int, Map)}.
+		 * <br>
+		 * Special behaviour is implemented for modifying the properties list.
+		 * Any iterable will be accepted, and non-null {@link Property} instances
+		 * will override existing values, everything else will be kept.
+		 * Specifying &quot;properties.size&quot; will limit the properties list to at
+		 * most that long.
 		 */
+		@Override
+		public Template copy(int depth,Map<String,Object> options){
+			int nextDepth = depth-1;
+			String newName = name;
+			// the list will be modified anyway
+			ArrayList<Property> newProperties = new ArrayList<>(properties);
+			Map<String,Object> set = (Map<String,Object>)options.get("set");
+			if(set!=null){
+				Number val;
+				CharSequence sval;
+				sval = (CharSequence) set.get(TEMPLATE_CLASS_NAME+".name");
+				if(sval!=null)newName = sval.toString();
+				// any iterable is allowed, valid values override old ones
+				Iterable<?> lval = (Iterable<?>) set.get(CLIP_CLASS_NAME+".properties");
+				if(lval!=null){
+					int size = newProperties.size();
+					Iterator<?> iter = lval.iterator();
+					// exhaust as many items as possible which don't need extending the list
+					int i;
+					for(i=0;i<size && iter.hasNext();i++){
+						Object value = iter.next();
+						if(value!=null && (value instanceof Property)){
+							newProperties.set(i, (Property)value);
+						}
+					}
+					// do remaining items, if any
+					while(iter.hasNext()){
+						Object value = iter.next();
+						if(value!=null && (value instanceof Property)){
+							newProperties.add((Property)value);
+						}
+					}
+					// need to limit length?
+					int j;
+					if(i<size 
+							&& (val = (Number) set.get(CLIP_CLASS_NAME+".properties.size"))!=null
+							&& (j = val.intValue())<i){
+						for(size--;size>=j;size--){
+							newProperties.remove(size);
+						}
+					}
+				}
+			}
+			// correct name
+			Session session = (Session) options.get("session");
+			newName = session.composition.clipTemplates.nextName(newName, -1, false, session);
+			// copy properties as needed
+			int size = newProperties.size();
+			for(int i=0;i<size;i++){
+				Property value = newProperties.get(i);
+				value = BetterClone.copy(value, nextDepth, options);
+				newProperties.set(i, value);
+			}
+			// make the copied object
+			Template result = new Template();
+			result.setName(newName);
+			result.properties.addAll(newProperties);
+			return result;
+		}
 		
 		@Override
 		public String getName(){
