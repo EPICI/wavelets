@@ -94,11 +94,8 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 					Object v = globalsStatic.get(k);
 					if(v instanceof BetterClone<?>){
 						BetterClone<?> bcv = ((BetterClone<?>) v);
-						HashMap<String,Object> copyOptions = new HashMap<>();
-						TreeSet<String> copyBlacklist = new TreeSet<>();
-						copyBlacklist.add("*Session");
-						copyBlacklist.add("*Composition");
-						copyOptions.put("blacklist", copyBlacklist);
+						Map<String,Object> copyOptions = BetterClone.fixOptions(null);
+						currentSession.setCopyOptions(copyOptions);
 						globalsDynamic.put(k, bcv.copy(Integer.MAX_VALUE, copyOptions));
 					}else{
 						globalsDynamic.put(k, v);

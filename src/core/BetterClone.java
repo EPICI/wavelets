@@ -1,6 +1,9 @@
 package core;
 
 import java.util.*;
+import org.apache.commons.lang3.ClassUtils;
+import org.apache.commons.collections4.iterators.IteratorChain;
+import org.apache.commons.collections4.trie.PatriciaTrie;
 
 /**
  * Cloneable doesn't work. It's just plain terrible.
@@ -37,7 +40,9 @@ public interface BetterClone<Self extends BetterClone<Self>> {
 	 * it should be copied regardless of whether the depth would allow it</li>
 	 * <li>&quot;set&quot; is a string-object map which says specific fields should
 	 * be changed in the copy; this is useful for modifying immutable objects</li>
+	 * <li>&quot;session&quot; is the current session</li>
 	 * </ul>
+	 * Class names should be retrieved by {@link Class#getCanonicalName()}
 	 * 
 	 * @param depth 0 for shallow, some other number for a depth limit
 	 * @param options if provided, contains additional named options
@@ -65,12 +70,14 @@ public interface BetterClone<Self extends BetterClone<Self>> {
 		Collection<String> blacklist = (Collection<String>)options.get("blacklist");
 		if(blacklist==null){
 			options.put("blacklist",
-					new TreeSet<>());
+					Collections.newSetFromMap(new PatriciaTrie<>())
+					);
 		}
 		Collection<String> whitelist = (Collection<String>)options.get("whitelist");
 		if(whitelist==null){
 			options.put("whitelist",
-					new TreeSet<>());
+					Collections.newSetFromMap(new PatriciaTrie<>())
+					);
 		}
 		Map<String,Object> set = (Map<String,Object>)options.get("set");
 		if(set==null){
@@ -90,11 +97,24 @@ public interface BetterClone<Self extends BetterClone<Self>> {
 	 * @return
 	 */
 	public static boolean fieldIncluded(Collection<String> collection,Class<?> oclass,String name){
+		// check for the name itself
 		if(name!=null && collection.contains(name))return true;
-		while(oclass!=null && oclass!=Object.class){
-			String check = "*"+oclass.getCanonicalName();
-			if(collection.contains(check))return true;
-			oclass = oclass.getSuperclass();
+		if(oclass!=null){
+			// implemented interfaces
+			List<Class<?>> interfaces = ClassUtils.getAllInterfaces(oclass);
+			// superclasses
+			List<Class<?>> superclasses = ClassUtils.getAllSuperclasses(oclass);
+			// join iterators
+			IteratorChain<Class<?>> iter = new IteratorChain<>(interfaces.iterator(),superclasses.iterator());
+			// convert to set for performance
+			HashSet<String> test = new HashSet<>();
+			while(iter.hasNext()){
+				Class<?> cls = iter.next();
+				String matchTo = "*"+cls.getCanonicalName();
+				test.add(matchTo);
+			}
+			// test for match
+			if(!Collections.disjoint(test, collection))return true;
 		}
 		return false;
 	}

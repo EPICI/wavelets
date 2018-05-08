@@ -2,6 +2,7 @@ package core;
 
 import java.awt.event.WindowEvent;
 import java.io.*;
+import java.util.*;
 import util.*;
 import util.ui.PivotSwingUtils;
 import javax.swing.*;
@@ -313,5 +314,26 @@ public class Session {
 	 */
 	public PrintStream getConsole(){
 		return console;
+	}
+	
+	private static final String SESSION_CLASS_NAME = Session.class.getCanonicalName();
+	private static final String PREFERENCES_CLASS_NAME = Preferences.class.getCanonicalName();
+	private static final String COMPOSITION_CLASS_NAME = Composition.class.getCanonicalName();
+	private static final String PLAYER_CLASS_NAME = Player.class.getCanonicalName();
+	/**
+	 * For an options map for {@link BetterClone#copy(int, Map)},
+	 * add some common options, including the current session.
+	 * 
+	 * @param options
+	 */
+	public void setCopyOptions(Map<String,Object> options){
+		// add current session
+		options.put("session", this);
+		// blacklist big classes
+		Collection<String> copyBlacklist = (Collection<String>) options.get("blacklist");
+		copyBlacklist.add("*"+SESSION_CLASS_NAME);
+		copyBlacklist.add("*"+PREFERENCES_CLASS_NAME);
+		copyBlacklist.add("*"+COMPOSITION_CLASS_NAME);
+		copyBlacklist.add("*"+PLAYER_CLASS_NAME);
 	}
 }
