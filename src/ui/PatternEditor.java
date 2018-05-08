@@ -430,7 +430,7 @@ public class PatternEditor extends Window implements Bindable {
 			templateRename.getButtonPressListeners().add(new TemplateRenameButtonListener(this));
 			templateRenameInput.getComponentKeyListeners().add(new TemplateRenameInputListener(this));
 			
-			// TODO template copy listener
+			templateCopy.getButtonPressListeners().add(new TemplateCopyButtonListener(this));
 			
 			// TODO template add new listener
 			
@@ -804,6 +804,56 @@ public class PatternEditor extends Window implements Bindable {
 			}
 			// don't eat the event
 			return false;
+		}
+		
+	}
+	
+	/**
+	 * Listens for pressing of the template copy button
+	 * and tries to duplicate the template when that happens
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static class TemplateCopyButtonListener implements ButtonPressListener{
+		
+		/**
+		 * Remember the parent, other data can be derived from here
+		 */
+		public LinkedEditorPane parent;
+		
+		/**
+		 * Standard constructor
+		 * 
+		 * @param parent
+		 */
+		public TemplateCopyButtonListener(LinkedEditorPane parent){
+			this.parent = parent;
+		}
+		
+		@Override
+		public void buttonPressed(org.apache.pivot.wtk.Button button){
+			// require a selection
+			String name = Objects.toString(parent.templateSelector.getSelectedItem(),"");
+			if(name.length()>0){
+				Clip.Template template=parent.parent.getComposition().clipTemplates.dualMap.get(name);
+				if(template!=null){
+					// it's in the map, so make the copy
+					Session session = parent.parent.session;
+					Composition composition = parent.parent.getComposition();
+					java.util.Map<String,Object> copyOptions = BetterClone.fixOptions(null);
+					session.setCopyOptions(copyOptions);
+					Clip.Template newTemplate = BetterClone.copy(template, 1, copyOptions);
+					// add it to the map
+					composition.clipTemplates.putNamed(newTemplate);
+					// select the new name
+					parent.updateTemplateList();
+					parent.templateSelector.setSelectedItem(newTemplate.getName());
+				}else{
+					// list clearly is outdated
+					parent.updateTemplateList();
+				}
+			}
 		}
 		
 	}
