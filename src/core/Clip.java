@@ -393,6 +393,11 @@ public class Clip implements BetterClone<Clip>, Serializable {
 		private static final long serialVersionUID = 1L;
 		
 		/**
+		 * Name prefix used for {@link util.ds.NamedMap}
+		 */
+		public static final String NAME_BASE = "Template";
+		
+		/**
 		 * List of properties
 		 */
 		public final ArrayList<Property> properties;
@@ -406,6 +411,25 @@ public class Clip implements BetterClone<Clip>, Serializable {
 		 */
 		public Template(){
 			properties = new ArrayList<>();
+		}
+		
+		/**
+		 * Create a template object according to default settings.
+		 * In the current implementation this will be named
+		 * like &quot;Template&quot; using
+		 * {@link util.ds.NamedMap#nextName(String, int, boolean, Session)}.
+		 * 
+		 * @param session
+		 * @return
+		 */
+		public static Template makeDefaultTemplate(Session session){
+			// create the object
+			Template result = new Template();
+			// add common properties (none so far)
+			// set name
+			result.setName(session.composition.clipTemplates.nextName(Template.NAME_BASE, 0, false, session));
+			// return
+			return result;
 		}
 		
 		private static final String TEMPLATE_CLASS_NAME = Template.class.getCanonicalName();

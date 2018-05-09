@@ -432,7 +432,7 @@ public class PatternEditor extends Window implements Bindable {
 			
 			templateCopy.getButtonPressListeners().add(new TemplateCopyButtonListener(this));
 			
-			// TODO template add new listener
+			templateNew.getButtonPressListeners().add(new TemplateNewButtonListener(this));
 			
 			// TODO template new parameter listener
 			
@@ -854,6 +854,45 @@ public class PatternEditor extends Window implements Bindable {
 					parent.updateTemplateList();
 				}
 			}
+		}
+		
+	}
+	
+	/**
+	 * Listens for pressing of the template add new button
+	 * and tries to add a new template when that happens
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static class TemplateNewButtonListener implements ButtonPressListener{
+		
+		/**
+		 * Remember the parent, other data can be derived from here
+		 */
+		public LinkedEditorPane parent;
+		
+		/**
+		 * Standard constructor
+		 * 
+		 * @param parent
+		 */
+		public TemplateNewButtonListener(LinkedEditorPane parent){
+			this.parent = parent;
+		}
+		
+		@Override
+		public void buttonPressed(org.apache.pivot.wtk.Button button){
+			// fetch needed data
+			Session session = parent.parent.session;
+			Composition composition = parent.parent.getComposition();
+			// make the new template
+			Clip.Template newTemplate = Clip.Template.makeDefaultTemplate(session);
+			// add it to the map
+			composition.clipTemplates.putNamed(newTemplate);
+			// select the new name
+			parent.updateTemplateList();
+			parent.templateSelector.setSelectedItem(newTemplate.getName());
 		}
 		
 	}
