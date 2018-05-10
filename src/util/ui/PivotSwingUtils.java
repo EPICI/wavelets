@@ -62,13 +62,10 @@ public class PivotSwingUtils {
 		try {
 			return (T) serializer.readObject(source,filename);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (SerializationException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (ClassCastException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return null;

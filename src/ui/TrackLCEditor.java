@@ -151,9 +151,8 @@ public class TrackLCEditor extends Window implements Bindable {
 			ArrayList<Track> tracks = view.tracks;
 			RowSequence rows = getRows();
 			if(tracks.size()!=0){
-				BXMLSerializer serializer = new BXMLSerializer();
 				for(Track track:view.tracks){
-					LinkedTableRow row = PivotSwingUtils.loadBxml(TrackLCEditor.class, "trackLCEditorTableRow.bxml", serializer);
+					LinkedTableRow row = PivotSwingUtils.loadBxml(TrackLCEditor.class, "trackLCEditorTableRow.bxml");
 					row.parent = this;
 					row.view = track;
 					row.init();
@@ -305,8 +304,7 @@ public class TrackLCEditor extends Window implements Bindable {
 		 * Inefficient for bulk add operations, so use only for singles
 		 */
 		public void addTrack(Track track){
-			BXMLSerializer serializer = new BXMLSerializer();
-			LinkedTableRow row = PivotSwingUtils.loadBxml(TrackLCEditor.class, "trackLCEditorTableRow.bxml", serializer);
+			LinkedTableRow row = PivotSwingUtils.loadBxml(TrackLCEditor.class, "trackLCEditorTableRow.bxml");
 			row.parent = this;
 			row.view = track;
 			row.init();

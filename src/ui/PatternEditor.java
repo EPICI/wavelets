@@ -68,11 +68,10 @@ public class PatternEditor extends Window implements Bindable {
 	}
 	
 	/**
-	 * The actual editor interface for the {@link Pattern}.
-	 * <br>
-	 * Note that it is only a {@link Container} so it can hold components.
-	 * None of the components are actually displayed, and would never need to
-	 * be displayed, since no part of the UI is a separate component.
+	 * The editor interface for an individual {@link core.Pattern}.
+	 * Uses several {@link TablePane} instances along with other components
+	 * to provide tools. The specialized editor component for managing the clips
+	 * is a {@link LinkedEditorInnerPane}.
 	 * 
 	 * @author EPICI
 	 * @version 1.0
@@ -442,6 +441,15 @@ public class PatternEditor extends Window implements Bindable {
 		}
 		
 		/**
+		 * Convenience method to create a new one from outside
+		 * 
+		 * @return
+		 */
+		public static LinkedEditorPane createNew(){
+			return PivotSwingUtils.loadBxml(LinkedEditorPane.class, "patternEditorPane.bxml");
+		}
+		
+		/**
 		 * Updates the template selector's list.
 		 * Causes the selection to be cleared due to the way
 		 * {@link ListButton} is implemented.
@@ -462,7 +470,10 @@ public class PatternEditor extends Window implements Bindable {
 		
 		/**
 		 * Set the current template to a given one,
-		 * and update the interface accordingly.
+		 * and update the interface accordingly,
+		 * except for the template selector (this is done to
+		 * avoid a loop, you should instead select the name
+		 * in the template selector and that will trigger this function).
 		 * If null, will fetch the required template.
 		 * Returns true on success, if returned false, then
 		 * no changes should happen.
@@ -480,7 +491,24 @@ public class PatternEditor extends Window implements Bindable {
 			}
 			// needs to be different
 			if(template==getTemplate())return false;
-			// TODO remake properties rows
+			// fetch data
+			ArrayList<Clip.Template.Property> properties = template.properties;
+			int nproperties = properties.size();
+			TablePane.RowSequence rows = clipTablePane.getRows();
+			// clear existing rows
+			rows.remove(
+					CLIP_TABLE_EXTRA_ROWS_TOP,
+					rows.getLength()-CLIP_TABLE_EXTRA_ROWS_TOP-CLIP_TABLE_EXTRA_ROWS_BOTTOM
+					);
+			// remake properties rows
+			for(int i=0;i<nproperties;i++){
+				Clip.Template.Property property = properties.get(i);
+				LinkedClipTableRow row = LinkedClipTableRow.createNew();
+				row.parent = this;
+				row.view = property;
+				row.init();
+				rows.insert(row, CLIP_TABLE_EXTRA_ROWS_TOP+i);
+			}
 			return true;
 		}
 		
@@ -1098,6 +1126,15 @@ public class PatternEditor extends Window implements Bindable {
 			// fix the mismatches
 			updateView(true);
 			updatePropertyInput(false,true,true,true,true);
+		}
+		
+		/**
+		 * Convenience method to create a new one from outside
+		 * 
+		 * @return
+		 */
+		public static LinkedClipTableRow createNew(){
+			return PivotSwingUtils.loadBxml(LinkedClipTableRow.class, "patternEditorClipTableRow.bxml");
 		}
 		
 		/**
@@ -1777,6 +1814,13 @@ public class PatternEditor extends Window implements Bindable {
 		
 	}
 	
+	/**
+	 * Main editor of the {@link core.Clip} instances for a {@link core.Pattern}.
+	 * Includes the traditional &quot;piano roll&quot; and a grid to place clips on.
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
 	public static class LinkedEditorInnerPane extends Component implements Bindable{
 		
 		/**
