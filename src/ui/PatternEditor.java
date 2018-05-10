@@ -559,7 +559,49 @@ public class PatternEditor extends Window implements Bindable {
 					rows.insert(row, CLIP_TABLE_EXTRA_ROWS_TOP+i);
 				}
 			}
+			// get rid of pending rename
+			renameToTextView(true,false);
 			return true;
+		}
+		
+		/**
+		 * Set the rename component to the text input to begin the rename operation,
+		 * or do the reverse, set it to the button to end the rename operation.
+		 * Confirming for forward means to set the text to match the current name,
+		 * which is usually desired. Confirming for reverse means to attempt the
+		 * rename operation.
+		 * 
+		 * @param reverse false to switch to text input, true to switch to button
+		 * @param confirm true to confirm changes, false to cancel
+		 */
+		public void renameToTextView(boolean reverse,boolean confirm){
+			TablePane.Row tr = clipTablePane.getRows().get(LinkedEditorPane.INDEX_TEMPLATE_RENAME);
+			Component swapTo;
+			if(reverse){
+				if(confirm){
+					// get old name and new name
+					String oldName = getTemplate().getName();
+					String newName = templateRenameInput.getText();
+					// attempt rename
+					String renamedTo = parent.getComposition().clipTemplates.rename(oldName, newName, parent.session);
+					if(renamedTo!=null){
+						// need to update list
+						updateTemplateList();
+						templateSelector.setSelectedItem(renamedTo);
+					}
+				}
+				// swap out for button
+				swapTo = templateRename;
+			}else{
+				if(confirm){
+					// set text to match
+					String name = Objects.toString(templateSelector.getSelectedItem(),"");
+					templateRenameInput.setText(name);
+				}
+				// swap out for text field
+				swapTo = templateRenameInput;
+			}
+			tr.update(1, swapTo);
 		}
 		
 		/**
@@ -805,11 +847,8 @@ public class PatternEditor extends Window implements Bindable {
 			// require a selection
 			Clip.Template template=parent.getTemplate();
 			if(template!=null){
-				String name = Objects.toString(parent.templateSelector.getSelectedItem(),"");
 				// it's in the map, so make the change
-				parent.templateRenameInput.setText(name);
-				TablePane.Row tr = parent.clipTablePane.getRows().get(LinkedEditorPane.INDEX_TEMPLATE_RENAME);
-				tr.update(1, parent.templateRenameInput);
+				parent.renameToTextView(false, true);
 			}else{
 				// list clearly is outdated
 				parent.updateTemplateList();
@@ -854,25 +893,11 @@ public class PatternEditor extends Window implements Bindable {
 		public boolean keyReleased(Component component, int keyCode, Keyboard.KeyLocation keyLocation){
 			switch(keyCode){
 			case KeyEvent.VK_ENTER:{// confirm
-				// get old name and new name
-				String oldName = parent.getTemplate().getName();
-				String newName = parent.templateRenameInput.getText();
-				// attempt rename
-				String renamedTo = parent.parent.getComposition().clipTemplates.rename(oldName, newName, parent.parent.session);
-				if(renamedTo!=null){
-					// need to update list
-					parent.updateTemplateList();
-					parent.templateSelector.setSelectedItem(renamedTo);
-				}
-				// swap out for button
-				TablePane.Row tr = parent.clipTablePane.getRows().get(LinkedEditorPane.INDEX_TEMPLATE_RENAME);
-				tr.update(1, parent.templateRename);
+				parent.renameToTextView(true, true);
 				break;
 			}
 			case KeyEvent.VK_ESCAPE:{// cancel
-				// swap out for button
-				TablePane.Row tr = parent.clipTablePane.getRows().get(LinkedEditorPane.INDEX_TEMPLATE_RENAME);
-				tr.update(1, parent.templateRename);
+				parent.renameToTextView(true, false);
 				break;
 			}
 			}
