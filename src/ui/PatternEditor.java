@@ -18,6 +18,7 @@ import org.apache.pivot.beans.*;
 import org.apache.pivot.collections.Map;
 import org.apache.pivot.util.ListenerList;
 import org.apache.pivot.util.Resources;
+import org.apache.pivot.util.Vote;
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.content.ButtonData;
 import org.apache.pivot.wtk.skin.*;
@@ -55,7 +56,7 @@ public class PatternEditor extends Window implements Bindable {
 	 * Initialize, called after setting fields
 	 */
 	public void init(){
-		// TODO force refresh when changing tabs
+		tabPane.getTabPaneSelectionListeners().add(new TabSwitchListener(this));
 	}
 	
 	/**
@@ -65,6 +66,54 @@ public class PatternEditor extends Window implements Bindable {
 	 */
 	public Composition getComposition(){
 		return session.composition;
+	}
+	
+	/**
+	 * Listens for switching to a different tab and updates the interface
+	 * accordingly when that happens
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static class TabSwitchListener implements TabPaneSelectionListener{
+		
+		/**
+		 * Remember the parent, other data can be derived from here
+		 */
+		public PatternEditor parent;
+		
+		/**
+		 * Standard constructor
+		 * 
+		 * @param parent
+		 */
+		public TabSwitchListener(PatternEditor parent){
+			this.parent = parent;
+		}
+		
+		@Override
+		public Vote previewSelectedIndexChange(TabPane tabPane, int selectedIndex){
+			// approve means nothing changes, so it's the default action
+			return Vote.APPROVE;
+		}
+		
+		@Override
+		public void selectedIndexChangeVetoed(TabPane tabPane, Vote reason){
+			// didn't switch tabs, so do nothing
+		}
+		
+		@Override
+		public void selectedIndexChanged(TabPane tabPane, int previousSelectedIndex){
+			// get the current tab
+			int currentSelectedIndex = tabPane.getSelectedIndex();
+			TabPane.TabSequence tabs = tabPane.getTabs();
+			LinkedEditorPane editor = (LinkedEditorPane) tabs.get(currentSelectedIndex);
+			// update clip template
+			String selectedTemplateName = Objects.toString(editor.templateSelector.getSelectedItem(),"");
+			editor.updateTemplateList();
+			editor.templateSelector.setSelectedItem(selectedTemplateName);
+		}
+		
 	}
 	
 	/**
@@ -456,6 +505,7 @@ public class PatternEditor extends Window implements Bindable {
 		 */
 		public void updateTemplateList(){
 			// get the original names
+			// this may need to be updated in the future to match getTemplate()
 			Set<String> source = parent.getComposition().clipTemplates.forwardMap.keySet();
 			// make the new list
 			org.apache.pivot.collections.ArrayList<String> list =
@@ -474,7 +524,8 @@ public class PatternEditor extends Window implements Bindable {
 		 * except for the template selector (this is done to
 		 * avoid a loop, you should instead select the name
 		 * in the template selector and that will trigger this function).
-		 * If null, will fetch the required template.
+		 * If given null, sets the interface to use no template,
+		 * or in other words, clears it.
 		 * Returns true on success, if returned false, then
 		 * no changes should happen.
 		 * 
@@ -482,32 +533,31 @@ public class PatternEditor extends Window implements Bindable {
 		 * @return
 		 */
 		public boolean updateTemplate(Clip.Template template){
-			if(template==null){
-				// null fix
-				String name = Objects.toString(templateSelector.getSelectedItem(),"");
-				if(name.length()==0)return false;
-				template=parent.getComposition().clipTemplates.dualMap.get(name);
-				if(template==null)return false;
-			}
 			// needs to be different
 			if(template==getTemplate())return false;
 			// fetch data
-			ArrayList<Clip.Template.Property> properties = template.properties;
-			int nproperties = properties.size();
 			TablePane.RowSequence rows = clipTablePane.getRows();
+			ArrayList<Clip.Template.Property> properties = null;
+			int nproperties = 0;
+			if(template!=null){
+				properties = template.properties;
+				nproperties = properties.size();
+			}
 			// clear existing rows
 			rows.remove(
 					CLIP_TABLE_EXTRA_ROWS_TOP,
 					rows.getLength()-CLIP_TABLE_EXTRA_ROWS_TOP-CLIP_TABLE_EXTRA_ROWS_BOTTOM
 					);
-			// remake properties rows
-			for(int i=0;i<nproperties;i++){
-				Clip.Template.Property property = properties.get(i);
-				LinkedClipTableRow row = LinkedClipTableRow.createNew();
-				row.parent = this;
-				row.view = property;
-				row.init();
-				rows.insert(row, CLIP_TABLE_EXTRA_ROWS_TOP+i);
+			if(template!=null){
+				// remake properties rows
+				for(int i=0;i<nproperties;i++){
+					Clip.Template.Property property = properties.get(i);
+					LinkedClipTableRow row = LinkedClipTableRow.createNew();
+					row.parent = this;
+					row.view = property;
+					row.init();
+					rows.insert(row, CLIP_TABLE_EXTRA_ROWS_TOP+i);
+				}
 			}
 			return true;
 		}
@@ -717,17 +767,12 @@ public class PatternEditor extends Window implements Bindable {
 		@Override
 		public void selectedItemChanged(ListButton listButton, Object previousSelectedItem){
 			// may need to remake interface
-			String name = Objects.toString(parent.templateSelector.getSelectedItem(),"");
-			if(name.length()>0){
-				Clip.Template template=parent.parent.getComposition().clipTemplates.dualMap.get(name);
-				if(template!=null){
-					// it's in the map, so make the change
-					parent.updateTemplate(template);
-				}else{
-					// list clearly is outdated
-					parent.updateTemplateList();
-				}
+			Clip.Template template=parent.getTemplate();
+			if(template==null){
+				// list clearly is outdated
+				parent.updateTemplateList();
 			}
+			parent.updateTemplate(template);
 		}
 		
 	}
@@ -758,18 +803,16 @@ public class PatternEditor extends Window implements Bindable {
 		@Override
 		public void buttonPressed(org.apache.pivot.wtk.Button button){
 			// require a selection
-			String name = Objects.toString(parent.templateSelector.getSelectedItem(),"");
-			if(name.length()>0){
-				Clip.Template template=parent.parent.getComposition().clipTemplates.dualMap.get(name);
-				if(template!=null){
-					// it's in the map, so make the change
-					parent.templateRenameInput.setText(name);
-					TablePane.Row tr = parent.clipTablePane.getRows().get(LinkedEditorPane.INDEX_TEMPLATE_RENAME);
-					tr.update(1, parent.templateRenameInput);
-				}else{
-					// list clearly is outdated
-					parent.updateTemplateList();
-				}
+			Clip.Template template=parent.getTemplate();
+			if(template!=null){
+				String name = Objects.toString(parent.templateSelector.getSelectedItem(),"");
+				// it's in the map, so make the change
+				parent.templateRenameInput.setText(name);
+				TablePane.Row tr = parent.clipTablePane.getRows().get(LinkedEditorPane.INDEX_TEMPLATE_RENAME);
+				tr.update(1, parent.templateRenameInput);
+			}else{
+				// list clearly is outdated
+				parent.updateTemplateList();
 			}
 		}
 		
@@ -865,25 +908,22 @@ public class PatternEditor extends Window implements Bindable {
 		@Override
 		public void buttonPressed(org.apache.pivot.wtk.Button button){
 			// require a selection
-			String name = Objects.toString(parent.templateSelector.getSelectedItem(),"");
-			if(name.length()>0){
-				Clip.Template template=parent.parent.getComposition().clipTemplates.dualMap.get(name);
-				if(template!=null){
-					// it's in the map, so make the copy
-					Session session = parent.parent.session;
-					Composition composition = parent.parent.getComposition();
-					java.util.Map<String,Object> copyOptions = BetterClone.fixOptions(null);
-					session.setCopyOptions(copyOptions);
-					Clip.Template newTemplate = BetterClone.copy(template, 1, copyOptions);
-					// add it to the map
-					composition.clipTemplates.putNamed(newTemplate);
-					// select the new name
-					parent.updateTemplateList();
-					parent.templateSelector.setSelectedItem(newTemplate.getName());
-				}else{
-					// list clearly is outdated
-					parent.updateTemplateList();
-				}
+			Clip.Template template=parent.getTemplate();
+			if(template!=null){
+				// it's in the map, so make the copy
+				Session session = parent.parent.session;
+				Composition composition = parent.parent.getComposition();
+				java.util.Map<String,Object> copyOptions = BetterClone.fixOptions(null);
+				session.setCopyOptions(copyOptions);
+				Clip.Template newTemplate = BetterClone.copy(template, 1, copyOptions);
+				// add it to the map
+				composition.clipTemplates.putNamed(newTemplate);
+				// select the new name
+				parent.updateTemplateList();
+				parent.templateSelector.setSelectedItem(newTemplate.getName());
+			}else{
+				// list clearly is outdated
+				parent.updateTemplateList();
 			}
 		}
 		
