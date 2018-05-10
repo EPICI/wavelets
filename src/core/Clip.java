@@ -5,6 +5,7 @@ import java.util.*;
 
 import ui.PatternEditor;
 import util.math.*;
+import util.ds.NamedMap;
 import util.hash.*;
 
 /**
@@ -18,7 +19,7 @@ import util.hash.*;
  */
 public class Clip implements BetterClone<Clip>, Serializable {
 	private static final long serialVersionUID = 1L;
-
+	
 	/**
 	 * A rather safe default value used for extending the
 	 * properties list and fetching if the list is not long enough
@@ -393,11 +394,6 @@ public class Clip implements BetterClone<Clip>, Serializable {
 		private static final long serialVersionUID = 1L;
 		
 		/**
-		 * Name prefix used for {@link util.ds.NamedMap}
-		 */
-		public static final String NAME_BASE = "Template";
-		
-		/**
 		 * List of properties
 		 */
 		public final ArrayList<Property> properties;
@@ -427,7 +423,10 @@ public class Clip implements BetterClone<Clip>, Serializable {
 			Template result = new Template();
 			// add common properties (none so far)
 			// set name
-			result.setName(session.composition.clipTemplates.nextName(Template.NAME_BASE, 0, false, session));
+			result.setName(
+					session.composition.clipTemplates.nextName(
+							session.getCommonName(Template.class),
+							0, false, session));
 			// return
 			return result;
 		}

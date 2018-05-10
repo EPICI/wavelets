@@ -104,6 +104,13 @@ public class Session {
 	public double timeCursorEnd;
 	
 	/**
+	 * Common names of classes which the user can access.
+	 * Removing existing values may break code which assumes it,
+	 * so only add names for your own classes.
+	 */
+	public Map<Class<?>,String> commonNames;
+	
+	/**
 	 * Default constructor, try to find preferences on its own
 	 */
 	public Session(){
@@ -124,6 +131,7 @@ public class Session {
 		theme.set(TrackLSEditor.LinkedEditorPane.class, TrackLSEditor.LinkedEditorPaneSkin.class);
 		theme.set(PatternEditor.LinkedEditorInnerPane.class, PatternEditor.LinkedEditorInnerPaneSkin.class);
 		theme.set(DoubleInput.DoubleSlider.class, DoubleInput.DoubleSliderSkin.class);
+		// create core UI
 		windowManager = PivotSwingUtils.loadBxml(WindowManager.class, "windowManager.bxml");
 		windowManager.session = this;
 		windowManagerFrame = PivotSwingUtils.wrapPivotWindow(windowManager);
@@ -173,8 +181,18 @@ public class Session {
 		});
 		mainFrame.setResizable(true);
 		mainFrame.setVisible(true);
+		// make the audio player
 		player = new PlayerDoubleBuffer(bufferSize);
 		player.session = this;
+		// make the common names map
+		commonNames = new IdentityHashMap<>();
+		commonNames.put(Composition.class, "Project");
+		commonNames.put(Track.class, "Track");
+		commonNames.put(TrackLayerSimple.class, "Pattern Track");
+		commonNames.put(TrackLayerCompound.class, "Layered Track");
+		commonNames.put(Clip.Template.class, "Clip Template");
+		commonNames.put(Curve.class, "2D Curve");
+		commonNames.put(Pattern.class, "Pattern");
 	}
 	
 	/**
@@ -336,4 +354,20 @@ public class Session {
 		copyBlacklist.add("*"+COMPOSITION_CLASS_NAME);
 		copyBlacklist.add("*"+PLAYER_CLASS_NAME);
 	}
+	
+	/**
+	 * Get the human-readable common name for a class.
+	 * Currently does not use localization.
+	 * 
+	 * @param cls
+	 * @return
+	 */
+	public String getCommonName(Class<?> cls){
+		// if it's in the map, return that
+		String name = commonNames.get(cls);
+		if(name!=null)return name;
+		// give up
+		return cls.getSimpleName();
+	}
+	
 }
