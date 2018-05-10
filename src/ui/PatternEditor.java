@@ -12,6 +12,8 @@ import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.net.URL;
 import java.util.*;
+
+import org.apache.commons.lang3.StringUtils;
 import org.apache.pivot.beans.*;
 import org.apache.pivot.collections.Map;
 import org.apache.pivot.util.ListenerList;
@@ -434,7 +436,7 @@ public class PatternEditor extends Window implements Bindable {
 			
 			templateNew.getButtonPressListeners().add(new TemplateNewButtonListener(this));
 			
-			// TODO template new parameter listener
+			templateParamNew.getButtonPressListeners().add(new TemplateParamNewButtonListener(this));
 			
 			tabName.setText(view.getName());
 		}
@@ -478,6 +480,7 @@ public class PatternEditor extends Window implements Bindable {
 			}
 			// needs to be different
 			if(template==getTemplate())return false;
+			// TODO remake properties rows
 			return true;
 		}
 		
@@ -893,6 +896,44 @@ public class PatternEditor extends Window implements Bindable {
 			// select the new name
 			parent.updateTemplateList();
 			parent.templateSelector.setSelectedItem(newTemplate.getName());
+		}
+		
+	}
+	
+	/**
+	 * Listens for pressing of the template add new parameter button
+	 * and tries to add a new template parameter when that happens
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static class TemplateParamNewButtonListener implements ButtonPressListener{
+		
+		/**
+		 * Remember the parent, other data can be derived from here
+		 */
+		public LinkedEditorPane parent;
+		
+		/**
+		 * Standard constructor
+		 * 
+		 * @param parent
+		 */
+		public TemplateParamNewButtonListener(LinkedEditorPane parent){
+			this.parent = parent;
+		}
+		
+		@Override
+		public void buttonPressed(org.apache.pivot.wtk.Button button){
+			// fetch needed data
+			Clip.Template template = parent.getTemplate();
+			// make the new parameter
+			Clip.Template.Property property = new Clip.Template.Property();
+			property.name = "Property "+(template.properties.size()+1);
+			// add it to the list
+			template.properties.add(property);
+			// remake interface
+			parent.updateTemplate(template);
 		}
 		
 	}
