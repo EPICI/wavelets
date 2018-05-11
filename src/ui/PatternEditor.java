@@ -12,14 +12,12 @@ import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.net.URL;
 import java.util.*;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.pivot.beans.*;
 import org.apache.pivot.collections.Map;
 import org.apache.pivot.util.ListenerList;
 import org.apache.pivot.util.Resources;
 import org.apache.pivot.util.Vote;
-import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.content.ButtonData;
 import org.apache.pivot.wtk.skin.*;
 import org.apache.pivot.wtk.skin.terra.TerraTheme;
@@ -66,6 +64,41 @@ public class PatternEditor extends Window implements Bindable {
 	 */
 	public Composition getComposition(){
 		return session.composition;
+	}
+	
+	/**
+	 * Add UI for a {@link Pattern} if it isn't already present.
+	 * 
+	 * @param pattern the pattern to add the UI for
+	 */
+	public void addPattern(Pattern pattern){
+		TabPane.TabSequence tabs = tabPane.getTabs();
+		for(Component component:tabs){
+			if(component instanceof LinkedEditorPane){
+				LinkedEditorPane ltp = (LinkedEditorPane) component;
+				if(ltp.view==pattern)return;
+			}
+		}
+		addNewPattern(pattern);
+	}
+	
+	/**
+	 * For internal use: add an instance of the UI for a pattern even
+	 * if it's already present.
+	 * 
+	 * @param pattern the pattern to add the UI for
+	 */
+	private void addNewPattern(Pattern pattern){
+		try{
+			TabPane.TabSequence tabs = tabPane.getTabs();
+			LinkedEditorPane linked = LinkedEditorPane.createNew();
+			linked.parent = this;
+			linked.view = pattern;
+			linked.init();
+			tabs.add(linked);
+		}catch(NullPointerException exception){
+			exception.printStackTrace();
+		}
 	}
 	
 	/**

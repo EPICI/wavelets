@@ -19,7 +19,6 @@ import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.content.ButtonData;
 import org.apache.pivot.wtk.skin.*;
 import org.apache.pivot.wtk.skin.terra.TerraTheme;
-
 import util.Bits;
 import util.ui.*;
 
@@ -100,10 +99,16 @@ public class TrackLSEditor extends Window implements Bindable {
 		addNewTLS(track);
 	}
 	
+	/**
+	 * For internal use: add an instance of the UI for a track even
+	 * if it's already present.
+	 * 
+	 * @param track the track to add the UI for
+	 */
 	private void addNewTLS(TrackLayerSimple track){
 		try{
 			TabPane.TabSequence tabs = tabPane.getTabs();
-			LinkedEditorPane linked = PivotSwingUtils.loadBxml(LinkedEditorPane.class, "trackLSEditorPane.bxml");
+			LinkedEditorPane linked = LinkedEditorPane.createNew();
 			linked.parent = this;
 			linked.view = track;
 			linked.init();
@@ -150,6 +155,15 @@ public class TrackLSEditor extends Window implements Bindable {
 		 */
 		public void init(){
 			tabName.setText(view.getName());
+		}
+		
+		/**
+		 * Convenience method to create a new one from outside
+		 * 
+		 * @return
+		 */
+		public static LinkedEditorPane createNew(){
+			return PivotSwingUtils.loadBxml(LinkedEditorPane.class, "trackLSEditorPane.bxml");
 		}
 		
 	}
