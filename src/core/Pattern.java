@@ -76,6 +76,30 @@ public class Pattern implements Destructable, TransientContainer<Composition>, N
 	}
 	
 	/**
+	 * Create a pattern object according to default settings.
+	 * In the current implementation this will be named
+	 * like &quot;Pattern&quot; using
+	 * {@link util.ds.NamedMap#nextName(String, int, boolean, Session)}.
+	 * 
+	 * @param session
+	 * @return
+	 */
+	public static Pattern makeDefaultTemplate(Session session){
+		// create the object
+		Pattern result = new Pattern(
+				8,
+				null,// TODO fetch (and possibly make) default synth
+				session.composition);
+		// set name
+		result.setName(
+				session.composition.clipTemplates.nextName(
+						session.getCommonName(Pattern.class),
+						0, false, session));
+		// return
+		return result;
+	}
+	
+	/**
 	 * Method to update the divisions and propagate necessary changes
 	 * <br>
 	 * Except for internal use, this is the
@@ -263,6 +287,7 @@ public class Pattern implements Destructable, TransientContainer<Composition>, N
 		}
 		// make the copied object
 		Pattern result = new Pattern(newDivisions,newSynthName,composition);
+		result.setName(newName);
 		result.clips.addAll(newClips);
 		return result;
 	}
