@@ -317,15 +317,6 @@ public class Clip implements BetterClone<Clip>, Serializable {
 	}
 	
 	private static final String CLIP_CLASS_NAME = Clip.class.getCanonicalName();
-	/**
-	 * Implements {@link BetterClone#copy(int, Map)}.
-	 * <br>
-	 * Special behaviour is implemented for modifying the properties list.
-	 * Any iterable will be accepted, and non-null {@link Number} instances
-	 * will override existing values, everything else will be kept.
-	 * Specifying &quot;properties.size&quot; will limit the properties list to at
-	 * most that long.
-	 */
 	@Override
 	public Clip copy(int depth,Map<String,Object> options){
 		int newDelay = delay,
@@ -432,15 +423,6 @@ public class Clip implements BetterClone<Clip>, Serializable {
 		}
 		
 		private static final String TEMPLATE_CLASS_NAME = Template.class.getCanonicalName();
-		/**
-		 * Implements {@link BetterClone#copy(int, Map)}.
-		 * <br>
-		 * Special behaviour is implemented for modifying the properties list.
-		 * Any iterable will be accepted, and non-null {@link Property} instances
-		 * will override existing values, everything else will be kept.
-		 * Specifying &quot;properties.size&quot; will limit the properties list to at
-		 * most that long.
-		 */
 		@Override
 		public Template copy(int depth,Map<String,Object> options){
 			int nextDepth = depth-1;

@@ -61,6 +61,10 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 	 */
 	public transient NamedMap<Synthesizer> synths;
 	/**
+	 * All patterns by name.
+	 */
+	public NamedMap<Pattern> patterns;
+	/**
 	 * Current session
 	 */
 	public transient Session currentSession;
@@ -80,6 +84,7 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 		tracks = new TrackLayerCompound(this);
 		clipTemplates = new NamedMap<>();
 		synthSpecs = new NamedMap<>();
+		patterns = new NamedMap<>();
 		initTransient(currentSession);
 	}
 
@@ -183,6 +188,10 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 		for(Map.Entry<String, Synthesizer.Specification> entry:synthSpecs.dualMap.entrySet()){
 			synths.dualMap.put(entry.getKey(), entry.getValue().resolve(currentSession));
 		}
+		for(Pattern pattern:patterns.dualMap.values()){
+			pattern.initTransient(this);
+		}
+		tracks.initTransient(this);
 	}
 
 }

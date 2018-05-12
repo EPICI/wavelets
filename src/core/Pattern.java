@@ -1,6 +1,6 @@
 package core;
 
-import java.util.ArrayList;
+import java.util.*;
 import org.python.core.*;
 import util.jython.*;
 
@@ -10,7 +10,7 @@ import util.jython.*;
  * @author EPICI
  * @version 1.0
  */
-public class Pattern implements Destructable,TransientContainer<Composition> {
+public class Pattern implements Destructable, TransientContainer<Composition>, Named, BetterClone<Pattern> {
 	private static final long serialVersionUID = 1L;
 	
 	/**
@@ -51,7 +51,8 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	protected transient Factory<Voice> voiceFactory;
 	
 	/**
-	 * The name of this instance, made public for easy access
+	 * The name of this instance.
+	 * Please use the getter and setter instead.
 	 */
 	public String name;
 	
@@ -63,13 +64,11 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	/**
 	 * Standard constructor where everything is specified
 	 * 
-	 * @param length length in measures
 	 * @param divisions number of steps per measure
 	 * @param synthName synthesizer name
 	 * @param composition parent
 	 */
-	public Pattern(int length,int divisions,String synthName,Composition composition){
-		this.length = length;
+	public Pattern(int divisions,String synthName,Composition composition){
 		this.divisions = divisions;
 		this.synthName = synthName;
 		clips = new ArrayList<>();
@@ -109,8 +108,6 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 		length += 1;
 	}
 	
-	//TODO everything
-	
 	/**
 	 * Get the name of this instance. Will never return null.
 	 * 
@@ -149,7 +146,7 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	@Override
 	public void initTransient(Composition parent) {
 		remakeLength();
-		//TODO load synthesizer
+		synthesizer = parent.synths.dualMap.get(synthName);
 		setDefaultVoiceFactory();
 	}
 	
@@ -195,6 +192,79 @@ public class Pattern implements Destructable,TransientContainer<Composition> {
 	 */
 	public Synthesizer getSynthesizer(){
 		return synthesizer;
+	}
+
+	@Override
+	public boolean setName(String newName) {
+		name = newName;
+		return true;
+	}
+	
+	private static final String PATTERN_CLASS_NAME = Pattern.class.getCanonicalName();
+	@Override
+	public Pattern copy(int depth, Map<String,Object> options){
+		int nextDepth = depth-1;
+		int newDivisions = divisions;
+		String newName = name;
+		String newSynthName = synthName;
+		// the list will be modified anyway
+		ArrayList<Clip> newClips = new ArrayList<>(clips);
+		Map<String,Object> set = (Map<String,Object>)options.get("set");
+		if(set!=null){
+			Number val;
+			CharSequence sval;
+			val = (Number) set.get(PATTERN_CLASS_NAME+".divisions");
+			if(val!=null)divisions = val.intValue();
+			sval = (CharSequence) set.get(PATTERN_CLASS_NAME+".name");
+			if(sval!=null)newName = sval.toString();
+			sval = (CharSequence) set.get(PATTERN_CLASS_NAME+".synthName");
+			if(sval!=null)newSynthName = sval.toString();
+			// any iterable is allowed, valid values override old ones
+			Iterable<?> lval = (Iterable<?>) set.get(PATTERN_CLASS_NAME+".clips");
+			if(lval!=null){
+				int size = newClips.size();
+				Iterator<?> iter = lval.iterator();
+				// exhaust as many items as possible which don't need extending the list
+				int i;
+				for(i=0;i<size && iter.hasNext();i++){
+					Object value = iter.next();
+					if(value!=null && (value instanceof Clip)){
+						newClips.set(i, (Clip)value);
+					}
+				}
+				// do remaining items, if any
+				while(iter.hasNext()){
+					Object value = iter.next();
+					if(value!=null && (value instanceof Clip)){
+						newClips.add((Clip)value);
+					}
+				}
+				// need to limit length?
+				int j;
+				if(i<size 
+						&& (val = (Number) set.get(PATTERN_CLASS_NAME+".clips.size"))!=null
+						&& (j = val.intValue())<i){
+					for(size--;size>=j;size--){
+						newClips.remove(size);
+					}
+				}
+			}
+		}
+		Session session = (Session) options.get("session");
+		Composition composition = session.composition;
+		// correct name
+		newName = composition.patterns.nextName(newName, -1, false, session);
+		// copy properties as needed
+		int size = newClips.size();
+		for(int i=0;i<size;i++){
+			Clip value = newClips.get(i);
+			value = BetterClone.copy(value, nextDepth, options);
+			newClips.set(i, value);
+		}
+		// make the copied object
+		Pattern result = new Pattern(newDivisions,newSynthName,composition);
+		result.clips.addAll(newClips);
+		return result;
 	}
 
 }

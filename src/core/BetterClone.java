@@ -42,7 +42,16 @@ public interface BetterClone<Self extends BetterClone<Self>> {
 	 * be changed in the copy; this is useful for modifying immutable objects</li>
 	 * <li>&quot;session&quot; is the current session</li>
 	 * </ul>
-	 * Class names should be retrieved by {@link Class#getCanonicalName()}
+	 * Class names should be retrieved by {@link Class#getCanonicalName()}.
+	 * <br>
+	 * Special values for &quot;set&quot; in order they should be applied:
+	 * <ol>
+	 * <li>&quot;.filter&quot; is usable for a collection, and should be a
+	 * {@link java.util.function.Predicate} which returns true if an element should
+	 * be kept and false if it should be removed.</li>
+	 * <li>&quot;.size&quot; is usable for a collection, and indicates it should
+	 * be trimmed to at most that size, or in some cases, filled to that size.</li>
+	 * </ol>
 	 * 
 	 * @param depth 0 for shallow, some other number for a depth limit
 	 * @param options if provided, contains additional named options
