@@ -86,7 +86,7 @@ public class Pattern implements Destructable, TransientContainer<Composition>, N
 	 * @param session
 	 * @return
 	 */
-	public static Pattern makeDefaultTemplate(Session session){
+	public static Pattern makeDefaultPattern(Session session){
 		// create the object
 		Pattern result = new Pattern(
 				8,
