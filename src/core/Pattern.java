@@ -1,6 +1,8 @@
 package core;
 
 import java.util.*;
+import java.util.function.Predicate;
+
 import org.python.core.*;
 import util.jython.*;
 
@@ -243,6 +245,11 @@ public class Pattern implements Destructable, TransientContainer<Composition>, N
 			if(sval!=null)newName = sval.toString();
 			sval = (CharSequence) set.get(PATTERN_CLASS_NAME+".synthName");
 			if(sval!=null)newSynthName = sval.toString();
+			// filter
+			Predicate<? super Clip> pval = (Predicate<? super Clip>) set.get(PATTERN_CLASS_NAME+".clips.filter");
+			if(pval!=null){
+				newClips.removeIf(pval.negate());
+			}
 			// any iterable is allowed, valid values override old ones
 			Iterable<?> lval = (Iterable<?>) set.get(PATTERN_CLASS_NAME+".clips");
 			if(lval!=null){

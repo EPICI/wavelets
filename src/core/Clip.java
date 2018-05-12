@@ -2,7 +2,7 @@ package core;
 
 import java.io.Serializable;
 import java.util.*;
-
+import java.util.function.Predicate;
 import ui.PatternEditor;
 import util.math.*;
 import util.ds.NamedMap;
@@ -323,8 +323,8 @@ public class Clip implements BetterClone<Clip>, Serializable {
 				newLength = length,
 				newPitch = pitch;
 		double newVolume = volume;
-		// avoid redundant copy, so set null for now
-		ArrayList<Double> newProperties = null;
+		// easier to copy now
+		ArrayList<Double> newProperties = new ArrayList<>(properties);
 		Map<String,Object> set = (Map<String,Object>)options.get("set");
 		if(set!=null){
 			Number val;
@@ -336,11 +336,15 @@ public class Clip implements BetterClone<Clip>, Serializable {
 			if(val!=null)newPitch = val.intValue();
 			val = (Number) set.get(CLIP_CLASS_NAME+".volume");
 			if(val!=null)newVolume = val.doubleValue();
+			// filter
+			Predicate<? super Double> pval = (Predicate<? super Double>) set.get(CLIP_CLASS_NAME+".properties.filter");
+			if(pval!=null){
+				newProperties.removeIf(pval.negate());
+			}
 			// any iterable is allowed, valid values override old ones
 			Iterable<?> lval = (Iterable<?>) set.get(CLIP_CLASS_NAME+".properties");
 			if(lval!=null){
 				// make copy
-				newProperties = new ArrayList<>(properties);
 				int size = newProperties.size();
 				Iterator<?> iter = lval.iterator();
 				// exhaust as many items as possible which don't need extending the list
@@ -435,6 +439,11 @@ public class Clip implements BetterClone<Clip>, Serializable {
 				CharSequence sval;
 				sval = (CharSequence) set.get(TEMPLATE_CLASS_NAME+".name");
 				if(sval!=null)newName = sval.toString();
+				// filter
+				Predicate<? super Property> pval = (Predicate<? super Property>) set.get(TEMPLATE_CLASS_NAME+".properties.filter");
+				if(pval!=null){
+					newProperties.removeIf(pval.negate());
+				}
 				// any iterable is allowed, valid values override old ones
 				Iterable<?> lval = (Iterable<?>) set.get(CLIP_CLASS_NAME+".properties");
 				if(lval!=null){
