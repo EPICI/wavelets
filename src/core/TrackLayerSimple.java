@@ -261,7 +261,7 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 			JInternalFrame wrapped = PivotSwingUtils.wrapPivotWindow(editor);
 			meta = new MetaComponent<>("Default Pattern Track Editor","Pattern Track Editor",wrapped);
 		}
-		editor.addTLS(this);
+		editor.addEditorData(this);
 		return meta;
 	}
 

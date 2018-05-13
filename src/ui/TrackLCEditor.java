@@ -20,27 +20,17 @@ import util.ui.*;
  * @author EPICI
  * @version 1.0
  */
-public class TrackLCEditor extends Window implements Bindable {
-	
-	/**
-	 * The current/linked session
-	 */
-	public Session session;
-	/**
-	 * The {@link TabPane} containing everything
-	 */
-	public TabPane tabPane;
+public class TrackLCEditor extends DataEditor.Tabbed<TrackLayerCompound> {
 
 	@Override
 	public void initialize(Map<String, Object> namespace, URL location, Resources resources) {
-		tabPane = (TabPane) namespace.get("tabPane");
+		super.initialize(namespace, location, resources);
 	}
 	
-	/**
-	 * Call after fields are initialized
-	 */
+	@Override
 	public void init(){
-		addTLC(session.composition.tracks);
+		super.init();
+		addEditorData(session.composition.tracks);
 	}
 	
 	/**
@@ -60,27 +50,12 @@ public class TrackLCEditor extends Window implements Bindable {
 		}
 		// Assuming all tracks got removed, this should add them back in forward order
 		for(int i=tracks.size()-1;i>=0;i--){
-			addTLC(tracks.get(i));
+			addEditorData(tracks.get(i));
 		}
 	}
 	
-	/**
-	 * Add UI for a {@link TrackLayerCompound} if it isn't already present
-	 * 
-	 * @param track the track to add the UI for
-	 */
-	public void addTLC(TrackLayerCompound track){
-		TabPane.TabSequence tabs = tabPane.getTabs();
-		for(Component component:tabs){
-			if(component instanceof LinkedTablePane){
-				LinkedTablePane ltp = (LinkedTablePane) component;
-				if(ltp.view==track)return;
-			}
-		}
-		addNewTLC(track);
-	}
-	
-	private void addNewTLC(TrackLayerCompound track){
+	@Override
+	protected void addNewEditorData(TrackLayerCompound track){
 		try{
 			TabPane.TabSequence tabs = tabPane.getTabs();
 			LinkedTablePane linked = PivotSwingUtils.loadBxml(LinkedTablePane.class, "trackLCEditorTable.bxml");
@@ -93,7 +68,7 @@ public class TrackLCEditor extends Window implements Bindable {
 		}
 	}
 	
-	public static class LinkedTablePane extends TablePane implements Bindable{
+	public static class LinkedTablePane extends TablePane implements Bindable, DataEditor.Instance<TrackLayerCompound>{
 		
 		/**
 		 * Rows which are not tracks
@@ -296,6 +271,11 @@ public class TrackLCEditor extends Window implements Bindable {
 				
 			});
 			//TODO add existing track by pasting on move here button
+		}
+		
+		@Override
+		public TrackLayerCompound getEditorData(){
+			return view;
 		}
 		
 		/**

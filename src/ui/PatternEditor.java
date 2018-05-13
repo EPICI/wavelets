@@ -30,16 +30,7 @@ import util.ui.*;
  * @author EPICI
  * @version 1.0
  */
-public class PatternEditor extends Window implements Bindable {
-	
-	/**
-	 * The current/linked session
-	 */
-	public Session session;
-	/**
-	 * The tab pane to switch between patterns
-	 */
-	public TabPane tabPane;
+public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 	
 	public PatternEditor(){
 		super();
@@ -47,13 +38,12 @@ public class PatternEditor extends Window implements Bindable {
 	
 	@Override
 	public void initialize(Map<String, Object> namespace, URL location, Resources resources) {
-		tabPane = (TabPane) namespace.get("tabPane");
+		super.initialize(namespace, location, resources);
 	}
 	
-	/**
-	 * Initialize, called after setting fields
-	 */
+	@Override
 	public void init(){
+		super.init();
 		tabPane.getTabPaneSelectionListeners().add(new TabSwitchListener(this));
 	}
 	
@@ -66,29 +56,8 @@ public class PatternEditor extends Window implements Bindable {
 		return session.composition;
 	}
 	
-	/**
-	 * Add UI for a {@link Pattern} if it isn't already present.
-	 * 
-	 * @param pattern the pattern to add the UI for
-	 */
-	public void addPattern(Pattern pattern){
-		TabPane.TabSequence tabs = tabPane.getTabs();
-		for(Component component:tabs){
-			if(component instanceof LinkedEditorPane){
-				LinkedEditorPane ltp = (LinkedEditorPane) component;
-				if(ltp.view==pattern)return;
-			}
-		}
-		addNewPattern(pattern);
-	}
-	
-	/**
-	 * For internal use: add an instance of the UI for a pattern even
-	 * if it's already present.
-	 * 
-	 * @param pattern the pattern to add the UI for
-	 */
-	private void addNewPattern(Pattern pattern){
+	@Override
+	protected void addNewEditorData(Pattern pattern){
 		try{
 			TabPane.TabSequence tabs = tabPane.getTabs();
 			LinkedEditorPane linked = LinkedEditorPane.createNew();
@@ -158,7 +127,7 @@ public class PatternEditor extends Window implements Bindable {
 	 * @author EPICI
 	 * @version 1.0
 	 */
-	public static class LinkedEditorPane extends Container implements Bindable{
+	public static class LinkedEditorPane extends Container implements Bindable, DataEditor.Instance<Pattern>{
 		
 		/**
 		 * Reserved rows at the top of the clip table
@@ -529,6 +498,11 @@ public class PatternEditor extends Window implements Bindable {
 		 */
 		public static LinkedEditorPane createNew(){
 			return PivotSwingUtils.loadBxml(LinkedEditorPane.class, "patternEditorPane.bxml");
+		}
+		
+		@Override
+		public Pattern getEditorData(){
+			return view;
 		}
 		
 		/**

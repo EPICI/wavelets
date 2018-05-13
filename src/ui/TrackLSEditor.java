@@ -28,7 +28,7 @@ import util.ui.*;
  * @author EPICI
  * @version 1.0
  */
-public class TrackLSEditor extends Window implements Bindable {
+public class TrackLSEditor extends DataEditor.Tabbed<TrackLayerSimple> {
 	
 	/**
 	 * Extra space to leave above and below for a pattern, in semitones
@@ -52,14 +52,6 @@ public class TrackLSEditor extends Window implements Bindable {
 	public static final int SHL_BORDER_THRESHOLD = SHL_BORDER_WIDTH*5;
 
 	/**
-	 * The current/linked session
-	 */
-	public Session session;
-	/**
-	 * The tab pane to switch between tracks
-	 */
-	public TabPane tabPane;
-	/**
 	 * Width of the floating sidebar in pixels
 	 */
 	public int sidebarWidth;
@@ -80,32 +72,16 @@ public class TrackLSEditor extends Window implements Bindable {
 	
 	@Override
 	public void initialize(Map<String, Object> namespace, URL location, Resources resources) {
-		tabPane = (TabPane) namespace.get("tabPane");
+		super.initialize(namespace, location, resources);
 	}
 	
-	/**
-	 * Add UI for a {@link TrackLayerSimple} if it isn't already present
-	 * 
-	 * @param track the track to add the UI for
-	 */
-	public void addTLS(TrackLayerSimple track){
-		TabPane.TabSequence tabs = tabPane.getTabs();
-		for(Component component:tabs){
-			if(component instanceof LinkedEditorPane){
-				LinkedEditorPane ltp = (LinkedEditorPane) component;
-				if(ltp.view==track)return;
-			}
-		}
-		addNewTLS(track);
+	@Override
+	public void init(){
+		super.init();
 	}
 	
-	/**
-	 * For internal use: add an instance of the UI for a track even
-	 * if it's already present.
-	 * 
-	 * @param track the track to add the UI for
-	 */
-	private void addNewTLS(TrackLayerSimple track){
+	@Override
+	protected void addNewEditorData(TrackLayerSimple track){
 		try{
 			TabPane.TabSequence tabs = tabPane.getTabs();
 			LinkedEditorPane linked = LinkedEditorPane.createNew();
@@ -128,7 +104,7 @@ public class TrackLSEditor extends Window implements Bindable {
 	 * @author EPICI
 	 * @version 1.0
 	 */
-	public static class LinkedEditorPane extends Container implements Bindable{
+	public static class LinkedEditorPane extends Container implements Bindable, DataEditor.Instance<TrackLayerSimple>{
 		
 		/**
 		 * The parent {@link TrackLSEditor}
@@ -164,6 +140,11 @@ public class TrackLSEditor extends Window implements Bindable {
 		 */
 		public static LinkedEditorPane createNew(){
 			return PivotSwingUtils.loadBxml(LinkedEditorPane.class, "trackLSEditorPane.bxml");
+		}
+		
+		@Override
+		public TrackLayerSimple getEditorData(){
+			return view;
 		}
 		
 	}
