@@ -195,6 +195,7 @@ public class DoubleInput extends FillPane {
 		if(newValidator==null)throw new IllegalArgumentException("validator can't be null: newValidator ("+newValidator+")");
 		validator = newValidator;
 		value = validator.nearest(value);
+		toSliderView(false);// force update UI
 	}
 	
 	/**
@@ -1182,11 +1183,11 @@ public class DoubleInput extends FillPane {
 		/**
 		 * What the preferred height is initialized to
 		 */
-		public static final int DEFAULT_HEIGHT = 40;
+		public static final int DEFAULT_HEIGHT = 20;
 		/**
 		 * What the preferred width is initialized to
 		 */
-		public static final int DEFAULT_WIDTH = 160;
+		public static final int DEFAULT_WIDTH = 80;
 		/**
 		 * The test string used to determine needed bounds
 		 */
@@ -1321,9 +1322,10 @@ public class DoubleInput extends FillPane {
 	    	    	slider.repaint();
 	    		}else{// Clicked -> switch view or fine adjustment
 	    			int width = getWidth(), height = getHeight();
+	    			int mindiameter = Math.min(width, height);
 	    			int lowerDist,upperDist;
 	    			boolean useUp;
-	    			if(width<height){
+	    			if(width>height){
 	    				lowerDist = x;
 	    				upperDist = width-x;
 	    			}else{
@@ -1331,7 +1333,7 @@ public class DoubleInput extends FillPane {
 	    				upperDist = height-y;
 	    			}
     				useUp = upperDist<lowerDist;
-	    			boolean useIncrement = Math.min(lowerDist, upperDist)<0;
+	    			boolean useIncrement = Math.min(lowerDist, upperDist)<mindiameter;
 	    			if(useIncrement){// Clicked near arrow -> increment
 	    				if(useUp){
 	    					sliderParent.value = sliderParent.validator.next(slider.value);

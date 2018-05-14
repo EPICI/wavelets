@@ -461,28 +461,28 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 					new DoubleInput.DoubleValidator.SplitDoubleValidator(
 							new DoubleInput.DoubleValidator.BoundedIntegerValidator(1, 1e6, 4),
 							new DoubleInput.DoubleValidator.HyperbolicStep(2)),
-					view.divisions, 0.05);
+					view.divisions, 0x1.0p-7);
 			divisionsInput.dataListeners.add(new DivisionsInputListener(this));
 			tr = patternTablePane.getRows().get(INDEX_DIVISIONS_INPUT);
 			tr.update(0, divisionsInput);
 			
 			clipStartInput = new DoubleInput(
 					new DoubleInput.DoubleValidator.BoundedIntegerValidator(-1e6,1e6,0),
-					0, 0.1);
+					0, 0x1.0p-5);
 			clipStartInput.dataListeners.add(new ClipStartInputListener(this));
 			tr = clipTablePane.getRows().get(INDEX_CLIP_START_INPUT);
 			tr.update(0, clipStartInput);
 			
 			clipDurationInput = new DoubleInput(
 					new DoubleInput.DoubleValidator.HyperbolicStep(1e-6, 1e6, 1, 2),
-					1, 0.01);
+					1, 0x1.0p-7);
 			clipDurationInput.dataListeners.add(new ClipDurationInputListener(this));
 			tr = clipTablePane.getRows().get(INDEX_CLIP_DURATION_INPUT);
 			tr.update(0, clipDurationInput);
 			
 			clipVolumeInput = new DoubleInput(
 					new DoubleInput.DoubleValidator.BoundedDoubleValidator(-10, 10, 0),
-					1, 0.01);
+					0, 0x1.0p-7);
 			clipVolumeInput.dataListeners.add(new ClipVolumeInputListener(this));
 			tr = clipTablePane.getRows().get(INDEX_CLIP_VOLUME_INPUT);
 			tr.update(0, clipVolumeInput);
@@ -1040,6 +1040,9 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 			if(template==null)return;
 			// make the new parameter
 			Clip.Template.Property property = new Clip.Template.Property();
+			property.min = 0;
+			property.base = 0.5;
+			property.max = 1;
 			property.name = "Property "+(template.properties.size()+1);
 			// add it to the list
 			template.properties.add(property);
@@ -1159,7 +1162,7 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 					new DoubleInput.DoubleValidator.SplitDoubleValidator(
 							new DoubleInput.DoubleValidator.BoundedDoubleValidator(view.base),
 							new DoubleInput.DoubleValidator.BoundedDoubleValidator(0)),
-					view.base, 0.05
+					view.base, 0x1.0p-5
 					);
 			propertyInput.dataListeners.add(new ClipPropertyInputListener(this));
 			tr = leftTablePane.getRows().get(INDEX_PROPERTY_INPUT);
@@ -1169,7 +1172,7 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 					new DoubleInput.DoubleValidator.SplitDoubleValidator(
 							new DoubleInput.DoubleValidator.BoundedDoubleValidator(0),
 							new DoubleInput.DoubleValidator.HyperbolicStep(2)),
-					0, 0.01
+					0, 0x1.0p-7
 					);
 			minInput.dataListeners.add(new PropertyMinInputListener(this));
 			tr = boundsTablePane.getRows().get(INDEX_BOUNDS_INPUT);
@@ -1179,7 +1182,7 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 					new DoubleInput.DoubleValidator.SplitDoubleValidator(
 							new DoubleInput.DoubleValidator.BoundedDoubleValidator(1),
 							new DoubleInput.DoubleValidator.HyperbolicStep(2)),
-					1, 0.01
+					1, 0x1.0p-7
 					);
 			maxInput.dataListeners.add(new PropertyMaxInputListener(this));
 			tr = boundsTablePane.getRows().get(INDEX_BOUNDS_INPUT);
@@ -1189,7 +1192,7 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 					new DoubleInput.DoubleValidator.SplitDoubleValidator(
 							new DoubleInput.DoubleValidator.BoundedDoubleValidator(0.5),
 							new DoubleInput.DoubleValidator.BoundedDoubleValidator(0)),
-					0.5, 0.01
+					0.5, 0x1.0p-7
 					);
 			baseInput.dataListeners.add(new PropertyBaseInputListener(this));
 			tr = boundsTablePane.getRows().get(INDEX_BOUNDS_INPUT);
@@ -1208,7 +1211,7 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 			
 			// fix the mismatches
 			updateView(true);
-			updatePropertyInput(false,true,true,true,true);
+			updatePropertyInput(true,true,true,true,true);
 		}
 		
 		/**
@@ -1337,7 +1340,7 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 					copyWhitelist = (Collection<String>)copyOptions.get("whitelist");
 					copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
 					propertyInput.setValidator(
-							BetterClone.copy(validator, 0, copyOptions));
+							BetterClone.copy(validator, 1, copyOptions));
 				}
 			}else{
 				Clip.Template.Property view = this.view;
@@ -1434,7 +1437,7 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 				copyWhitelist = (Collection<String>)propertyInputCopyOptions.get("whitelist");
 				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
 				propertyInput.setValidator(
-						BetterClone.copy(propertyInput.validator, 0, propertyInputCopyOptions));
+						BetterClone.copy(propertyInput.validator, 1, propertyInputCopyOptions));
 			}
 			if(max|base){
 				minInputCopyOptions = BetterClone.fixOptions(null);
@@ -1443,7 +1446,7 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 				copyWhitelist = (Collection<String>)minInputCopyOptions.get("whitelist");
 				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
 				minInput.setValidator(
-						BetterClone.copy(minInput.validator, 0, minInputCopyOptions));
+						BetterClone.copy(minInput.validator, 1, minInputCopyOptions));
 			}
 			if(min|base){
 				maxInputCopyOptions = BetterClone.fixOptions(null);
@@ -1451,7 +1454,7 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 				copyWhitelist = (Collection<String>)maxInputCopyOptions.get("whitelist");
 				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
 				maxInput.setValidator(
-						BetterClone.copy(maxInput.validator, 0, maxInputCopyOptions));
+						BetterClone.copy(maxInput.validator, 1, maxInputCopyOptions));
 			}
 			if(min|max){
 				baseInputCopyOptions = BetterClone.fixOptions(null);
@@ -1460,7 +1463,7 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 				copyWhitelist = (Collection<String>)baseInputCopyOptions.get("whitelist");
 				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
 				baseInput.setValidator(
-						BetterClone.copy(baseInput.validator, 0, baseInputCopyOptions));
+						BetterClone.copy(baseInput.validator, 1, baseInputCopyOptions));
 			}
 		}
 		
