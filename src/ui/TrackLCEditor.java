@@ -300,14 +300,6 @@ public class TrackLCEditor extends DataEditor.Tabbed<TrackLayerCompound> {
 			row.init();
 			getRows().add(row);
 		}
-		
-		@Override
-		public boolean equals(Object o){
-			if(o==this)return true;
-			if(o==null || !(o instanceof LinkedEditorPane))return false;
-			LinkedEditorPane other = (LinkedEditorPane) o;
-			return view.equals(other.view);
-		}
 	}
 	
 	public static class LinkedTableRow extends TablePane.Row implements Bindable{

@@ -512,14 +512,6 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 		}
 		
 		@Override
-		public boolean equals(Object o){
-			if(o==this)return true;
-			if(o==null || !(o instanceof LinkedEditorPane))return false;
-			LinkedEditorPane other = (LinkedEditorPane) o;
-			return view.equals(other.view);
-		}
-		
-		@Override
 		public Pattern getEditorData(){
 			return view;
 		}
