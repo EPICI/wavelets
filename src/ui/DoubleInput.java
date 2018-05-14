@@ -877,7 +877,8 @@ public class DoubleInput extends FillPane {
 				// Compute pbase^by, pbase^-by
 				double ub = Math.exp(by*lpbase), vb = 1/ub;
 				// Compute the final result
-				return (Math.sqrt(value*value+1)*(ub-vb)+value*(ub+vb))*0.5;
+				double result = (Math.sqrt(value*value+1)*(ub-vb)+value*(ub+vb))*0.5;
+				return nearest(result);
 			}
 			
 			public int hashCode(){

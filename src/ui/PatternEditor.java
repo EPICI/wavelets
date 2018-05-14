@@ -1442,7 +1442,8 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 			if(max|base){
 				minInputCopyOptions = BetterClone.fixOptions(null);
 				copySet = (java.util.Map<String,Object>)minInputCopyOptions.get("set");
-				/*if(max|base)*/copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max", Math.min(newMax, newBase));
+				copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base", newMin);
+				copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max", Math.min(newMax, newBase));
 				copyWhitelist = (Collection<String>)minInputCopyOptions.get("whitelist");
 				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
 				minInput.setValidator(
@@ -1450,7 +1451,9 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 			}
 			if(min|base){
 				maxInputCopyOptions = BetterClone.fixOptions(null);
-				/*if(min|base)*/copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", Math.max(newMin, newBase));
+				copySet = (java.util.Map<String,Object>)maxInputCopyOptions.get("set");
+				copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base", newMax);
+				copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", Math.max(newMin, newBase));
 				copyWhitelist = (Collection<String>)maxInputCopyOptions.get("whitelist");
 				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
 				maxInput.setValidator(
@@ -1458,8 +1461,10 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 			}
 			if(min|max){
 				baseInputCopyOptions = BetterClone.fixOptions(null);
-				if(min)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", newMin);
-				if(max)copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max", newMax);
+				copySet = (java.util.Map<String,Object>)baseInputCopyOptions.get("set");
+				copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base", newBase);
+				copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min", newMin);
+				copySet.put(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max", newMax);
 				copyWhitelist = (Collection<String>)baseInputCopyOptions.get("whitelist");
 				copyWhitelist.add("*"+DOUBLEVALIDATOR_CLASS_NAME);
 				baseInput.setValidator(
