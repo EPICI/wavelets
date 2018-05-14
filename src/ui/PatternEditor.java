@@ -2,6 +2,8 @@ package ui;
 
 import core.*;
 import core.curves.*;
+import ui.TrackLSEditor.LinkedEditorPane;
+
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.Mouse.Button;
 import org.apache.pivot.wtk.Mouse.ScrollType;
@@ -45,6 +47,15 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 	public void init(){
 		super.init();
 		tabPane.getTabPaneSelectionListeners().add(new TabSwitchListener(this));
+	}
+	
+	/**
+	 * Convenience method to create a new one from outside
+	 * 
+	 * @return
+	 */
+	public static PatternEditor createNew(){
+		return PivotSwingUtils.loadBxml(PatternEditor.class, "patternEditor.bxml");
 	}
 	
 	/**
@@ -498,6 +509,14 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 		 */
 		public static LinkedEditorPane createNew(){
 			return PivotSwingUtils.loadBxml(LinkedEditorPane.class, "patternEditorPane.bxml");
+		}
+		
+		@Override
+		public boolean equals(Object o){
+			if(o==this)return true;
+			if(o==null || !(o instanceof LinkedEditorPane))return false;
+			LinkedEditorPane other = (LinkedEditorPane) o;
+			return view.equals(other.view);
 		}
 		
 		@Override

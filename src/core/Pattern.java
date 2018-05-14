@@ -180,6 +180,7 @@ public class Pattern implements Destructable, TransientContainer<Composition>, N
 	 * Set voice factory to default value
 	 */
 	protected void setDefaultVoiceFactory(){
+		if(synthesizer==null)return;//TODO remove this null guard once synthesizer is implemented
 		if(synthesizer.isPython()){
 			PyObject pyData = synthesizer.getPvfInfo();
 			PyString stra = pyData.__getitem__(0).__str__();
@@ -297,6 +298,16 @@ public class Pattern implements Destructable, TransientContainer<Composition>, N
 		result.setName(newName);
 		result.clips.addAll(newClips);
 		return result;
+	}
+	
+	@Override
+	public boolean equals(Object o){
+		if(o==this)return true;
+		if(o==null || !(o instanceof Pattern))return false;
+		Pattern other = (Pattern) o;
+		return divisions==other.divisions
+				&& synthName.equals(other.synthName)
+				&& clips.equals(other.clips);
 	}
 
 }

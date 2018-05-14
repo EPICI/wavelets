@@ -62,7 +62,7 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 		MetaComponent<JInternalFrame> meta = tls.getUI();
 		comp = tls.parentComposition();
 		Session session = comp.currentSession;
-		session.windowManager.addWindow(meta);
+		session.windowManager.addWindow(meta,true);
 		return true;
 	}
 	

@@ -204,12 +204,11 @@ public class Session {
 	 * @param track the track to open the UI for
 	 */
 	public void openUI(Track track){
-		MetaComponent<? extends JComponent> meta = track.getUI();
-		JComponent component = meta.component;
+		MetaComponent<? extends JComponent> ometa = track.getUI();
+		JComponent component = ometa.component;
 		if(component instanceof JInternalFrame){
-			String name = meta.group;
-			windowManager.addWindow(name,(JInternalFrame)component);
-			windowManager.openWindow(name);
+			MetaComponent<JInternalFrame> meta = new MetaComponent<>(ometa);
+			windowManager.addWindow(meta,true);
 		}else{
 			// not supported yet
 		}

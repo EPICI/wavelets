@@ -11,6 +11,7 @@ import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.Keyboard.KeyLocation;
 import org.apache.pivot.wtk.content.ButtonData;
 import core.*;
+import ui.TrackLSEditor.LinkedEditorPane;
 import util.*;
 import util.ui.*;
 
@@ -31,6 +32,15 @@ public class TrackLCEditor extends DataEditor.Tabbed<TrackLayerCompound> {
 	public void init(){
 		super.init();
 		addEditorData(session.composition.tracks);
+	}
+	
+	/**
+	 * Convenience method to create a new one from outside
+	 * 
+	 * @return
+	 */
+	public static TrackLCEditor createNew(){
+		return PivotSwingUtils.loadBxml(TrackLCEditor.class, "trackLCEditor.bxml");
 	}
 	
 	/**
@@ -289,6 +299,14 @@ public class TrackLCEditor extends DataEditor.Tabbed<TrackLayerCompound> {
 			row.view = track;
 			row.init();
 			getRows().add(row);
+		}
+		
+		@Override
+		public boolean equals(Object o){
+			if(o==this)return true;
+			if(o==null || !(o instanceof LinkedEditorPane))return false;
+			LinkedEditorPane other = (LinkedEditorPane) o;
+			return view.equals(other.view);
 		}
 	}
 	

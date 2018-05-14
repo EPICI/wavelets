@@ -31,6 +31,9 @@ public class MetaComponent<T extends JComponent> {
 	 * Additional metadata
 	 * <br>
 	 * User should know what to do with this
+	 * <br>
+	 * &quot;window&quot; should map to an instance of
+	 * {@link org.apache.pivot.wtk.Window} where applicable.
 	 */
 	public HashMap<String,Object> metaData;
 	
@@ -46,19 +49,19 @@ public class MetaComponent<T extends JComponent> {
 		this.name=name;
 		this.group=group;
 		this.component=component;
-		this.metaData=metaData;
+		this.metaData=metaData!=null?metaData:new HashMap<>();
 	}
+	
 	/**
-	 * Constructor where the HashMap is left empty
+	 * Copy constructor. Will attempt a cast.
+	 * Uses a shallow copy for {@link #metaData}.
 	 * 
-	 * @param name the type name
-	 * @param group the group name
-	 * @param component the component
+	 * @param source
 	 */
-	public MetaComponent(String name,String group,T component){
-		this.name=name;
-		this.group=group;
-		this.component=component;
-		this.metaData=new HashMap<>();
+	public MetaComponent(MetaComponent<?> source){
+		this.name = source.name;
+		this.group = source.group;
+		this.component = (T) source.component;
+		this.metaData = new HashMap<>(source.metaData);
 	}
 }

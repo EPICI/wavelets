@@ -250,17 +250,20 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 		return new double[]{composition.measuresToSeconds(min),composition.measuresToSeconds(max)};
 	}
 
-	public static TrackLSEditor editor;
-	public static MetaComponent<JInternalFrame> meta;
 	@Override
 	public MetaComponent<JInternalFrame> getUI() {
+		Session session = parentComposition().currentSession;
+		MetaComponent<JInternalFrame> meta = session.windowManager.getWindow("Pattern Track Editor");
+		TrackLSEditor editor;
 		if(meta==null||meta.component.isClosed()){
-			Session session = parentComposition().currentSession;
 			editor = TrackLSEditor.createNew();
 			editor.session = session;
+			editor.init();
 			JInternalFrame wrapped = PivotSwingUtils.wrapPivotWindow(editor);
-			meta = new MetaComponent<>("Default Pattern Track Editor","Pattern Track Editor",wrapped);
+			meta = new MetaComponent<>("Default Pattern Track Editor","Pattern Track Editor",wrapped,null);
+			meta.metaData.put("window", editor);
 		}
+		editor = (TrackLSEditor) meta.metaData.get("window");
 		editor.addEditorData(this);
 		return meta;
 	}
@@ -268,6 +271,13 @@ public class TrackLayerSimple implements Track, TransientContainer<TrackLayerCom
 	@Override
 	public ViewComponent getViewComponent() {
 		return new TrackLSPreview(this);
+	}
+	
+	public boolean equals(Object o){
+		if(o==this)return true;
+		if(o==null || !(o instanceof TrackLayerSimple))return false;
+		TrackLayerSimple other = (TrackLayerSimple) o;
+		return patterns.equals(other.patterns);
 	}
 	
 	public int hashCode(){

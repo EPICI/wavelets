@@ -71,12 +71,13 @@ public class WindowManager extends Window implements Bindable {
 					switch(sel){
 					case NAME_TRACKLCEDITOR:{
 						if(!windows.containsKey(NAME_TRACKLCEDITOR)){
-							TrackLCEditor trackLCEditor = PivotSwingUtils.loadBxml(TrackLCEditor.class, "trackLCEditor.bxml");
+							TrackLCEditor trackLCEditor = TrackLCEditor.createNew();
 							trackLCEditor.session=session;
 							trackLCEditor.init();
 							JInternalFrame wrapped = PivotSwingUtils.wrapPivotWindow(trackLCEditor);
-							addWindow(NAME_TRACKLCEDITOR,wrapped);
-							openWindow(NAME_TRACKLCEDITOR);
+							MetaComponent<JInternalFrame> meta = new MetaComponent<>("Default "+NAME_TRACKLCEDITOR,NAME_TRACKLCEDITOR,wrapped,null);
+							meta.metaData.put("window", trackLCEditor);
+							addWindow(meta,true);
 						}
 						break;
 					}
@@ -88,23 +89,41 @@ public class WindowManager extends Window implements Bindable {
 	}
 	
 	/**
+	 * Fetch the meta for a window by its {@link MetaComponent#group},
+	 * if it exists, otherwise returns null.
+	 * 
+	 * @param group
+	 * @return
+	 */
+	public MetaComponent<JInternalFrame> getWindow(String group){
+		LinkedTablePane ltp = windows.get(group);
+		if(ltp!=null)return ltp.meta;
+		return null;
+	}
+	
+	/**
+	 * Shortcut for adding a new window
+	 * <br>
+	 * Adds by <i>group</i>
+	 * 
+	 * @param meta contains reference to frame and additional metadata
+	 * @param open whether to open the window immediately after
+	 */
+	public void addWindow(MetaComponent<JInternalFrame> meta,boolean open){
+		addWindow(meta);
+		if(open)openWindow(meta.group);
+	}
+	
+	/**
 	 * Shortcut for adding a new window
 	 * <br>
 	 * Adds by <i>group</i>
 	 * 
 	 * @param meta contains reference to frame and additional metadata
 	 */
-	public void addWindow(MetaComponent<? extends JInternalFrame> meta){
-		addWindow(meta.group,meta.component);
-	}
-	
-	/**
-	 * Add a new window
-	 * 
-	 * @param name the name to add under
-	 * @param window the window to add
-	 */
-	public void addWindow(String name,JInternalFrame window){
+	protected void addWindow(MetaComponent<JInternalFrame> meta){
+		String name = meta.group;
+		JInternalFrame window = meta.component;
 		if(!windows.containsKey(name)){// If it already exists, don't re-add it
 			try {
 				LinkedTablePane linked = PivotSwingUtils.loadBxml(WindowManager.class,"windowManagerTable.bxml");
@@ -112,12 +131,11 @@ public class WindowManager extends Window implements Bindable {
 				linked.name = name;
 				linked.frame = window;
 				linked.label.setText(name);
+				linked.meta = meta;
 				window.addInternalFrameListener(new InternalFrameListener(){
 
 					@Override
 					public void internalFrameActivated(InternalFrameEvent arg0) {
-						// TODO Auto-generated method stub
-						
 					}
 
 					@Override
@@ -127,32 +145,22 @@ public class WindowManager extends Window implements Bindable {
 
 					@Override
 					public void internalFrameClosing(InternalFrameEvent arg0) {
-						// TODO Auto-generated method stub
-						
 					}
 
 					@Override
 					public void internalFrameDeactivated(InternalFrameEvent arg0) {
-						// TODO Auto-generated method stub
-						
 					}
 
 					@Override
 					public void internalFrameDeiconified(InternalFrameEvent arg0) {
-						// TODO Auto-generated method stub
-						
 					}
 
 					@Override
 					public void internalFrameIconified(InternalFrameEvent arg0) {
-						// TODO Auto-generated method stub
-						
 					}
 
 					@Override
 					public void internalFrameOpened(InternalFrameEvent arg0) {
-						// TODO Auto-generated method stub
-						
 					}
 					
 				});
@@ -276,6 +284,10 @@ public class WindowManager extends Window implements Bindable {
 		 * Name, used internally
 		 */
 		public String name;
+		/**
+		 * Optional, the metadata this is based on
+		 */
+		public MetaComponent<JInternalFrame> meta;
 		
 		/**
 		 * Part of {@link Bindable}, allows for initialization by {@link BXMLSerializer}

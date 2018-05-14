@@ -2,9 +2,11 @@ package core;
 
 import java.util.*;
 import javax.swing.*;
+import ui.*;
 import util.*;
 import util.hash.HashTriArx;
 import util.hash.QuickKeyGen;
+import util.ui.PivotSwingUtils;
 
 /**
  * Contains tracks
@@ -82,7 +84,6 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 
 	@Override
 	public void initTransient(TLCParent parent) {
-		// TODO Auto-generated method stub
 		parentIsComposition=parent instanceof Composition;
 		if(parentIsComposition){
 			parentComposition = (Composition) parent;
@@ -116,14 +117,34 @@ public class TrackLayerCompound implements Track, TransientContainer<TLCParent>,
 
 	@Override
 	public MetaComponent<JInternalFrame> getUI() {
-		// TODO Auto-generated method stub
-		return null;
+		Session session = parentComposition().currentSession;
+		MetaComponent<JInternalFrame> meta = session.windowManager.getWindow("Layered Track Editor");
+		TrackLCEditor editor;
+		if(meta==null||meta.component.isClosed()){
+			editor = TrackLCEditor.createNew();
+			editor.session = session;
+			editor.init();
+			JInternalFrame wrapped = PivotSwingUtils.wrapPivotWindow(editor);
+			meta = new MetaComponent<>("Default Layered Track Editor","Layered Track Editor",wrapped,null);
+			meta.metaData.put("window", editor);
+		}
+		editor = (TrackLCEditor) meta.metaData.get("window");
+		editor.addEditorData(this);
+		return meta;
 	}
 
 	@Override
 	public ViewComponent getViewComponent() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+	
+	@Override
+	public boolean equals(Object o){
+		if(o==this)return true;
+		if(o==null || !(o instanceof TrackLayerCompound))return false;
+		TrackLayerCompound other = (TrackLayerCompound) o;
+		return tracks.equals(other.tracks);
 	}
 	
 	public int hashCode(){

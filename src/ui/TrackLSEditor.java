@@ -11,6 +11,7 @@ import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.net.URL;
 import java.util.*;
+import javax.swing.JInternalFrame;
 import org.apache.pivot.beans.*;
 import org.apache.pivot.collections.Map;
 import org.apache.pivot.util.ListenerList;
@@ -145,6 +146,14 @@ public class TrackLSEditor extends DataEditor.Tabbed<TrackLayerSimple> {
 		@Override
 		public TrackLayerSimple getEditorData(){
 			return view;
+		}
+		
+		@Override
+		public boolean equals(Object o){
+			if(o==this)return true;
+			if(o==null || !(o instanceof LinkedEditorPane))return false;
+			LinkedEditorPane other = (LinkedEditorPane) o;
+			return view.equals(other.view);
 		}
 		
 	}
@@ -537,7 +546,20 @@ public class TrackLSEditor extends DataEditor.Tabbed<TrackLayerSimple> {
 					if(la){// Left click -> press button
 						if(yextend){// Past last row, special
 							if(x<swidtha){// Add new
-								// TODO also pattern editor
+								Pattern pattern = Pattern.makeDefaultPattern(session);
+								MetaComponent<JInternalFrame> meta = session.windowManager.getWindow("Pattern Editor");
+								PatternEditor peditor;
+								if(meta==null||meta.component.isClosed()){
+									peditor = PatternEditor.createNew();
+									peditor.session = session;
+									peditor.init();
+									JInternalFrame wrapped = PivotSwingUtils.wrapPivotWindow(peditor);
+									meta = new MetaComponent<>("Default Pattern Editor","Pattern Editor",wrapped,null);
+									meta.metaData.put("window", peditor);
+								}
+								peditor = (PatternEditor) meta.metaData.get("window");
+								peditor.addEditorData(pattern);
+								session.windowManager.addWindow(meta,true);
 							}else{// Move here
 								if(session!=null){
 									Object clip = session.clipBoard;
@@ -550,10 +572,24 @@ public class TrackLSEditor extends DataEditor.Tabbed<TrackLayerSimple> {
 								}
 							}
 						}else{// In pattern row
+							Pattern pattern = pk[iwy];
 							if(x<swidtha){// Delete
-								patterns.remove(pk[iwy]);
+								patterns.remove(pattern);
 							}else{// Edit
-								// TODO pattern editor
+								MetaComponent<JInternalFrame> meta = session.windowManager.getWindow("Pattern Editor");
+								PatternEditor peditor;
+								if(meta==null||meta.component.isClosed()){
+									peditor = PatternEditor.createNew();
+									peditor.session = session;
+									peditor.init();
+									JInternalFrame wrapped = PivotSwingUtils.wrapPivotWindow(peditor);
+									meta = new MetaComponent<>("Default Pattern Editor","Pattern Editor",wrapped,null);
+									meta.metaData.put("window", peditor);
+								}
+								peditor = (PatternEditor) meta.metaData.get("window");
+								peditor.addEditorData(pattern);
+								session.windowManager.addWindow(meta,true);
+								session.windowManager.addWindow(meta,true);
 							}
 						}
 					}else if(!yextend){
