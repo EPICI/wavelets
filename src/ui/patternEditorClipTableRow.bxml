@@ -66,8 +66,6 @@
 					]"/>
 				</TablePane.Row>
 			</TablePane>
-		</TablePane.Row>
-		<TablePane.Row>
 			<TablePane bxml:id="moveTablePane">
 				<columns>
 					<TablePane.Column width="1*"/>

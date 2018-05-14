@@ -1357,12 +1357,11 @@ public class DoubleInput extends FillPane {
 	    		DoubleSlider slider = (DoubleSlider) getComponent();
 	    		DoubleInput sliderParent = slider.parent;
 		    	mouseDragged = true;
-		    	double shift = getShift();
 		    	lastMousex = x;
 		    	lastMousey = y;
-		    	shift = getShift()-shift;
+		    	double shift = getShift();
 		    	shift *= sliderParent.stepScale;
-		    	double newValue = sliderParent.validator.step(sliderParent.value, shift);
+		    	double newValue = sliderParent.validator.step(slider.value, shift);
 		    	sliderParent.value = newValue;
 		    	sliderParent.valueChanged(false);
 		    	slider.repaint();
@@ -1374,8 +1373,8 @@ public class DoubleInput extends FillPane {
 		public void mouseOut(Component component) {
 			DoubleSlider slider = (DoubleSlider) getComponent();
 			keys.clear();// Forget which keys are pressed, for safety
-			lastMousex = -1;
-			lastMousey = -1;
+			// lastMousex = -1;
+			// lastMousey = -1;
 			slider.repaint();// May need repainting
 		}
 	    
@@ -1465,7 +1464,7 @@ public class DoubleInput extends FillPane {
 			final double minradius = 0.5*mindiameter, maxradius = 0.5*maxdiameter;
 			// --- Draw ---
 			// The base is a rectangle with half circle caps
-			RoundRectangle2D.Double shapeOuter = new RoundRectangle2D.Double(0, 0, width, height, minradius, minradius);
+			RoundRectangle2D.Double shapeOuter = new RoundRectangle2D.Double(0, 0, width, height, mindiameter, mindiameter);
 			g.setPaint(new GradientPaint(0,0,bgColUpper,0,height,bgColLower));
 			g.fill(shapeOuter);
 			// If any pending changes, show it
@@ -1513,14 +1512,14 @@ public class DoubleInput extends FillPane {
 				g.setColor(arrowCol);
 				Path2D.Double arrowPath = new Path2D.Double();
 				arrowPath.moveTo(width-minradius+arrowWidth, centery);
-				arrowPath.moveTo(width-minradius, centery+arrowWidth);
-				arrowPath.moveTo(width-minradius, centery-arrowWidth);
+				arrowPath.lineTo(width-minradius, centery+arrowWidth);
+				arrowPath.lineTo(width-minradius, centery-arrowWidth);
 				arrowPath.closePath();
 				g.fill(arrowPath);
 				arrowPath = new Path2D.Double();
 				arrowPath.moveTo(minradius-arrowWidth, centery);
-				arrowPath.moveTo(minradius, centery+arrowWidth);
-				arrowPath.moveTo(minradius, centery-arrowWidth);
+				arrowPath.lineTo(minradius, centery+arrowWidth);
+				arrowPath.lineTo(minradius, centery-arrowWidth);
 				arrowPath.closePath();
 				g.fill(arrowPath);
 			}

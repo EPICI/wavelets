@@ -1036,6 +1036,8 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 		public void buttonPressed(org.apache.pivot.wtk.Button button){
 			// fetch needed data
 			Clip.Template template = parent.getTemplate();
+			// abort if no selection
+			if(template==null)return;
 			// make the new parameter
 			Clip.Template.Property property = new Clip.Template.Property();
 			property.name = "Property "+(template.properties.size()+1);
