@@ -81,7 +81,7 @@ public class DoubleInput extends FillPane {
 	/**
 	 * The data change listeners
 	 */
-	public ListenerList<DataListener> dataListeners;
+	public DataListenerList dataListeners;
 	
 	/**
 	 * Default constructor
@@ -108,6 +108,7 @@ public class DoubleInput extends FillPane {
 		textListener = new TextInputListener(this);
 		text.getComponentStateListeners().add(textListener);
 		text.getComponentKeyListeners().add(textListener);
+		dataListeners = new DataListenerList();
 		toSliderView(false);
 	}
 	
@@ -203,6 +204,24 @@ public class DoubleInput extends FillPane {
 	 */
 	public static double parse(String text){
 		return Double.parseDouble(text);
+	}
+	
+	/**
+	 * A {@link ListenerList} of {@link DataListener}.
+	 * When given an event, passes it on to each of its listeners.
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 */
+	public static class DataListenerList extends WTKListenerList<DataListener> implements DataListener{
+
+		@Override
+		public void updated(DoubleInput component, boolean commit) {
+			for(DataListener listener:this){
+				listener.updated(component, commit);
+			}
+		}
+		
 	}
 	
 	/**

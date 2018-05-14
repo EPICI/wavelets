@@ -138,7 +138,7 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 	 * @author EPICI
 	 * @version 1.0
 	 */
-	public static class LinkedEditorPane extends Container implements Bindable, DataEditor.Instance<Pattern>{
+	public static class LinkedEditorPane extends FillPane implements Bindable, DataEditor.Instance<Pattern>{
 		
 		/**
 		 * Reserved rows at the top of the clip table
@@ -1904,12 +1904,21 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 	 * @author EPICI
 	 * @version 1.0
 	 */
-	public static class LinkedEditorInnerPane extends Component implements Bindable{
+	public static class LinkedEditorInnerPane extends Container implements Bindable{
 		
 		/**
 		 * The pane that contains this
 		 */
 		public LinkedEditorPane parent;
+		
+		/**
+		 * Blank constructor. Only does some basic pre-initialization
+		 * since {@link #initialize(Map, URL, Resources)}
+		 * and {@link #init()} will handle the rest.
+		 */
+		public LinkedEditorInnerPane(){
+			installSkin(LinkedEditorInnerPane.class);
+		}
 		
 		@Override
 		public void initialize(Map<String, Object> namespace, URL location, Resources resources) {

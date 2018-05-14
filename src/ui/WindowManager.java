@@ -107,11 +107,11 @@ public class WindowManager extends Window implements Bindable {
 	 * Adds by <i>group</i>
 	 * 
 	 * @param meta contains reference to frame and additional metadata
-	 * @param open whether to open the window immediately after
+	 * @param open whether to open the window immediately after if it isn't open already
 	 */
 	public void addWindow(MetaComponent<JInternalFrame> meta,boolean open){
 		addWindow(meta);
-		if(open)openWindow(meta.group);
+		if(open && !meta.component.isVisible())openWindow(meta.group);
 	}
 	
 	/**
