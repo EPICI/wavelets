@@ -131,7 +131,7 @@ public class NamedMap<T extends Named> implements Serializable{
 			T value = dualMap.remove(oldName);
 			// Can we accept the given name?
 			if(!forwardMap.containsKey(newName)
-					&& value.setName(newName)){
+					&& Named.setName(value, newName)){
 				// it removes the old pairing for us, so no more work needed
 				dualMap.put(newName, value);
 				return newName;
@@ -140,7 +140,7 @@ public class NamedMap<T extends Named> implements Serializable{
 			if(Preferences.getBooleanSafe(session, Preferences.INDEX_BOOLEAN_NAMEDMAP_RENAME_USE_NEXTNAME)){
 				// What name would be next?
 				newName = nextName(oldName,-1,false,session);
-				if(value.setName(newName)){
+				if(Named.setName(value, newName)){
 					dualMap.put(newName, value);
 					return newName;
 				}
@@ -168,7 +168,7 @@ public class NamedMap<T extends Named> implements Serializable{
 				&&!forwardMap.containsKey(newName)){
 			T value = forwardMap.get(oldName);
 			// test if it will reject the new name
-			if(value.setName(newName)){
+			if(Named.setName(value, newName)){
 				// it removes the old pairing for us, so no more work needed
 				dualMap.put(newName, value);
 				return true;
