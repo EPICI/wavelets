@@ -11,6 +11,7 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.GradientPaint;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
@@ -1195,7 +1196,7 @@ public class DoubleInput extends FillPane {
 		/**
 		 * How wide the arrow is compared to the minor radius
 		 */
-		public static final double ARROW_FAC = 0.3;
+		public static final double ARROW_FAC = 0.5;
 		
 		/**
 		 * Cache the font so other stuff can use it
@@ -1428,6 +1429,9 @@ public class DoubleInput extends FillPane {
 		public void paint(Graphics2D g) {
 			// --- Fetch some data ---
 			int width = getWidth(), height = getHeight();
+			int mouseDown = this.mouseDown;
+			int lastMousex = this.lastMousex, lastMousey = this.lastMousey;
+			boolean mouseDragged = this.mouseDragged;
 			AffineTransform at = g.getTransform();
 			// Ensure width > height
 			if(width<height){// Vertical slider
@@ -1435,6 +1439,7 @@ public class DoubleInput extends FillPane {
 				at.translate(0, height);
 				g.setTransform(at);
 				int tmp = width;width = height;height = tmp;
+				tmp = lastMousex;lastMousex = lastMousey;lastMousey = tmp;
 			}
 			DoubleSlider ds = (DoubleSlider) getComponent();
 			DoubleInput di = ds.parent;
@@ -1460,11 +1465,13 @@ public class DoubleInput extends FillPane {
 			arrowCol = colors.line;
 			changeColLower = colors.highlight;
 			changeColUpper = ColorScheme.brighten(changeColLower, 0.1f);
+			GradientPaint changePaint = new GradientPaint(0,0,changeColUpper,0,height,changeColLower);
 			// Calculate extra coordinates and dimensions
 			final double centerx = width*0.5, centery = height*0.5;
 			final int mindiameter = height, maxdiameter = width;
 			final double minradius = 0.5*mindiameter, maxradius = 0.5*maxdiameter;
 			// --- Draw ---
+			g.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			// The base is a rectangle with half circle caps
 			RoundRectangle2D.Double shapeOuter = new RoundRectangle2D.Double(0, 0, width, height, mindiameter, mindiameter);
 			g.setPaint(new GradientPaint(0,0,bgColUpper,0,height,bgColLower));
@@ -1486,7 +1493,7 @@ public class DoubleInput extends FillPane {
 				path.lineTo(centerx, topy);
 				path.closePath();
 				// Render it
-				g.setPaint(new GradientPaint(0,0,changeColUpper,0,height,changeColLower));
+				g.setPaint(changePaint);
 				g.fill(path);
 			}
 			// Outline comes after so it is always above
@@ -1510,19 +1517,22 @@ public class DoubleInput extends FillPane {
 			// No arrows if disabled, this indicates they cannot change it
 			if(enabled){
 				// Draw arrows
+				boolean leftIncrement = mouseDown==1 && !mouseDragged && lastMousex<mindiameter;
+				boolean rightIncrement = mouseDown==1 && !mouseDragged && lastMousex>width-mindiameter;
 				double arrowWidth = minradius*ARROW_FAC;
-				g.setColor(arrowCol);
 				Path2D.Double arrowPath = new Path2D.Double();
 				arrowPath.moveTo(width-minradius+arrowWidth, centery);
 				arrowPath.lineTo(width-minradius, centery+arrowWidth);
 				arrowPath.lineTo(width-minradius, centery-arrowWidth);
 				arrowPath.closePath();
+				g.setPaint(rightIncrement?changePaint:arrowCol);
 				g.fill(arrowPath);
 				arrowPath = new Path2D.Double();
 				arrowPath.moveTo(minradius-arrowWidth, centery);
 				arrowPath.lineTo(minradius, centery+arrowWidth);
 				arrowPath.lineTo(minradius, centery-arrowWidth);
 				arrowPath.closePath();
+				g.setPaint(leftIncrement?changePaint:arrowCol);
 				g.fill(arrowPath);
 			}
 		}
