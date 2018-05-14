@@ -1357,9 +1357,11 @@ public class DoubleInput extends FillPane {
 	    		DoubleSlider slider = (DoubleSlider) getComponent();
 	    		DoubleInput sliderParent = slider.parent;
 		    	mouseDragged = true;
+		    	double shift = getShift();
 		    	lastMousex = x;
 		    	lastMousey = y;
-		    	double shift = getShift()*sliderParent.stepScale;
+		    	shift = getShift()-shift;
+		    	shift *= sliderParent.stepScale;
 		    	double newValue = sliderParent.validator.step(sliderParent.value, shift);
 		    	sliderParent.value = newValue;
 		    	sliderParent.valueChanged(false);
@@ -1480,7 +1482,7 @@ public class DoubleInput extends FillPane {
 				path.moveTo(endx, topy);
 				Draw.BezierArc.arc(path, AffineTransform.getScaleInstance(caplength, minradius), endx, centery, 1, -Math.PI*0.5, Math.PI, 2);
 				path.lineTo(centerx, boty);
-				path.lineTo(centery, topy);
+				path.lineTo(centerx, topy);
 				path.closePath();
 				// Render it
 				g.setPaint(new GradientPaint(0,0,changeColUpper,0,height,changeColLower));

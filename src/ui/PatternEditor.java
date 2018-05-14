@@ -551,8 +551,6 @@ public class PatternEditor extends DataEditor.Tabbed<Pattern> {
 		 * @return
 		 */
 		public boolean updateTemplate(Clip.Template template){
-			// needs to be different
-			if(template==getTemplate())return false;
 			// fetch data
 			TablePane.RowSequence rows = clipTablePane.getRows();
 			ArrayList<Clip.Template.Property> properties = null;
