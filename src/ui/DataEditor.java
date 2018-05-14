@@ -54,7 +54,7 @@ public interface DataEditor<T> {
 			for(Component component:tabs){
 				if(component instanceof Instance<?>){
 					Instance<?> ieditor = (Instance<?>) component;
-					if(data.equals(ieditor))return false;
+					if(data.equals(ieditor.getEditorData()))return false;
 				}
 			}
 			addNewEditorData(data);
