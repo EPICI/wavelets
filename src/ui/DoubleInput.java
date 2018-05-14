@@ -109,6 +109,11 @@ public class DoubleInput extends FillPane {
 		text.getComponentStateListeners().add(textListener);
 		text.getComponentKeyListeners().add(textListener);
 		dataListeners = new DataListenerList();
+		slider.parent = this;
+		slider.value = value;
+		slider.init();
+		add(slider);
+		add(text);
 		toSliderView(false);
 	}
 	

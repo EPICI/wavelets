@@ -424,7 +424,7 @@ public class Draw {
 				pre[2] = nrx+nry*distance;
 				pre[3] = nry-nrx*distance;
 				// Transform
-				transform.transform(pre, 0, post, 0, 6);
+				transform.transform(pre, 0, post, 0, 3);
 				// Add the segment
 				path.curveTo(
 						cx+post[0],

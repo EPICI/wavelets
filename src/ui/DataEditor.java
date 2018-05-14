@@ -7,6 +7,7 @@ import org.apache.pivot.collections.Map;
 import org.apache.pivot.util.Resources;
 import org.apache.pivot.wtk.*;
 
+import core.Named;
 import core.Session;
 
 /**
@@ -54,7 +55,15 @@ public interface DataEditor<T> {
 			for(Component component:tabs){
 				if(component instanceof Instance<?>){
 					Instance<?> ieditor = (Instance<?>) component;
-					if(data.equals(ieditor.getEditorData()))return false;
+					Object other = ieditor.getEditorData();
+					if(
+							// different name may have same data but must be treated as separate
+							(data instanceof Named)
+							&& (other instanceof Named)
+							? ((Named)data).getName().equals(((Named)other).getName())
+							// finally, do standard equality test
+							: data.equals(other)
+							)return false;
 				}
 			}
 			addNewEditorData(data);
