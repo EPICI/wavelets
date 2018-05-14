@@ -539,6 +539,8 @@ public class TrackLSEditor extends DataEditor.Tabbed<TrackLayerSimple> {
 						if(yextend){// Past last row, special
 							if(x<swidtha){// Add new
 								Pattern pattern = Pattern.makeDefaultPattern(session);
+								// TODO uncomment this after synth is implemented
+								//editor.view.patterns.put(pattern, new BitSet());
 								MetaComponent<JInternalFrame> meta = session.windowManager.getWindow("Pattern Editor");
 								PatternEditor peditor;
 								if(meta==null||meta.component.isClosed()){
@@ -552,6 +554,7 @@ public class TrackLSEditor extends DataEditor.Tabbed<TrackLayerSimple> {
 								peditor = (PatternEditor) meta.metaData.get("window");
 								peditor.addEditorData(pattern);
 								session.windowManager.addWindow(meta,true);
+								editor.repaint();
 							}else{// Move here
 								if(session!=null){
 									Object clip = session.clipBoard;
