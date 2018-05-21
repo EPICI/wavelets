@@ -237,48 +237,46 @@ public class Pattern implements Destructable, TransientContainer<Composition>, N
 		// the list will be modified anyway
 		ArrayList<Clip> newClips = new ArrayList<>(clips);
 		Map<String,Object> set = (Map<String,Object>)options.get("set");
-		if(set!=null){
-			Number val;
-			CharSequence sval;
-			val = (Number) set.get(PATTERN_CLASS_NAME+".divisions");
-			if(val!=null)divisions = val.intValue();
-			sval = (CharSequence) set.get(PATTERN_CLASS_NAME+".name");
-			if(sval!=null)newName = sval.toString();
-			sval = (CharSequence) set.get(PATTERN_CLASS_NAME+".synthName");
-			if(sval!=null)newSynthName = sval.toString();
-			// filter
-			Predicate<? super Clip> pval = (Predicate<? super Clip>) set.get(PATTERN_CLASS_NAME+".clips.filter");
-			if(pval!=null){
-				newClips.removeIf(pval.negate());
+		Number val;
+		CharSequence sval;
+		val = (Number) set.get(PATTERN_CLASS_NAME+".divisions");
+		if(val!=null)divisions = val.intValue();
+		sval = (CharSequence) set.get(PATTERN_CLASS_NAME+".name");
+		if(sval!=null)newName = sval.toString();
+		sval = (CharSequence) set.get(PATTERN_CLASS_NAME+".synthName");
+		if(sval!=null)newSynthName = sval.toString();
+		// filter
+		Predicate<? super Clip> pval = (Predicate<? super Clip>) set.get(PATTERN_CLASS_NAME+".clips.filter");
+		if(pval!=null){
+			newClips.removeIf(pval.negate());
+		}
+		// any iterable is allowed, valid values override old ones
+		Iterable<?> lval = (Iterable<?>) set.get(PATTERN_CLASS_NAME+".clips");
+		if(lval!=null){
+			int size = newClips.size();
+			Iterator<?> iter = lval.iterator();
+			// exhaust as many items as possible which don't need extending the list
+			int i;
+			for(i=0;i<size && iter.hasNext();i++){
+				Object value = iter.next();
+				if(value!=null && (value instanceof Clip)){
+					newClips.set(i, (Clip)value);
+				}
 			}
-			// any iterable is allowed, valid values override old ones
-			Iterable<?> lval = (Iterable<?>) set.get(PATTERN_CLASS_NAME+".clips");
-			if(lval!=null){
-				int size = newClips.size();
-				Iterator<?> iter = lval.iterator();
-				// exhaust as many items as possible which don't need extending the list
-				int i;
-				for(i=0;i<size && iter.hasNext();i++){
-					Object value = iter.next();
-					if(value!=null && (value instanceof Clip)){
-						newClips.set(i, (Clip)value);
-					}
+			// do remaining items, if any
+			while(iter.hasNext()){
+				Object value = iter.next();
+				if(value!=null && (value instanceof Clip)){
+					newClips.add((Clip)value);
 				}
-				// do remaining items, if any
-				while(iter.hasNext()){
-					Object value = iter.next();
-					if(value!=null && (value instanceof Clip)){
-						newClips.add((Clip)value);
-					}
-				}
-				// need to limit length?
-				int j;
-				if(i<size 
-						&& (val = (Number) set.get(PATTERN_CLASS_NAME+".clips.size"))!=null
-						&& (j = val.intValue())<i){
-					for(size--;size>=j;size--){
-						newClips.remove(size);
-					}
+			}
+			// need to limit length?
+			int j;
+			if(i<size 
+					&& (val = (Number) set.get(PATTERN_CLASS_NAME+".clips.size"))!=null
+					&& (j = val.intValue())<i){
+				for(size--;size>=j;size--){
+					newClips.remove(size);
 				}
 			}
 		}

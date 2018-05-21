@@ -16,6 +16,54 @@ import org.apache.commons.collections4.trie.PatriciaTrie;
  * @param <Self> itself. Hacky way of enforcing it.
  */
 public interface BetterClone<Self extends BetterClone<Self>> {
+	
+	/**
+	 * If a key-value pair <i>k:v</i> exists in this map,
+	 * v provides a way to copy objects of type k.
+	 */
+	static final HashMap<Class<?>,Copier<?>> copiers = new HashMap<>();
+	
+	/**
+	 * Designate the copier which will copy a particular class.
+	 * If the subclasses don't have their own copiers, this will
+	 * copy for them as well.
+	 * 
+	 * @param cls
+	 * @param copier
+	 */
+	public static <T> void setCopier(Class<T> cls,Copier<T> copier){
+		copiers.put(cls, copier);
+	}
+	
+	/**
+	 * Get the copier designated to copy a particular class.
+	 * Returns null if no copier is designated for this class.
+	 * Does not consider superclasses.
+	 * 
+	 * @param cls
+	 * @return
+	 */
+	public static <T> Copier<T> getCopier(Class<T> cls){
+		return (Copier<T>) copiers.get(cls);
+	}
+	
+	/**
+	 * Same as {@link #getCopier(Class)} except superclasses are considered.
+	 * Considers this class, then its superclass, then the super's super, etc.
+	 * until it finds a copier or reaches {@link Object}.
+	 * 
+	 * @param cls
+	 * @return
+	 */
+	public static Copier<?> getCopierSuper(Class<?> cls){
+		List<Class<?>> superclasses = ClassUtils.getAllSuperclasses(cls);
+		for(Class<?> icls:superclasses){// look for nearest class with copier
+			Copier<?> copier = getCopier(icls);
+			if(copier!=null)return copier;
+		}
+		return null;
+	}
+	
 	/**
 	 * Copy to a certain depth.
 	 * <br>
@@ -37,7 +85,8 @@ public interface BetterClone<Self extends BetterClone<Self>> {
 	 * prefix with &quot;*&quot; to blacklist a class instead of individual fields</li>
 	 * <li>&quot;whitelist&quot; is some collection of strings where
 	 * if the name of a field is or is similar to a string in the collection,
-	 * it should be copied regardless of whether the depth would allow it</li>
+	 * it should be copied regardless of whether the depth would allow it
+	 * (conventionally overrides blacklist)</li>
 	 * <li>&quot;set&quot; is a string-object map which says specific fields should
 	 * be changed in the copy; this is useful for modifying immutable objects</li>
 	 * <li>&quot;session&quot; is the current session</li>
@@ -99,9 +148,12 @@ public interface BetterClone<Self extends BetterClone<Self>> {
 	/**
 	 * Useful for whitelist and blacklist: check if the field name or class
 	 * is in the collection.
+	 * <br>
+	 * If using {@link #copy(BetterClone, int, Map)} or {@link #tryCopy(Object, int, Map)},
+	 * that already includes
 	 * 
 	 * @param collection collection to search in
-	 * @param oclass class of value to check for
+	 * @param oclass if provided, class of value to check for
 	 * @param name if provided, also check for this exact string
 	 * @return
 	 */
@@ -129,40 +181,136 @@ public interface BetterClone<Self extends BetterClone<Self>> {
 	}
 	
 	/**
+	 * Attempt to copy an object even if it does not implement {@link BetterClone}.
+	 * Attempts, in order, are:
+	 * <ol>
+	 * <li>Cast to {@link BetterClone} and use {@link #copy(int, Map)}.</li>
+	 * <li>Find a {@link Copier} in {@link #copiers} (access it with
+	 * {@link #setCopier(Class, Copier)} and {@link #getCopier(Class)}) and use
+	 * that to make a copy.</li>
+	 * </ol>
+	 * On failure, returns the original object uncopied.
+	 * <br>
+	 * Other than additional attempts, is the same as {@link #copy(BetterClone, int, Map)}.
+	 * 
+	 * @param source
+	 * @param depth
+	 * @param options
+	 * @return
+	 */
+	public static <T> T tryCopy(T source,int depth,Map<String,Object> options){
+		// null becomes null
+		if(source==null)return null;
+		// depth check
+		if(depth<0)return source;
+		// fix options
+		options = fixOptions(options);
+		// fetch class
+		Class<?> sourceClass = source.getClass();
+		// test blacklist/whitelist
+		Collection<String> blacklist = (Collection<String>)options.get("blacklist");
+		Collection<String> whitelist = (Collection<String>)options.get("whitelist");
+		if(fieldIncluded(blacklist,sourceClass,null)
+				&&!fieldIncluded(whitelist,sourceClass,null)
+				){
+			return source;
+		}
+		// test replace
+		Map<Object,Object> replace = (Map<Object,Object>)options.get("replace");
+		Object replaceWith = replace.get(source);
+		if(replaceWith!=null){
+			return (T)replaceWith;
+		}
+		// null until an attempt succeeds
+		T result = null;
+		// attempt: use BetterClone
+		if(source instanceof BetterClone<?>){
+			BetterClone<?> csource = (BetterClone<?>) source;
+			result = (T) csource.copy(depth,options);
+		}
+		// attempt: use Copier
+		if(result==null){
+			Copier<?> copier = getCopierSuper(sourceClass);
+			if(copier!=null){
+				result = (T) copier.copyCast(source, depth, options);
+			}
+		}
+		// all attempts failed
+		if(result==null)result = source;
+		// put in replace map
+		replace.put(source, result);
+		// return
+		return result;
+	}
+	
+	/**
 	 * Copies <i>source</i>, with safety. Special cases taken care of by this method:
 	 * <ul>
 	 * <li>If <i>source</i> is null, returns null</li>
 	 * <li>If <i>depth</i> is negative, returns <i>source</i> uncopied</li>
 	 * <li>If <i>source</i> is in the &quot;replace&quot; in <i>options</i>,
 	 * returns the mapped value</li>
-	 * <li>If the class of <i>source</i> is in the &quot;blacklist&quot;
+	 * <li>If the class of <i>source</i>, any of its superclasses,
+	 * or any of its implemented interfaces is in the &quot;blacklist&quot;
+	 * but not in the &quot;whitelist&quot;
 	 * in <i>options</i>, returns <i>source</i> uncopied</li>
 	 * <li>If <i>options</i> is null, it will be substituted; however this
 	 * will lose all the data in the options so don't do this</li>
 	 * </ul>
+	 * <br>
+	 * The generic <i>T</i> does not need to implement <i>BetterClone&lt;T&gt;</i>,
+	 * however, the copy class needs to be <i>T</i> or a subclass or implementor of it.
+	 * <br>
+	 * Note: this actually redirects to {@link #tryCopy(Object, int, Map)}.
 	 * 
 	 * @param source object to copy
 	 * @param depth
 	 * @param options
 	 * @return
 	 */
-	public static <T extends BetterClone<T>> T copy(T source,int depth,Map<String,Object> options){
-		if(source==null)return null;
-		if(depth<0)return source;
-		options = fixOptions(options);
-		Class<?> sourceClass = source.getClass();
-		Collection<String> blacklist = (Collection<String>)options.get("blacklist");
-		if(blacklist.contains("*"+sourceClass.getCanonicalName())){
-			// We only accept the full name to avoid ambiguity
-			return source;
+	public static <T extends BetterClone<?>> T copy(T source,int depth,Map<String,Object> options){
+		/*
+		 * This is a simple redirect, so it should get inlined.
+		 * The compiler should notice the BetterClone attempt always works,
+		 * and will optimize away later attempts.
+		 */
+		return tryCopy(source,depth,options);
+	}
+	
+	/**
+	 * An interface which allows copying using a helper object
+	 * which determines copy functionality. Originally meant
+	 * so that classes not implementing {@link BetterClone}
+	 * can copy in a similar manner, but may also be used to define
+	 * multiple ways of copying the same type.
+	 * 
+	 * @author EPICI
+	 * @version 1.0
+	 *
+	 * @param <T>
+	 */
+	public static interface Copier<T>{
+		/**
+		 * Like {@link BetterClone#copy(int, Map)}, but since we are copying
+		 * a different object, that object is a parameter.
+		 * 
+		 * @param source the object to copy
+		 * @param depth see {@link BetterClone#copy(int, Map)}
+		 * @param options see {@link BetterClone#copy(int, Map)}
+		 * @return
+		 */
+		public T copy(T source,int depth,Map<String,Object> options);
+		
+		/**
+		 * Call {@link #copy(Object, int, Map)} by casting <i>source</i> to <i>T</i>.
+		 * 
+		 * @param source
+		 * @param depth
+		 * @param options
+		 * @return
+		 */
+		public default T copyCast(Object source,int depth,Map<String,Object> options){
+			return copy((T)source,depth,options);
 		}
-		Map<Object,Object> replace = (Map<Object,Object>)options.get("replace");
-		Object replaceWith = replace.get(source);
-		if(replaceWith!=null){
-			return (T)replaceWith;
-		}
-		T result = source.copy(depth, options);
-		replace.put(source, result);
-		return result;
 	}
 }

@@ -147,7 +147,7 @@ public class SynthNOsc implements Synthesizer {
 	 * @param v a value
 	 * @return a compressed view
 	 */
-	private long sig(double v){
+	private static long sig(double v){
 		long bits = Double.doubleToLongBits(v);
 		return bits>>>48;
 	}
@@ -164,13 +164,30 @@ public class SynthNOsc implements Synthesizer {
 		return true;
 	}
 	
+	// TODO BetterClone implementation
+	
+	// TODO makeDefaultSynth(Session) static method, use single saw osc
+	
+	private static final String OSC_CLASS_NAME = Osc.class.getCanonicalName();
+	private static final String[] OSC_PROPERTIES_NAMES = {
+			"detune",
+			"volume",
+			"attackConst",
+			"attackFrac",
+			"holdConst",
+			"holdFrac",
+			"decayConst",
+			"decayFrac",
+			"minVolume",
+	};
+	
 	/**
 	 * An oscillator used by this class
 	 * 
 	 * @author EPICI
 	 * @version 1.0
 	 */
-	public class Osc{
+	public class Osc implements BetterClone<Osc>{
 		/**
 		 * Primitive waveform used
 		 * <table><thead>
@@ -182,7 +199,7 @@ public class SynthNOsc implements Synthesizer {
 		 * <tr><td>Saw</td><td>3</td></tr>
 		 * </tbody></table>
 		 */
-		public volatile byte type;
+		public volatile int type;
 		/**
 		 * Holds the other properties
 		 * <br>
@@ -468,6 +485,38 @@ public class SynthNOsc implements Synthesizer {
 			return new Osc.OscVoice(pitch,start,end,volume);
 		}
 		
+		@Override
+		public Osc copy(int depth,Map<String,Object> options){
+			int nextDepth = depth-1;
+			int newType = type;
+			VarDouble[] newProperties = properties;
+			int nproperties = newProperties.length;
+			newProperties = Arrays.copyOf(newProperties, nproperties);
+			Collection<String> blacklist = (Collection<String>)options.get("blacklist");
+			Collection<String> whitelist = (Collection<String>)options.get("whitelist");
+			Map<String,Object> set = (Map<String,Object>)options.get("set");
+			VarDouble dval;
+			for(int i=0;i<nproperties;i++){
+				final String FIELD_NAME = OSC_CLASS_NAME+OSC_PROPERTIES_NAMES[i];
+				dval = (VarDouble) set.get(FIELD_NAME);
+				if(dval!=null){
+					newProperties[i] = dval;
+				}else if(!BetterClone.fieldIncluded(blacklist, null,
+								FIELD_NAME)
+						|| BetterClone.fieldIncluded(whitelist, null,
+								FIELD_NAME)){
+					newProperties[i] = BetterClone.tryCopy(newProperties[i], depth-1, options);
+				}
+			}
+			Number val;
+			val = (Number) set.get(OSC_CLASS_NAME+".type");
+			if(val!=null)newType = val.intValue();
+			// make the copied object
+			Osc result = new Osc();
+			result.type = newType;
+			return result;
+		}
+		
 		/**
 		 * A voice for this oscillator
 		 * 
@@ -590,7 +639,7 @@ public class SynthNOsc implements Synthesizer {
 			public Samples nextSegment(int sampleCount) {
 				double[] data = new double[sampleCount];
 				if(step==3)return new Samples(sampleRate,data);
-				byte ltype = type;
+				int ltype = type;
 				// Load values
 				double ldetune = getDetune(time), lvolume = getVolume(time), lattackConst = getAttackConst(time), lattackFrac = getAttackFrac(time), lholdConst = getHoldConst(time),
 						lholdFrac = getHoldFrac(time), ldecayConst = getDecayConst(time), ldecayFrac = getDecayFrac(time), lminVolume = getMinVolume(time);

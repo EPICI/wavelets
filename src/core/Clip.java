@@ -326,50 +326,48 @@ public class Clip implements BetterClone<Clip>, Serializable {
 		// easier to copy now
 		ArrayList<Double> newProperties = new ArrayList<>(properties);
 		Map<String,Object> set = (Map<String,Object>)options.get("set");
-		if(set!=null){
-			Number val;
-			val = (Number) set.get(CLIP_CLASS_NAME+".delay");
-			if(val!=null)newDelay = val.intValue();
-			val = (Number) set.get(CLIP_CLASS_NAME+".length");
-			if(val!=null)newLength = val.intValue();
-			val = (Number) set.get(CLIP_CLASS_NAME+".pitch");
-			if(val!=null)newPitch = val.intValue();
-			val = (Number) set.get(CLIP_CLASS_NAME+".volume");
-			if(val!=null)newVolume = val.doubleValue();
-			// filter
-			Predicate<? super Double> pval = (Predicate<? super Double>) set.get(CLIP_CLASS_NAME+".properties.filter");
-			if(pval!=null){
-				newProperties.removeIf(pval.negate());
+		Number val;
+		val = (Number) set.get(CLIP_CLASS_NAME+".delay");
+		if(val!=null)newDelay = val.intValue();
+		val = (Number) set.get(CLIP_CLASS_NAME+".length");
+		if(val!=null)newLength = val.intValue();
+		val = (Number) set.get(CLIP_CLASS_NAME+".pitch");
+		if(val!=null)newPitch = val.intValue();
+		val = (Number) set.get(CLIP_CLASS_NAME+".volume");
+		if(val!=null)newVolume = val.doubleValue();
+		// filter
+		Predicate<? super Double> pval = (Predicate<? super Double>) set.get(CLIP_CLASS_NAME+".properties.filter");
+		if(pval!=null){
+			newProperties.removeIf(pval.negate());
+		}
+		// any iterable is allowed, valid values override old ones
+		Iterable<?> lval = (Iterable<?>) set.get(CLIP_CLASS_NAME+".properties");
+		if(lval!=null){
+			// make copy
+			int size = newProperties.size();
+			Iterator<?> iter = lval.iterator();
+			// exhaust as many items as possible which don't need extending the list
+			int i;
+			for(i=0;i<size && iter.hasNext();i++){
+				Object value = iter.next();
+				if(value!=null && (value instanceof Number)){
+					newProperties.set(i, ((Number)value).doubleValue());
+				}
 			}
-			// any iterable is allowed, valid values override old ones
-			Iterable<?> lval = (Iterable<?>) set.get(CLIP_CLASS_NAME+".properties");
-			if(lval!=null){
-				// make copy
-				int size = newProperties.size();
-				Iterator<?> iter = lval.iterator();
-				// exhaust as many items as possible which don't need extending the list
-				int i;
-				for(i=0;i<size && iter.hasNext();i++){
-					Object value = iter.next();
-					if(value!=null && (value instanceof Number)){
-						newProperties.set(i, ((Number)value).doubleValue());
-					}
+			// do remaining items, if any
+			while(iter.hasNext()){
+				Object value = iter.next();
+				if(value!=null && (value instanceof Number)){
+					newProperties.add(((Number)value).doubleValue());
 				}
-				// do remaining items, if any
-				while(iter.hasNext()){
-					Object value = iter.next();
-					if(value!=null && (value instanceof Number)){
-						newProperties.add(((Number)value).doubleValue());
-					}
-				}
-				// need to limit length?
-				int j;
-				if(i<size 
-						&& (val = (Number) set.get(CLIP_CLASS_NAME+".properties.size"))!=null
-						&& (j = val.intValue())<i){
-					for(size--;size>=j;size--){
-						newProperties.remove(size);
-					}
+			}
+			// need to limit length?
+			int j;
+			if(i<size 
+					&& (val = (Number) set.get(CLIP_CLASS_NAME+".properties.size"))!=null
+					&& (j = val.intValue())<i){
+				for(size--;size>=j;size--){
+					newProperties.remove(size);
 				}
 			}
 		}
@@ -434,44 +432,42 @@ public class Clip implements BetterClone<Clip>, Serializable {
 			// the list will be modified anyway
 			ArrayList<Property> newProperties = new ArrayList<>(properties);
 			Map<String,Object> set = (Map<String,Object>)options.get("set");
-			if(set!=null){
-				Number val;
-				CharSequence sval;
-				sval = (CharSequence) set.get(TEMPLATE_CLASS_NAME+".name");
-				if(sval!=null)newName = sval.toString();
-				// filter
-				Predicate<? super Property> pval = (Predicate<? super Property>) set.get(TEMPLATE_CLASS_NAME+".properties.filter");
-				if(pval!=null){
-					newProperties.removeIf(pval.negate());
+			Number val;
+			CharSequence sval;
+			sval = (CharSequence) set.get(TEMPLATE_CLASS_NAME+".name");
+			if(sval!=null)newName = sval.toString();
+			// filter
+			Predicate<? super Property> pval = (Predicate<? super Property>) set.get(TEMPLATE_CLASS_NAME+".properties.filter");
+			if(pval!=null){
+				newProperties.removeIf(pval.negate());
+			}
+			// any iterable is allowed, valid values override old ones
+			Iterable<?> lval = (Iterable<?>) set.get(CLIP_CLASS_NAME+".properties");
+			if(lval!=null){
+				int size = newProperties.size();
+				Iterator<?> iter = lval.iterator();
+				// exhaust as many items as possible which don't need extending the list
+				int i;
+				for(i=0;i<size && iter.hasNext();i++){
+					Object value = iter.next();
+					if(value!=null && (value instanceof Property)){
+						newProperties.set(i, (Property)value);
+					}
 				}
-				// any iterable is allowed, valid values override old ones
-				Iterable<?> lval = (Iterable<?>) set.get(CLIP_CLASS_NAME+".properties");
-				if(lval!=null){
-					int size = newProperties.size();
-					Iterator<?> iter = lval.iterator();
-					// exhaust as many items as possible which don't need extending the list
-					int i;
-					for(i=0;i<size && iter.hasNext();i++){
-						Object value = iter.next();
-						if(value!=null && (value instanceof Property)){
-							newProperties.set(i, (Property)value);
-						}
+				// do remaining items, if any
+				while(iter.hasNext()){
+					Object value = iter.next();
+					if(value!=null && (value instanceof Property)){
+						newProperties.add((Property)value);
 					}
-					// do remaining items, if any
-					while(iter.hasNext()){
-						Object value = iter.next();
-						if(value!=null && (value instanceof Property)){
-							newProperties.add((Property)value);
-						}
-					}
-					// need to limit length?
-					int j;
-					if(i<size 
-							&& (val = (Number) set.get(CLIP_CLASS_NAME+".properties.size"))!=null
-							&& (j = val.intValue())<i){
-						for(size--;size>=j;size--){
-							newProperties.remove(size);
-						}
+				}
+				// need to limit length?
+				int j;
+				if(i<size 
+						&& (val = (Number) set.get(CLIP_CLASS_NAME+".properties.size"))!=null
+						&& (j = val.intValue())<i){
+					for(size--;size>=j;size--){
+						newProperties.remove(size);
 					}
 				}
 			}
@@ -612,22 +608,20 @@ public class Clip implements BetterClone<Clip>, Serializable {
 						newStep = step,
 						newUpdate = update;
 				Map<String,Object> set = (Map<String,Object>)options.get("set");
-				if(set!=null){
-					Number val;
-					val = (Number) set.get(PROPERTY_CLASS_NAME+".min");
-					if(val!=null)newMin = val.doubleValue();
-					val = (Number) set.get(PROPERTY_CLASS_NAME+".base");
-					if(val!=null)newBase = val.doubleValue();
-					val = (Number) set.get(PROPERTY_CLASS_NAME+".max");
-					if(val!=null)newMax = val.doubleValue();
-					CharSequence sval;
-					sval = (CharSequence) set.get(PROPERTY_CLASS_NAME+".name");
-					if(sval!=null)newName = sval.toString();
-					sval = (CharSequence) set.get(PROPERTY_CLASS_NAME+".step");
-					if(sval!=null)newStep = sval.toString();
-					sval = (CharSequence) set.get(PROPERTY_CLASS_NAME+".update");
-					if(sval!=null)newUpdate = sval.toString();
-				}
+				Number val;
+				val = (Number) set.get(PROPERTY_CLASS_NAME+".min");
+				if(val!=null)newMin = val.doubleValue();
+				val = (Number) set.get(PROPERTY_CLASS_NAME+".base");
+				if(val!=null)newBase = val.doubleValue();
+				val = (Number) set.get(PROPERTY_CLASS_NAME+".max");
+				if(val!=null)newMax = val.doubleValue();
+				CharSequence sval;
+				sval = (CharSequence) set.get(PROPERTY_CLASS_NAME+".name");
+				if(sval!=null)newName = sval.toString();
+				sval = (CharSequence) set.get(PROPERTY_CLASS_NAME+".step");
+				if(sval!=null)newStep = sval.toString();
+				sval = (CharSequence) set.get(PROPERTY_CLASS_NAME+".update");
+				if(sval!=null)newUpdate = sval.toString();
 				Property result = new Property(newName,newMin,newBase,newMax,newStep,newUpdate);
 				return result;
 			}

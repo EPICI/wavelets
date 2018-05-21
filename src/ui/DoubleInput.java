@@ -568,15 +568,13 @@ public class DoubleInput extends FillPane {
 			public DoubleValidator copy(int depth,Map<String,Object> options){
 				double newMin = this.min, newMax = this.max, newBase = this.base;
 				Map<String,Object> set = (Map<String,Object>)options.get("set");
-				if(set!=null){
-					Number val;
-					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min");
-					if(val!=null)newMin = val.doubleValue();
-					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max");
-					if(val!=null)newMax = val.doubleValue();
-					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base");
-					if(val!=null)newBase = val.doubleValue();
-				}
+				Number val;
+				val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min");
+				if(val!=null)newMin = val.doubleValue();
+				val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max");
+				if(val!=null)newMax = val.doubleValue();
+				val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base");
+				if(val!=null)newBase = val.doubleValue();
 				return new BoundedDoubleValidator(newMin,newMax,newBase);
 			}
 			
@@ -659,15 +657,13 @@ public class DoubleInput extends FillPane {
 			public DoubleValidator copy(int depth,Map<String,Object> options){
 				double newMin = this.min, newMax = this.max, newBase = this.base;
 				Map<String,Object> set = (Map<String,Object>)options.get("set");
-				if(set!=null){
-					Number val;
-					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min");
-					if(val!=null)newMin = val.doubleValue();
-					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max");
-					if(val!=null)newMax = val.doubleValue();
-					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base");
-					if(val!=null)newBase = val.doubleValue();
-				}
+				Number val;
+				val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min");
+				if(val!=null)newMin = val.doubleValue();
+				val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max");
+				if(val!=null)newMax = val.doubleValue();
+				val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base");
+				if(val!=null)newBase = val.doubleValue();
 				return new BoundedIntegerValidator(newMin,newMax,newBase);
 			}
 			
@@ -794,20 +790,18 @@ public class DoubleInput extends FillPane {
 				val = (DoubleValidator) set.get(SPLITDOUBLEVALIDATOR_CLASS_NAME+".set");
 				if(val!=null){
 					newSet = val;
-				}else if(depth>0
-						&&!BetterClone.fieldIncluded(blacklist, newSet.getClass(),
+				}else if(!BetterClone.fieldIncluded(blacklist, null,
 								SPLITDOUBLEVALIDATOR_CLASS_NAME+".set")
-						|| BetterClone.fieldIncluded(whitelist, newSet.getClass(),
+						|| BetterClone.fieldIncluded(whitelist, null,
 								SPLITDOUBLEVALIDATOR_CLASS_NAME+".set")){
 					newSet = BetterClone.copy(newSet, depth-1, options);
 				}
 				val = (DoubleValidator) set.get(SPLITDOUBLEVALIDATOR_CLASS_NAME+".step");
 				if(val!=null){
 					newStep = val;
-				}else if(depth>0
-						&&!BetterClone.fieldIncluded(blacklist, newSet.getClass(),
+				}else if(!BetterClone.fieldIncluded(blacklist, null,
 								SPLITDOUBLEVALIDATOR_CLASS_NAME+".step")
-						|| BetterClone.fieldIncluded(whitelist, newSet.getClass(),
+						|| BetterClone.fieldIncluded(whitelist, null,
 								SPLITDOUBLEVALIDATOR_CLASS_NAME+".step")){
 					newStep = BetterClone.copy(newStep, depth-1, options);
 				}
@@ -902,17 +896,15 @@ public class DoubleInput extends FillPane {
 			public DoubleValidator copy(int depth,Map<String,Object> options){
 				double newMin = this.min, newMax = this.max, newBase = this.base, newPbase = this.pbase;
 				Map<String,Object> set = (Map<String,Object>)options.get("set");
-				if(set!=null){
-					Number val;
-					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min");
-					if(val!=null)newMin = val.doubleValue();
-					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max");
-					if(val!=null)newMax = val.doubleValue();
-					val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base");
-					if(val!=null)newBase = val.doubleValue();
-					val = (Number) set.get(HYPERBOLICSTEP_CLASS_NAME+".pbase");
-					if(val!=null)newPbase = val.doubleValue();
-				}
+				Number val;
+				val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".min");
+				if(val!=null)newMin = val.doubleValue();
+				val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".max");
+				if(val!=null)newMax = val.doubleValue();
+				val = (Number) set.get(BOUNDEDDOUBLEVALIDATOR_CLASS_NAME+".base");
+				if(val!=null)newBase = val.doubleValue();
+				val = (Number) set.get(HYPERBOLICSTEP_CLASS_NAME+".pbase");
+				if(val!=null)newPbase = val.doubleValue();
 				return new HyperbolicStep(newMin,newMax,newBase,newPbase);
 			}
 			
@@ -1102,20 +1094,17 @@ public class DoubleInput extends FillPane {
 				dval = (DoubleValidator) set.get(LINEARMAP_CLASS_NAME+".view");
 				if(dval!=null){
 					newView = dval;
-				}else if(depth>0
-						&&!BetterClone.fieldIncluded(blacklist, newView.getClass(),
+				}else if(!BetterClone.fieldIncluded(blacklist, null,
 								LINEARMAP_CLASS_NAME+".view")
-						|| BetterClone.fieldIncluded(whitelist, newView.getClass(),
+						|| BetterClone.fieldIncluded(whitelist, null,
 								LINEARMAP_CLASS_NAME+".view")){
 					newView = BetterClone.copy(newView, depth-1, options);
 				}
-				if(set!=null){
-					Number val;
-					val = (Number) set.get(LINEARMAP_CLASS_NAME+".mul");
-					if(val!=null)newMul = val.doubleValue();
-					val = (Number) set.get(LINEARMAP_CLASS_NAME+".add");
-					if(val!=null)newAdd = val.doubleValue();
-				}
+				Number val;
+				val = (Number) set.get(LINEARMAP_CLASS_NAME+".mul");
+				if(val!=null)newMul = val.doubleValue();
+				val = (Number) set.get(LINEARMAP_CLASS_NAME+".add");
+				if(val!=null)newAdd = val.doubleValue();
 				return new LinearMap(newView,newMul,newAdd);
 			}
 			
