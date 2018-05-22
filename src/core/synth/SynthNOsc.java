@@ -2,6 +2,7 @@ package core.synth;
 
 import java.awt.Color;
 import java.util.*;
+import java.util.function.*;
 import javax.swing.JInternalFrame;
 import org.python.core.PyObject;
 import core.*;
@@ -17,8 +18,9 @@ import util.ds.*;
  * @author EPICI
  * @version 1.0
  */
-public class SynthNOsc implements Synthesizer {
-	
+public class SynthNOsc implements BetterClone<SynthNOsc>, Synthesizer {
+	private static final long serialVersionUID = 1L;
+
 	private static final double SEMITONE = StrictMath.pow(2d, 1d/12d);
 	
 	/**
@@ -164,10 +166,70 @@ public class SynthNOsc implements Synthesizer {
 		return true;
 	}
 	
-	// TODO BetterClone implementation
+	public SynthNOsc copy(int depth,Map<String,Object> options){
+		int nextDepth = depth-1;
+		String newName = name;
+		// the list will be modified anyway
+		ArrayList<Osc> newOscillators = new ArrayList<Osc>(oscillators);
+		Map<String,Object> set = (Map<String,Object>)options.get("set");
+		Number val;
+		CharSequence sval;
+		sval = (CharSequence) set.get(SYNTHNOSC_CLASS_NAME+".name");
+		if(sval!=null)newName = sval.toString();
+		// filter
+		Predicate<? super Osc> pval = (Predicate<? super Osc>) set.get(SYNTHNOSC_CLASS_NAME+".oscillators.filter");
+		if(pval!=null){
+			newOscillators.removeIf(pval.negate());
+		}
+		// any iterable is allowed, valid values override old ones
+		Iterable<?> lval = (Iterable<?>) set.get(SYNTHNOSC_CLASS_NAME+".oscillators");
+		int size = newOscillators.size();
+		if(lval!=null){
+			Iterator<?> iter = lval.iterator();
+			// exhaust as many items as possible which don't need extending the list
+			int i;
+			for(i=0;i<size && iter.hasNext();i++){
+				Object value = iter.next();
+				if(value!=null && (value instanceof Osc)){
+					newOscillators.set(i, (Osc)value);
+				}
+			}
+			// do remaining items, if any
+			while(iter.hasNext()){
+				Object value = iter.next();
+				if(value!=null && (value instanceof Osc)){
+					newOscillators.add((Osc)value);
+				}
+			}
+		}
+		// need to limit length?
+		int j;
+		if((val = (Number) set.get(SYNTHNOSC_CLASS_NAME+".oscillators.size"))!=null
+				&& (j = val.intValue())<size){
+			for(size--;size>=j;size--){
+				newOscillators.remove(size);
+			}
+		}
+		// correct name
+		Session session = (Session) options.get("session");
+		newName = session.composition.synths.nextName(newName, -1, false, session);
+		// copy properties as needed
+		size = newOscillators.size();
+		for(int i=0;i<size;i++){
+			Osc value = newOscillators.get(i);
+			value = BetterClone.copy(value, nextDepth, options);
+			newOscillators.set(i, value);
+		}
+		// make the copied object
+		SynthNOsc result = new SynthNOsc(parentComposition);
+		result.setName(newName);
+		result.oscillators.addAll(newOscillators);
+		return result;
+	}
 	
 	// TODO makeDefaultSynth(Session) static method, use single saw osc
 	
+	private static final String SYNTHNOSC_CLASS_NAME = Osc.class.getCanonicalName();
 	private static final String OSC_CLASS_NAME = Osc.class.getCanonicalName();
 	private static final String[] OSC_PROPERTIES_NAMES = {
 			"detune",

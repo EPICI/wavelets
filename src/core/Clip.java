@@ -342,9 +342,9 @@ public class Clip implements BetterClone<Clip>, Serializable {
 		}
 		// any iterable is allowed, valid values override old ones
 		Iterable<?> lval = (Iterable<?>) set.get(CLIP_CLASS_NAME+".properties");
+		int size = newProperties.size();
 		if(lval!=null){
 			// make copy
-			int size = newProperties.size();
 			Iterator<?> iter = lval.iterator();
 			// exhaust as many items as possible which don't need extending the list
 			int i;
@@ -361,19 +361,18 @@ public class Clip implements BetterClone<Clip>, Serializable {
 					newProperties.add(((Number)value).doubleValue());
 				}
 			}
-			// need to limit length?
-			int j;
-			if(i<size 
-					&& (val = (Number) set.get(CLIP_CLASS_NAME+".properties.size"))!=null
-					&& (j = val.intValue())<i){
-				for(size--;size>=j;size--){
-					newProperties.remove(size);
-				}
+		}
+		// need to limit length?
+		int j;
+		if((val = (Number) set.get(CLIP_CLASS_NAME+".properties.size"))!=null
+				&& (j = val.intValue())<size){
+			for(size--;size>=j;size--){
+				newProperties.remove(size);
 			}
 		}
 		Clip result = new Clip(newDelay,newLength,newPitch,newVolume);
 		// if null, then no changes, so use original
-		result.properties.addAll(newProperties==null?properties:newProperties);
+		result.properties.addAll(newProperties);
 		return result;
 	}
 	
@@ -443,8 +442,8 @@ public class Clip implements BetterClone<Clip>, Serializable {
 			}
 			// any iterable is allowed, valid values override old ones
 			Iterable<?> lval = (Iterable<?>) set.get(CLIP_CLASS_NAME+".properties");
+			int size = newProperties.size();
 			if(lval!=null){
-				int size = newProperties.size();
 				Iterator<?> iter = lval.iterator();
 				// exhaust as many items as possible which don't need extending the list
 				int i;
@@ -461,21 +460,20 @@ public class Clip implements BetterClone<Clip>, Serializable {
 						newProperties.add((Property)value);
 					}
 				}
-				// need to limit length?
-				int j;
-				if(i<size 
-						&& (val = (Number) set.get(CLIP_CLASS_NAME+".properties.size"))!=null
-						&& (j = val.intValue())<i){
-					for(size--;size>=j;size--){
-						newProperties.remove(size);
-					}
+			}
+			// need to limit length?
+			int j;
+			if((val = (Number) set.get(TEMPLATE_CLASS_NAME+".properties.size"))!=null
+					&& (j = val.intValue())<size){
+				for(size--;size>=j;size--){
+					newProperties.remove(size);
 				}
 			}
 			// correct name
 			Session session = (Session) options.get("session");
 			newName = session.composition.clipTemplates.nextName(newName, -1, false, session);
 			// copy properties as needed
-			int size = newProperties.size();
+			size = newProperties.size();
 			for(int i=0;i<size;i++){
 				Property value = newProperties.get(i);
 				value = BetterClone.copy(value, nextDepth, options);

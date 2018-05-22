@@ -94,7 +94,7 @@ public class Pattern implements Destructable, TransientContainer<Composition>, N
 				session.composition);
 		// set name
 		result.setName(
-				session.composition.clipTemplates.nextName(
+				session.composition.patterns.nextName(
 						session.getCommonName(Pattern.class),
 						0, false, session));
 		// return
