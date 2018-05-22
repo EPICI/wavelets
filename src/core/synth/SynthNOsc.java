@@ -166,6 +166,31 @@ public class SynthNOsc implements BetterClone<SynthNOsc>, Synthesizer {
 		return true;
 	}
 	
+	/**
+	 * Create a synthesizer object according to default settings.
+	 * In the current implementation this will be named
+	 * like &quot;Nx Osc Synth&quot; using
+	 * {@link util.ds.NamedMap#nextName(String, int, boolean, Session)}.
+	 * 
+	 * @param session
+	 * @return
+	 */
+	public static SynthNOsc makeDefaultSynth(Session session){
+		// create the object
+		SynthNOsc result = new SynthNOsc(session.composition);
+		// add saw oscillator
+		Osc osc = result.new Osc();
+		osc.type = 3;
+		result.oscillators.add(osc);
+		// set name
+		result.setName(
+				session.composition.synths.nextName(
+						session.getCommonName(SynthNOsc.class),
+						0, false, session));
+		// return
+		return result;
+	}
+	
 	public SynthNOsc copy(int depth,Map<String,Object> options){
 		int nextDepth = depth-1;
 		String newName = name;
@@ -226,8 +251,6 @@ public class SynthNOsc implements BetterClone<SynthNOsc>, Synthesizer {
 		result.oscillators.addAll(newOscillators);
 		return result;
 	}
-	
-	// TODO makeDefaultSynth(Session) static method, use single saw osc
 	
 	private static final String SYNTHNOSC_CLASS_NAME = Osc.class.getCanonicalName();
 	private static final String OSC_CLASS_NAME = Osc.class.getCanonicalName();

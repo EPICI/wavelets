@@ -8,7 +8,7 @@ import util.ui.PivotSwingUtils;
 import javax.swing.*;
 import org.apache.pivot.wtk.*;
 import org.apache.pivot.wtk.skin.terra.TerraTheme;
-
+import core.synth.*;
 import ui.*;
 
 /**
@@ -191,8 +191,10 @@ public class Session {
 		commonNames.put(TrackLayerSimple.class, "Pattern Track");
 		commonNames.put(TrackLayerCompound.class, "Layered Track");
 		commonNames.put(Clip.Template.class, "Clip Template");
-		commonNames.put(Curve.class, "2D Curve");
+		commonNames.put(Curve.class, "1D Curve");
 		commonNames.put(Pattern.class, "Pattern");
+		commonNames.put(Synthesizer.class, "Synthesizer");
+		commonNames.put(SynthNOsc.class, "Nx Osc Synth");
 	}
 	
 	/**
