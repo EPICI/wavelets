@@ -4,6 +4,8 @@ import java.util.*;
 import java.util.function.Predicate;
 
 import org.python.core.*;
+
+import core.synth.SynthNOsc;
 import util.jython.*;
 
 /**
@@ -82,15 +84,23 @@ public class Pattern implements Destructable, TransientContainer<Composition>, N
 	 * In the current implementation this will be named
 	 * like &quot;Pattern&quot; using
 	 * {@link util.ds.NamedMap#nextName(String, int, boolean, Session)}.
+	 * <br>
+	 * Note that for the default synthesizer this creates an instance of
+	 * {@link SynthNOsc} and adds it to the composition's synthesizers for use.
 	 * 
 	 * @param session
 	 * @return
 	 */
 	public static Pattern makeDefaultPattern(Session session){
+		// synth
+		Synthesizer synth = SynthNOsc.makeDefaultSynth(session);
+		String synthName = synth.getName();
+		Synthesizer.Specification synthSpec = Synthesizer.specWrap(synth);
+		session.composition.addSynth(synthName, synth, synthSpec);
 		// create the object
 		Pattern result = new Pattern(
 				8,
-				null,// TODO fetch (and possibly make) default synth
+				synthName,
 				session.composition);
 		// set name
 		result.setName(
@@ -180,7 +190,6 @@ public class Pattern implements Destructable, TransientContainer<Composition>, N
 	 * Set voice factory to default value
 	 */
 	protected void setDefaultVoiceFactory(){
-		if(synthesizer==null)return;//TODO remove this null guard once synthesizer is implemented
 		if(synthesizer.isPython()){
 			PyObject pyData = synthesizer.getPvfInfo();
 			PyString stra = pyData.__getitem__(0).__str__();

@@ -163,9 +163,54 @@ public class Composition implements TransientContainer<Session>, TLCParent, Dest
 		return true;
 	}
 	
-	// TODO remove synth method
+	/**
+	 * Removes a synthesizer from the map and destroys the object.
+	 * Returns true on success.
+	 * <br>
+	 * Future version should instead move it to a &quot;low priority&quot;
+	 * map which allows overwrites and is not saved with the project.
+	 * 
+	 * @param name
+	 * @return
+	 */
+	public boolean removeSynth(String name){
+		Synthesizer synth;
+		synth = synths.dualMap.get(name);
+		if(synth!=null){
+			synths.dualMap.remove(name);
+			synthSpecs.dualMap.remove(name);
+			synth.destroySelf();
+			return true;
+		}
+		return false;
+	}
 	
-	// TODO update synth specification method
+	/**
+	 * Attempt to change the specification for a synthesizer.
+	 * It is required that the new specification produces the same
+	 * object, as determined by its {@link Object#equals(Object)}.
+	 * Note that the current synthesizer is taken from the cache
+	 * {@link #synths} rather than using {@link #synthSpecs} and calling
+	 * {@link Synthesizer.Specification#resolve(Session)}.
+	 * Returns true on success.
+	 * 
+	 * @param name
+	 * @param newSpec
+	 * @return
+	 */
+	public boolean setSynthSpec(String name,Synthesizer.Specification newSpec){
+		if(newSpec==null)return false;
+		Synthesizer.Specification oldSpec = synthSpecs.dualMap.get(name);
+		if(oldSpec!=null){
+			Synthesizer oldSynth = synths.dualMap.get(name);
+			Synthesizer newSynth = newSpec.resolve(currentSession);
+			if(newSynth.equals(oldSynth)){
+				synthSpecs.dualMap.put(name, newSpec);
+				return true;
+			}
+		}
+		return false;
+	}
 	
 	@Override
 	public void destroy() {

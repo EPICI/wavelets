@@ -104,13 +104,16 @@ public class TrackLSPreviewSkin extends ComponentSkin {
 	}
 
 	@Override
-	public void paint(Graphics2D graphics) {//TODO replace boolean gradient setting with variable resolution (1 per pixel max, 1 for whole screen min)
+	public void paint(Graphics2D graphics) {
 		/*
-		 * TLS style bits
-		 * 0 = toggle synth signature colour gradient or solid
+		 * Determines resolution of gradient:
+		 * Call this x, a range of 2^x pixels is a solid tone
+		 * 0 is individual pixels (highest resolution)
+		 * 30 makes everything the same tone (lowest resolution), 31 would cause overflow
 		 */
-		long style = 0;//TODO fetch from preferences when available
-		boolean gradientSynthSig = (style&1)!=0;
+		int gradientShift = (int)Preferences.getIntSafe(session, Preferences.INDEX_INT_TLS_PATTERN_BAR_GRADIENT_SHIFT)/*, gradientShiftInc = 1<<gradientShift, gradientShiftMask = gradientShiftInc-1, gradientShiftMaskInv = ~gradientShiftMask*/;
+		// TODO actually implement gradient view
+		boolean gradientSynthSig = gradientShift<30;
 		TrackLSPreview target = (TrackLSPreview) getComponent();
 		TrackLayerSimple tls = target.target;
 		updateWidth();updateHeight();

@@ -509,7 +509,7 @@ public class SynthNOsc implements BetterClone<SynthNOsc>, Synthesizer {
 		 */
 		public synchronized void setDecayFrac(double decayFrac) {
 			final double t=Floats.D_TINY;
-			properties[8].set(decayFrac<t?t:decayFrac);
+			properties[7].set(decayFrac<t?t:decayFrac);
 		}
 
 		/**
@@ -525,7 +525,7 @@ public class SynthNOsc implements BetterClone<SynthNOsc>, Synthesizer {
 		 * @see VarDouble
 		 */
 		public synchronized double getMinVolume(double time) {
-			return properties[9].get(time);
+			return properties[8].get(time);
 		}
 
 		/**
@@ -542,7 +542,7 @@ public class SynthNOsc implements BetterClone<SynthNOsc>, Synthesizer {
 		 */
 		public synchronized void setMinVolume(double minVolume) {
 			final double t=Floats.D_TINY;
-			properties[9].set(minVolume>t?t:minVolume);
+			properties[8].set(minVolume>t?t:minVolume);
 		}
 		
 		/**
