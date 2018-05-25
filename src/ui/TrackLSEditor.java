@@ -553,7 +553,6 @@ public class TrackLSEditor extends DataEditor.Tabbed<TrackLayerSimple> {
 								peditor = (PatternEditor) meta.metaData.get("window");
 								peditor.addEditorData(pattern);
 								session.windowManager.addWindow(meta,true);
-								editor.repaint();
 							}else{// Move here
 								if(session!=null){
 									Object clip = session.clipBoard;
