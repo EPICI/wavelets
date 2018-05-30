@@ -20,6 +20,22 @@ public interface BetterClone<Self extends BetterClone<Self>> {
 	/**
 	 * If a key-value pair <i>k:v</i> exists in this map,
 	 * v provides a way to copy objects of type k.
+	 * <br>
+	 * Use methods {@link #setCopier(Class, Copier)} and
+	 * {@link #getCopier(Class)} or
+	 * {@link #getCopierSuper(Class)}
+	 * to access this map.
+	 * <br>
+	 * These copier utilities should not
+	 * be bound to a {@link Session}, and there should only be one canonical
+	 * copier for a class replaced possibly by improved or alternate versions.
+	 * Also, there is no reason a {@link Session} cannot simply overwrite the existing
+	 * copiers with its own if need be, so functionality is not hindered.
+	 * Since the user must be aware of these possible unexpected results
+	 * in some niche cases, it may be considered bad design that this map
+	 * is independent of the {@link Session}, however, making it fully bound
+	 * to the {@link Session} hurts usability enough that it is
+	 * not worth it at this time.
 	 */
 	static final HashMap<Class<?>,Copier<?>> copiers = new HashMap<>();
 	
